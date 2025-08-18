@@ -20,7 +20,7 @@ from typing import Iterable, Sequence, Any, Optional
 
 from . import app_config
 from . import app_table_display as tables
-
+from .app_helpers import truncate_middle
 
 # -----------------------------
 # Terminal / layout
@@ -144,16 +144,6 @@ def wrap_text(text: str, width: Optional[int] = None) -> str:
     """Wrap a long string to terminal width."""
     w = width or (term_width() - 2)
     return "\n".join(wrap(text, w))
-
-def truncate_middle(s: str, max_len: int) -> str:
-    """
-    Truncate long strings in the middle with an ellipsis.
-    e.g., '/very/long/path/file.txt' -> '/very/lo…file.txt'
-    """
-    if len(s) <= max_len or max_len < 5:
-        return s if len(s) <= max_len else s[:max_len]
-    half = (max_len - 1) // 2
-    return s[:half] + "…" + s[-(max_len - half - 1):]
 
 # -----------------------------
 # Re-export table utilities

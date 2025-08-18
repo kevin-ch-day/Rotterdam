@@ -5,43 +5,52 @@ Allows users to list connected devices and select one to connect to,
 with numbered selection for easier navigation.
 """
 
-from app_utils import app_display
+from app_utils import app_display, app_menu_utils
 from device_analysis import device_discovery
 
 
 def list_and_select_device() -> str:
-    """
-    Lists all connected devices and lets the user select one by number.
-    Returns the serial number of the selected device.
-    """
+    """Display connected devices and return the chosen serial."""
     try:
-        # Get the list of devices
         devices = device_discovery.list_detailed_devices()
 
-        # If no devices are connected
         if not devices:
             app_display.warn("No devices attached.")
             return ""
 
-        # Display the list of devices in a numbered menu format
-        app_display.print_section("ADB Devices")
-        for index, device in enumerate(devices, start=1):
-            print(f"[{index}] Serial: {device['serial']} | Model: {device['model']} | State: {device['state']}")
+        labels = [
+            f"{d.get('serial')} | {d.get('model') or '-'} | {d.get('state')}"
+            for d in devices
+        ]
 
-        # Ask user to select a device
-        try:
-            selection = int(input("\nSelect the device by number: ").strip())
-            if selection < 1 or selection > len(devices):
-                app_display.fail("Invalid selection, please choose a valid number.")
-                return ""
+        choice = app_menu_utils.show_menu(
+            "ADB Devices",
+            labels,
+            exit_label="Cancel",
+            prompt="Select device",
+        )
 
-            selected_device = devices[selection - 1]
-            app_display.good(f"Selected device: {selected_device['serial']}")
-            return selected_device['serial']
-
-        except ValueError:
-            app_display.fail("Invalid input, please enter a number.")
+        if choice == 0:
+            app_display.warn("No device selected.")
             return ""
+
+        selected = devices[choice - 1]
+        app_display.good(f"Selected device: {selected['serial']}")
+
+        app_display.print_section("Device Details")
+        app_display.print_kv(
+            [
+                ("Serial", selected.get("serial", "")),
+                ("Model", selected.get("model", "")),
+                ("Manufacturer", selected.get("manufacturer", "")),
+                ("Android", selected.get("android_release", "")),
+                ("SDK", selected.get("sdk", "")),
+                ("Connection", selected.get("connection", "")),
+                ("Type", selected.get("type", "")),
+            ]
+        )
+
+        return selected.get("serial", "")
 
     except RuntimeError as e:
         app_display.fail(str(e))
