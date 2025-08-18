@@ -6,8 +6,7 @@ Initializes config, shows banner, and launches the main menu.
 """
 
 from app_utils import app_config, app_menu_utils, app_display
-from device_analysis import device_discovery
-from device_selection import list_and_select_device  # Import updated function
+from device_analysis import device_discovery, device_selection
 
 
 def main() -> None:
@@ -50,7 +49,7 @@ def main() -> None:
 
         elif choice == 2:
             # Use the new function to list and select a device
-            selected_device = list_and_select_device()
+            selected_device = device_selection.list_and_select_device()
 
             if selected_device:
                 app_display.good(f"Device {selected_device} connected successfully.")
