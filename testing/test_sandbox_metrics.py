@@ -8,10 +8,17 @@ def test_compute_runtime_metrics():
     ]
     network = ["https://example.com", "https://example.com", "https://other.com"]
     writes = ["/data/a.txt", "/data/b.txt", "/data/a.txt"]
-    metrics = compute_runtime_metrics(perms, network, writes)
+    activities = [
+        "com.example/.Main",
+        "com.example/.Settings",
+        "com.example/.Main",
+    ]
+    metrics = compute_runtime_metrics(perms, network, writes, activities)
     assert metrics["permission_usage_counts"]["android.permission.INTERNET"] == 2
     assert metrics["network_endpoints"] == ["https://example.com", "https://other.com"]
     assert metrics["filesystem_writes"] == ["/data/a.txt", "/data/b.txt"]
     assert metrics["unique_permission_count"] == 2
     assert metrics["network_endpoint_count"] == 2
     assert metrics["filesystem_write_count"] == 2
+    assert metrics["activities"] == ["com.example/.Main", "com.example/.Settings"]
+    assert metrics["activity_count"] == 2

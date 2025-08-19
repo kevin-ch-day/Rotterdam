@@ -22,15 +22,6 @@ from logging_config import get_logger, log_context
 logger = get_logger(__name__)
 
 
-def collect_permissions(apk_path: str) -> List[str]:
-    """Stub collecting of runtime permissions for *apk_path*.
-
-    This simplified implementation returns a fixed permission list suitable
-    for tests without requiring an attached device.
-    """
-    return ["android.permission.INTERNET"]
-
-
 def _run_shell(cmd: list[str]) -> str:
     """Run ``adb shell`` with *cmd* and return stdout as text."""
     adb_path = adb._adb_path()

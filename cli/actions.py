@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from contextlib import contextmanager
+from typing import Any, Dict, Optional
 
 from core import display, menu, renderers, config
 from .prompts import prompt_existing_path
@@ -19,11 +21,27 @@ from devices import (
     processes,
 )
 from analysis import analyze_apk
-from sandbox import run_analysis as sandbox_analyze
-from logging_config import get_logger, log_context
+from sandbox import run_analysis as sandbox_analyze, compute_runtime_metrics
+from sandbox import ui_driver
 
+# Optional logging integration
+try:
+    from logging_config import get_logger, log_context  # type: ignore
+    logger = get_logger(__name__)  # type: ignore
+except Exception:  # pragma: no cover
+    import logging
 
-logger = get_logger(__name__)
+    logger = logging.getLogger(__name__)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+
+    @contextmanager
+    def log_context(**_: Any):  # type: ignore
+        yield
 
 
 def show_connected_devices() -> None:
@@ -31,7 +49,7 @@ def show_connected_devices() -> None:
     logger.info("show_connected_devices")
     try:
         output = discovery.check_connected_devices()
-        devs = discovery.parse_devices_l(output)
+        devs = discovery.parse_devices_l(output)  # keep API as defined in devices.discovery
     except RuntimeError as e:
         logger.exception("failed to check connected devices")
         display.fail(str(e))
@@ -71,7 +89,13 @@ def list_installed_packages(serial: str) -> None:
     """Display packages installed on the device."""
     with log_context(device=serial):
         logger.info("list_installed_packages")
-        pkg_info = packages.inventory_packages(serial)
+        try:
+            pkg_info = packages.inventory_packages(serial)
+        except RuntimeError as e:
+            logger.exception("failed to inventory packages")
+            display.fail(str(e))
+            return
+
         display.print_section("Application Inventory")
         if not pkg_info:
             logger.info("no packages found")
@@ -110,6 +134,7 @@ def list_running_processes(serial: str) -> None:
             logger.exception("process listing failed")
             display.fail(str(e))
             return
+
         display.print_section("Running Processes")
         if not procs:
             logger.info("no process data available")
@@ -231,6 +256,40 @@ def sandbox_analyze_apk() -> None:
                 print(f"{n.get('protocol', '')} -> {n.get('destination', '')}")
 
 
+def explore_installed_app(serial: str) -> None:
+    """Select an installed package and run automated UI exploration."""
+    try:
+        pkgs = packages.list_installed_packages(serial)
+    except RuntimeError as e:
+        display.fail(str(e))
+        return
+    if not pkgs:
+        print("Status: No packages found.")
+        return
+
+    choice = menu.show_menu(
+        "Installed Packages",
+        pkgs,
+        exit_label="Cancel",
+        prompt="Select package",
+    )
+    if choice == 0:
+        print("Status: No package selected.")
+        return
+
+    package = pkgs[choice - 1]
+    activities = ui_driver.run_monkey(serial, package)
+    metrics = compute_runtime_metrics([], [], [], activities)
+
+    display.print_section("Visited Activities")
+    if metrics.get("activities"):
+        for act in metrics["activities"]:
+            print(act)
+        print(f"Total: {metrics['activity_count']}")
+    else:
+        print("No activity coverage recorded.")
+
+
 def _display_manifest_insights(outdir: Path) -> None:
     """Load manifest-derived data and display tables."""
     try:
@@ -245,7 +304,9 @@ def _display_manifest_insights(outdir: Path) -> None:
         report = json.loads((outdir / "report.json").read_text())
     except Exception:
         report = {}
-    metrics = report.get("metrics", {})
+
+    metrics: Dict[str, Any] = report.get("metrics", {})
+    diff: Dict[str, Any] = report.get("diff", {})
 
     if features:
         display.print_section("Requested Features")
@@ -264,3 +325,18 @@ def _display_manifest_insights(outdir: Path) -> None:
         if prefix_counts:
             display.print_section("Permission Patterns")
             renderers.print_prefix_summary(prefix_counts)
+
+    if diff:
+        display.print_section("Differences from Previous Version")
+        added_perms = diff.get("added_permissions", [])
+        removed_perms = diff.get("removed_permissions", [])
+        if added_perms:
+            print("Added permissions: " + ", ".join(added_perms))
+        if removed_perms:
+            print("Removed permissions: " + ", ".join(removed_perms))
+        for kind, names in diff.get("added_components", {}).items():
+            if names:
+                print(f"Added {kind.title()}s: {', '.join(names)}")
+        for kind, names in diff.get("removed_components", {}).items():
+            if names:
+                print(f"Removed {kind.title()}s: {', '.join(names)}")

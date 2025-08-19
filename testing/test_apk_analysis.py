@@ -45,7 +45,11 @@ def test_extract_permission_details():
         "tag": "uses-permission",
         "max_sdk_version": 28,
     } in details
-    assert any(d["tag"] == "uses-permission-sdk-23" and d["name"] == "android.permission.READ_CONTACTS" for d in details)
+    assert any(
+        d["tag"] == "uses-permission-sdk-23"
+        and d["name"] == "android.permission.READ_CONTACTS"
+        for d in details
+    )
 
 
 def test_categorize_permissions():
@@ -60,7 +64,7 @@ def test_categorize_permissions():
 
 def test_scan_for_secrets(tmp_path: Path):
     sample = tmp_path / "Sample.java"
-    sample.write_text("String API_KEY = \"abc\";")
+    sample.write_text('String API_KEY = "abc";')
     results = scan_for_secrets(tmp_path)
     assert results and "Sample.java" in results[0]
 
@@ -150,7 +154,17 @@ def test_write_report(tmp_path: Path):
         metadata,
         runtime_metrics,
     )
+
+    # risk_scoring returns {"score", "rationale", "breakdown"}; it is merged into metrics.
     risk = calculate_risk_score(metrics, {})
+
+    diff = {
+        "added_permissions": ["android.permission.CAMERA"],
+        "removed_permissions": [],
+        "added_components": {"activity": ["New"]},
+        "removed_components": {},
+    }
+
     report = write_report(
         tmp_path,
         ["android.permission.INTERNET"],
@@ -163,8 +177,12 @@ def test_write_report(tmp_path: Path):
         metadata,
         metrics,
         risk,
+        {"Sample.java": ["TestRule"]},  # yara_matches
+        diff,
     )
     data = json.loads(report.read_text())
+
+    # smoke checks (presence)
     assert "android.permission.INTERNET" in str(data)
     assert "Sample.java:10" in str(data)
     assert "Main" in str(data)
@@ -174,9 +192,18 @@ def test_write_report(tmp_path: Path):
     assert "com.example.API_KEY" in str(data)
     assert "permission_density" in str(data)
     assert "feature_count" in str(data)
-    assert "risk" in str(data)
+
+    # risk fields (merged into metrics; no "risk" key expected)
+    assert "score" in str(data)
     assert "rationale" in str(data)
+
+    # derived extras
     assert "permission_prefix_counts" in data["metrics"]
+
+    # both optional sections present
+    assert data["yara_matches"]["Sample.java"] == ["TestRule"]
+    assert data["diff"]["added_permissions"] == ["android.permission.CAMERA"]
+    assert data["diff"]["added_components"]["activity"] == ["New"]
 
 
 def test_calculate_derived_metrics():
