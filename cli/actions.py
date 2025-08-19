@@ -144,6 +144,92 @@ def list_running_processes(serial: str) -> None:
         renderers.print_process_table(procs)
 
 
+def _collect_table_counts(conn, tables: list[str]) -> tuple[list[tuple[str, int | str]], list[str]]:
+    """Return (display values, missing tables) for the given table names."""
+    from sqlalchemy import text
+
+    counts: list[tuple[str, int | str]] = []
+    missing: list[str] = []
+    for tbl in tables:
+        try:
+            res = conn.execute(text(f"SELECT COUNT(*) FROM {tbl}"))
+            counts.append((tbl.title(), res.scalar_one()))
+        except Exception:
+            counts.append((tbl.title(), "N/A"))
+            missing.append(tbl)
+    return counts, missing
+
+
+def _fetch_recent_analyses(conn, limit: int = 10) -> list[list[str | int | None]]:
+    """Return the most recent analyses records for display."""
+    from sqlalchemy import text
+
+    try:
+        res = conn.execute(
+            text(
+                "SELECT package, score, status FROM analyses ORDER BY id DESC LIMIT :lim"
+            ),
+            {"lim": limit},
+        )
+        return [[row[0], row[1], row[2]] for row in res]
+    except Exception:
+        return []
+
+
+def show_database_status() -> None:
+    """Report connectivity and basic statistics for the configured database.
+
+    This helper surfaces connection issues and missing tables early by
+    verifying a trivial query, counting core tables and showing the latest
+    analysis results.
+    """
+    logger.info("show_database_status")
+
+    from sqlalchemy.engine.url import make_url
+    from sqlalchemy.exc import SQLAlchemyError
+    from storage.engine_compat import create_engine_safe
+
+    url = config.get_database_url()
+    safe_url = make_url(url).render_as_string(hide_password=True)
+
+    display.print_section("Database Status")
+    display.print_kv([("Engine", safe_url)])
+
+    try:
+        engine = create_engine_safe(url, future=True)
+    except SQLAlchemyError as exc:  # pragma: no cover - configuration failure
+        logger.exception("failed to create engine")
+        display.fail(f"Failed to initialise database: {exc}")
+        return
+
+    with engine.connect() as conn:
+        # Connectivity check
+        try:
+            conn.execute("SELECT 1")
+            display.good("Connectivity check succeeded")
+        except Exception as exc:  # pragma: no cover - runtime safety
+            logger.exception("connectivity check failed")
+            display.fail(f"Connectivity check failed: {exc}")
+            return
+
+        counts, missing = _collect_table_counts(
+            conn, ["devices", "packages", "analyses"]
+        )
+        display.print_kv(counts)
+        if missing:
+            display.warn(
+                "Missing tables: " + ", ".join(name.title() for name in missing)
+            )
+
+        rows = _fetch_recent_analyses(conn)
+
+    display.print_section("Recent Analyses")
+    if rows:
+        display.print_table(rows, headers=["Package", "Score", "Status"])
+    else:
+        print("No analysis records found.")
+
+
 def analyze_apk_path() -> None:
     """Prompt for an APK path and run the static analyzer."""
     apk_path = prompt_existing_path(

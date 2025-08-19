@@ -33,6 +33,7 @@ def run_main_menu() -> None:
         "List installed packages on selected device",
         "Scan installed apps for dangerous permissions",
         "List running processes on selected device",
+        "Database",  # check connectivity and recent analyses
         "Analyze a local APK for permissions and secrets",
         "Pull and analyze an installed app",
         "Sandbox analyze a local APK",
@@ -63,14 +64,16 @@ def run_main_menu() -> None:
             if selected_serial:
                 actions.list_running_processes(selected_serial)
         elif choice == 7:
-            actions.analyze_apk_path()
+            actions.show_database_status()
         elif choice == 8:
+            actions.analyze_apk_path()
+        elif choice == 9:
             selected_serial = _ensure_device_selected(selected_serial)
             if selected_serial:
                 actions.analyze_installed_app(selected_serial)
-        elif choice == 9:
-            actions.sandbox_analyze_apk()
         elif choice == 10:
+            actions.sandbox_analyze_apk()
+        elif choice == 11:
             selected_serial = _ensure_device_selected(selected_serial)
             if selected_serial:
                 actions.explore_installed_app(selected_serial)
