@@ -5,6 +5,10 @@ Rotterdam is a toolkit for analyzing Android applications and devices. It provid
 ## Development
 
 Set up a Python environment and install the project's dependencies.
+Dependencies are listed in `requirements.txt`, including the MySQL driver
+`mysql-connector-python` and YARA bindings via `yara-python`.
+The YARA wrapper requires the system `libyara` library; on Debian-based
+systems it can be installed with `apt-get install libyara-dev`.
 
 ### Database configuration
 
@@ -14,7 +18,7 @@ connection in one of two ways:
 
 1. Provide a full SQLAlchemy URL via ``DATABASE_URL``::
 
-   ``export DATABASE_URL="mysql+pymysql://user:pass@host/db"``
+   ``export DATABASE_URL="mysql+mysqlconnector://user:pass@host/db"``
 
 2. Set individual MySQL parameters and they will be assembled into a URL::
 
