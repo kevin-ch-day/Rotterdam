@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict, List, Any, Sequence
 
-from core import display
+from core import display, config
 from .manifest import (
     extract_app_flags,
     extract_components,
@@ -21,6 +21,7 @@ from .permissions import categorize_permissions
 from .secrets import scan_for_secrets
 from .report import calculate_derived_metrics, write_report
 from risk_scoring import calculate_risk_score
+from .diff import diff_snapshots
 
 
 def _run_tool(cmd: Sequence[str], tool_name: str) -> None:
@@ -91,6 +92,22 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     risk = calculate_risk_score(metrics, dynamic_metrics)
     (out / "risk_score.json").write_text(json.dumps(risk, indent=2))
 
+    # Store a snapshot of key manifest data with a simple version tag
+    snapshot = {
+        "permissions": perms,
+        "components": {k: [c.get("name", "") for c in v] for k, v in components.items()},
+    }
+    config.STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+    base = apk.stem
+    existing = sorted(config.STORAGE_DIR.glob(f"{base}_v*.json"))
+    version = len(existing) + 1
+    snap_path = config.STORAGE_DIR / f"{base}_v{version}.json"
+    snap_path.write_text(json.dumps(snapshot, indent=2))
+    diff = None
+    if existing:
+        prev_path = existing[-1]
+        diff = diff_snapshots(prev_path, snap_path)
+
     write_report(
         out,
         perms,
@@ -103,6 +120,7 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
         metadata,
         metrics,
         risk,
+        diff,
     )
 
     return out

@@ -62,10 +62,11 @@ PROJECT_ROOT: Path = _discover_project_root()
 OUTPUT_DIR: Path = PROJECT_ROOT / "output"
 LOGS_DIR: Path = PROJECT_ROOT / "logs"
 SCREENSHOTS_DIR: Path = OUTPUT_DIR / "device_screenshots"
+STORAGE_DIR: Path = PROJECT_ROOT / "storage"
 
 def ensure_dirs() -> None:
     """Create required directories if missing."""
-    for d in (OUTPUT_DIR, LOGS_DIR, SCREENSHOTS_DIR):
+    for d in (OUTPUT_DIR, LOGS_DIR, SCREENSHOTS_DIR, STORAGE_DIR):
         d.mkdir(parents=True, exist_ok=True)
 
 
