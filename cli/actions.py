@@ -202,6 +202,7 @@ def _display_manifest_insights(outdir: Path) -> None:
     except Exception:
         report = {}
     metrics = report.get("metrics", {})
+    diff = report.get("diff", {})
 
     if features:
         display.print_section("Requested Features")
@@ -220,3 +221,17 @@ def _display_manifest_insights(outdir: Path) -> None:
         if prefix_counts:
             display.print_section("Permission Patterns")
             renderers.print_prefix_summary(prefix_counts)
+    if diff:
+        display.print_section("Differences from Previous Version")
+        added_perms = diff.get("added_permissions", [])
+        removed_perms = diff.get("removed_permissions", [])
+        if added_perms:
+            print("Added permissions: " + ", ".join(added_perms))
+        if removed_perms:
+            print("Removed permissions: " + ", ".join(removed_perms))
+        for kind, names in diff.get("added_components", {}).items():
+            if names:
+                print(f"Added {kind.title()}s: {', '.join(names)}")
+        for kind, names in diff.get("removed_components", {}).items():
+            if names:
+                print(f"Removed {kind.title()}s: {', '.join(names)}")

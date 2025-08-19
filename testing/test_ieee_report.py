@@ -1,4 +1,5 @@
 from reports import ieee
+from reports import ieee
 
 
 def test_format_device_inventory_creates_section_and_table():
@@ -65,4 +66,13 @@ def test_format_risk_summary_includes_score_and_breakdown():
     assert "Table IV. Risk Breakdown" in out
     assert "42.5" in out
     assert "Example rationale" in out
+
+
+def test_format_yara_matches_outputs_table():
+    matches = {"a.txt": ["Rule1"], "b.txt": ["Rule2", "Rule3"]}
+    out = ieee.format_yara_matches(matches)
+    assert "SECTION V: YARA SCAN" in out
+    assert "V.A – Rule Matches" in out
+    assert "Table V. YARA Matches" in out
+    assert "a.txt" in out and "Rule1" in out
 
