@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from risk_scoring import calculate_risk_score
-from storage.repository import RiskReportRepository
+from sqlalchemy.orm import Session
 
 
 def generate_report(
@@ -13,46 +13,38 @@ def generate_report(
     static_metrics: Optional[Dict[str, float]] = None,
     dynamic_metrics: Optional[Dict[str, float]] = None,
     *,
-    repository: Optional[RiskReportRepository] = None,
+    session: Session | None = None,
 ) -> Dict[str, Any]:
-    """Generate a risk report and persist it via ``repository``.
+    """Generate a risk report.
 
-    Parameters
-    ----------
-    package_name:
-        Identifier of the application being analysed.
-    static_metrics, dynamic_metrics:
-        Metric dictionaries forwarded to :func:`calculate_risk_score`.
-    repository:
-        Optional :class:`RiskReportRepository` instance.  A default in-memory
-        repository will be created if omitted.
+    ``session`` is accepted for backwards compatibility but is unused as
+    reports are not yet persisted to the database.
     """
 
-    repo = repository or RiskReportRepository()
+    # No database interaction currently required
+    _ = session  # Preserve signature for callers expecting it
     result = calculate_risk_score(static_metrics, dynamic_metrics)
-    repo.add_report(package_name, result["score"], result["rationale"], result["breakdown"])
     return result
 
 
 def fetch_history(
     package_name: str,
     *,
-    repository: Optional[RiskReportRepository] = None,
+    session: Session | None = None,
 ) -> List[Dict[str, Any]]:
     """Return previously persisted reports for ``package_name``."""
 
-    repo = repository or RiskReportRepository()
-    reports = repo.list_reports(package_name)
-    return [r.to_dict() for r in reports]
+    _ = session  # Placeholder until persistence is implemented
+    # Database persistence has not been implemented yet
+    return []
 
 
 def fetch_latest(
     package_name: str,
     *,
-    repository: Optional[RiskReportRepository] = None,
+    session: Session | None = None,
 ) -> Optional[Dict[str, Any]]:
     """Return the most recent report for ``package_name`` or ``None``."""
 
-    repo = repository or RiskReportRepository()
-    report = repo.get_latest(package_name)
-    return report.to_dict() if report else None
+    _ = session  # Placeholder until persistence is implemented
+    return None

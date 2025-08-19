@@ -14,6 +14,8 @@ from contextlib import contextmanager
 from typing import Any, Dict, Optional
 import argparse
 
+from sqlalchemy import text
+
 from core import display, menu, renderers, config
 from core.diagnostics import SystemDoctor, BinaryCheck, ModuleCheck
 from .prompts import prompt_existing_path
@@ -28,7 +30,7 @@ from devices import (
 from analysis import analyze_apk
 from sandbox import run_analysis as sandbox_analyze, compute_runtime_metrics
 from sandbox import ui_driver
-from storage.repository import AnalysisRepository
+from storage.repository import AnalysisRepository, session_scope, DATABASE_URL, ping_db
 
 # Optional logging integration
 try:
@@ -303,8 +305,6 @@ def list_running_processes(serial: str) -> None:
 
 def _collect_table_counts(conn, tables: list[str]) -> tuple[list[tuple[str, int | str]], list[str]]:
     """Return (display values, missing tables) for the given table names."""
-    from sqlalchemy import text
-
     counts: list[tuple[str, int | str]] = []
     missing: list[str] = []
     for tbl in tables:
@@ -319,12 +319,11 @@ def _collect_table_counts(conn, tables: list[str]) -> tuple[list[tuple[str, int 
 
 def _fetch_recent_analyses(conn, limit: int = 10) -> list[list[str | int | None]]:
     """Return the most recent analyses records for display."""
-    from sqlalchemy import text
-
     try:
         res = conn.execute(
             text(
-                "SELECT package, score, status FROM analyses ORDER BY id DESC LIMIT :lim"
+                "SELECT package_name, score, status "
+                "FROM analyses ORDER BY id DESC LIMIT :lim"
             ),
             {"lim": limit},
         )
@@ -333,52 +332,56 @@ def _fetch_recent_analyses(conn, limit: int = 10) -> list[list[str | int | None]
         return []
 
 
-def show_database_status() -> None:
-    """Report connectivity and basic statistics for the configured database.
+def _redact(url: str) -> str:
+    """Hide password in DSN when printing."""
+    if "://" not in url:
+        return url
+    scheme, rest = url.split("://", 1)
+    if "@" in rest and ":" in rest.split("@", 1)[0]:
+        creds, hostpart = rest.split("@", 1)
+        user = creds.split(":", 1)[0]
+        rest = f"{user}:***@{hostpart}"
+    return f"{scheme}://{rest}"
 
-    This helper surfaces connection issues and missing tables early by
-    verifying a trivial query, counting core tables and showing the latest
-    analysis results.
-    """
+
+def show_database_status() -> None:
+    """Report connectivity and basic statistics for the configured database."""
     logger.info("show_database_status")
 
-    from sqlalchemy.engine.url import make_url
-    from sqlalchemy.exc import SQLAlchemyError
-    from storage.engine_compat import create_engine_safe
+    display.print_section("Database")
+    print(f"DSN: {_redact(DATABASE_URL)}")
 
-    url = config.get_database_url()
-    safe_url = make_url(url).render_as_string(hide_password=True)
-
-    display.print_section("Database Status")
-    display.print_kv([("Engine", safe_url)])
-
-    try:
-        engine = create_engine_safe(url, future=True)
-    except SQLAlchemyError as exc:  # pragma: no cover - configuration failure
-        logger.exception("failed to create engine")
-        display.fail(f"Failed to initialise database: {exc}")
+    ok, ver_or_err, ms = ping_db()
+    if ok:
+        display.good(f"MySQL version: {ver_or_err} ({ms:.1f} ms)")
+    else:
+        display.warn(f"DB check failed in {ms:.1f} ms → {ver_or_err}")
         return
 
-    with engine.connect() as conn:
-        # Connectivity check
-        try:
-            conn.execute("SELECT 1")
-            display.good("Connectivity check succeeded")
-        except Exception as exc:  # pragma: no cover - runtime safety
-            logger.exception("connectivity check failed")
-            display.fail(f"Connectivity check failed: {exc}")
-            return
+    try:
+        with session_scope() as s:
+            counts = {}
+            for tbl in [
+                "devices",
+                "packages",
+                "device_packages",
+                "analyses",
+                "analysis_findings",
+                "permissions_snapshots",
+                "permission_items",
+            ]:
+                counts[tbl] = s.execute(text(f"SELECT COUNT(*) FROM {tbl}")).scalar()
+        for k, v in counts.items():
+            print(f"  - {k:24s} {v}")
+    except Exception as e:
+        display.warn(f"Count query failed: {e}")
 
-        counts, missing = _collect_table_counts(
-            conn, ["devices", "packages", "analyses"]
-        )
-        display.print_kv(counts)
-        if missing:
-            display.warn(
-                "Missing tables: " + ", ".join(name.title() for name in missing)
-            )
-
-        rows = _fetch_recent_analyses(conn)
+    # Recent analyses
+    try:
+        with session_scope() as s:
+            rows = _fetch_recent_analyses(s, limit=10)  # type: ignore[arg-type]
+    except Exception:
+        rows = []
 
     display.print_section("Recent Analyses")
     if rows:

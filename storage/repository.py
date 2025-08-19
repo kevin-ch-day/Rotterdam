@@ -1,127 +1,112 @@
-"""Repository layer for CRUD operations on stored analysis results."""
-
 from __future__ import annotations
 
-from typing import List, Optional
-import datetime as _dt
+"""Database engine and session helpers for MySQL storage.
 
-from sqlalchemy import select
+The database configuration is loaded from a ``.env`` file located at the
+project root. ``DATABASE_URL`` must be provided in this file or as an
+environment variable. A minimal ``.env`` parser is included below.
 
-from .engine_compat import create_engine_safe
-from sqlalchemy.exc import SQLAlchemyError
+Default fallback (for dev/tests):
+    mysql+mysqlconnector://rotterdam_user:ChangeMe@127.0.0.1:3306/rotterdam
+"""
+
+import contextlib
+import os
+from pathlib import Path
+import time
+from typing import Iterator
+
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from core.config import get_database_url
 
-from .models import Base, RiskReport, Analysis
+def _load_database_url() -> str:
+    """Load ``DATABASE_URL`` from environment or ``.env`` file.
 
-
-def init_db(
-    url: str | None = None,
-    *,
-    pool_size: int = 5,
-    max_overflow: int = 10,
-) -> sessionmaker:
-    """Initialise a database and return a ``sessionmaker`` factory.
-
-    The URL can point to any SQLAlchemy-supported backend, e.g. SQLite or
-    MySQL.  If omitted, the environment is inspected for connection
-    information and finally an in-memory SQLite database is used as a
-    fallback.
+    If no value is found, a development default is returned so that imports
+    do not fail during testing. The default uses the mysql-connector driver.
     """
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        env_path = Path(__file__).resolve().parents[1] / ".env"
+        if env_path.exists():
+            for line in env_path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key.strip(), value.strip())
+            url = os.getenv("DATABASE_URL")
 
-    db_url = url or get_database_url()
-    try:
-        engine = create_engine_safe(
-            db_url,
+    if not url:
+        url = "mysql+mysqlconnector://rotterdam_user:ChangeMe@127.0.0.1:3306/rotterdam"
+    return url
+
+
+# Cached DSN for reuse by downstream modules
+DATABASE_URL = _load_database_url()
+
+_engine: Engine | None = None
+_SessionLocal: sessionmaker | None = None
+
+
+def get_engine() -> Engine:
+    """Return a singleton SQLAlchemy Engine."""
+    global _engine, _SessionLocal
+    if _engine is None:
+        _engine = create_engine(
+            DATABASE_URL,
             pool_pre_ping=True,
-            pool_size=pool_size,
-            max_overflow=max_overflow,
+            pool_size=5,
+            max_overflow=10,
+            pool_recycle=1800,
+            echo=False,
+            future=True,
+            # mysql-connector-python supports this; harmless for others using this DSN.
+            connect_args={"connection_timeout": 3},
+        )
+        _SessionLocal = sessionmaker(
+            bind=_engine,
+            autoflush=False,
+            autocommit=False,
+            expire_on_commit=False,
             future=True,
         )
-        Base.metadata.create_all(engine)
-    except SQLAlchemyError as exc:
-        raise RuntimeError(f"Failed to initialise database: {exc}") from exc
-    return sessionmaker(bind=engine, expire_on_commit=False, future=True)
+    return _engine
 
 
-class RiskReportRepository:
-    """Simple repository for :class:`RiskReport` records."""
-
-    def __init__(
-        self, session_factory: sessionmaker | None = None, *, db_url: str | None = None
-    ):
-        self._session_factory = session_factory or init_db(db_url)
-
-    def _session(self) -> Session:
-        return self._session_factory()
-
-    # CRUD operations
-    def add_report(
-        self,
-        package_name: str,
-        score: float,
-        rationale: str,
-        breakdown: dict,
-    ) -> RiskReport:
-        with self._session() as session:
-            report = RiskReport(
-                package_name=package_name,
-                score=score,
-                rationale=rationale,
-                breakdown=breakdown,
-            )
-            session.add(report)
-            session.commit()
-            session.refresh(report)
-            return report
-
-    def get_report(self, report_id: int) -> Optional[RiskReport]:
-        with self._session() as session:
-            return session.get(RiskReport, report_id)
-
-    def list_reports(self, package_name: str | None = None) -> List[RiskReport]:
-        with self._session() as session:
-            stmt = select(RiskReport)
-            if package_name:
-                stmt = stmt.where(RiskReport.package_name == package_name)
-            stmt = stmt.order_by(RiskReport.created_at.desc())
-            return list(session.scalars(stmt))
-
-    def get_latest(self, package_name: str) -> Optional[RiskReport]:
-        reports = self.list_reports(package_name)
-        return reports[0] if reports else None
-
-    def delete(self, report_id: int) -> None:
-        with self._session() as session:
-            report = session.get(RiskReport, report_id)
-            if report is not None:
-                session.delete(report)
-                session.commit()
+def get_session() -> Session:
+    """Return a new Session bound to the singleton engine."""
+    global _SessionLocal
+    if _SessionLocal is None:
+        get_engine()
+    return _SessionLocal()  # type: ignore[operator]
 
 
-class AnalysisRepository:
-    """Repository for persisting :class:`Analysis` records."""
+@contextlib.contextmanager
+def session_scope() -> Iterator[Session]:
+    """Provide a transactional scope around a series of operations."""
+    session = get_session()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
-    def __init__(
-        self, session_factory: sessionmaker | None = None, *, db_url: str | None = None
-    ):
-        self._session_factory = session_factory or init_db(db_url)
 
-    def _session(self) -> Session:
-        return self._session_factory()
-
-    def upsert(self, target: str, report_path: str) -> Analysis:
-        """Insert or update an analysis record for ``target``."""
-        with self._session() as session:
-            stmt = select(Analysis).where(Analysis.target == target)
-            record = session.scalars(stmt).first()
-            if record:
-                record.report_path = report_path
-                record.created_at = _dt.datetime.utcnow()
-            else:
-                record = Analysis(target=target, report_path=report_path)
-                session.add(record)
-            session.commit()
-            session.refresh(record)
-            return record
+def ping_db() -> tuple[bool, str, float]:
+    """Ping the DB and return (ok, version_or_error, latency_ms)."""
+    eng = get_engine()
+    t0 = time.perf_counter()
+    try:
+        with eng.connect() as conn:
+            ver = conn.execute(text("SELECT VERSION()")).scalar() or "unknown"
+        ms = (time.perf_counter() - t0) * 1000.0
+        return True, str(ver), ms
+    except Exception as e:
+        ms = (time.perf_counter() - t0) * 1000.0
+        return False, f"{e.__class__.__name__}: {e}", ms
