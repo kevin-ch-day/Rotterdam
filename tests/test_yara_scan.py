@@ -1,11 +1,16 @@
 import pytest
-import pytest
 from pathlib import Path
 
 from analysis.yara_scan import compile_rules, scan_directory
 
-
-yara = pytest.importorskip("yara")
+# The yara Python bindings sometimes fail to load if the underlying
+# native library is missing or incompatible with the runtime. Instead
+# of erroring during collection, skip the test when yara cannot be
+# imported for any reason.
+try:  # pragma: no cover - import guarded for test environment
+    import yara  # type: ignore
+except Exception:  # noqa: BLE001 - broad to catch OSError/AttributeError
+    pytest.skip("yara library unavailable", allow_module_level=True)
 
 
 def test_scan_directory(tmp_path: Path):
