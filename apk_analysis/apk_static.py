@@ -5,8 +5,9 @@ from __future__ import annotations
 import json
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Sequence
 
+from app_utils import app_display
 from .manifest_utils import (
     extract_app_flags,
     extract_components,
@@ -22,6 +23,18 @@ from .report_utils import calculate_derived_metrics, write_report
 from analysis_scoring import calculate_risk_score
 
 
+def _run_tool(cmd: Sequence[str], tool_name: str) -> None:
+    """Execute an external tool and surface friendly errors."""
+    try:
+        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL)
+    except FileNotFoundError:
+        app_display.fail(f"{tool_name} is not installed or not found in PATH")
+        raise RuntimeError(f"{tool_name} missing") from None
+    except subprocess.CalledProcessError as e:
+        app_display.fail(f"{tool_name} failed: {e}")
+        raise RuntimeError(f"{tool_name} execution failed") from e
+
+
 def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     """Decompile an APK and run simple static analysis.
 
@@ -33,20 +46,9 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     apktool_dir = out / "apktool"
     jadx_dir = out / "jadx"
 
-    subprocess.run([
-        "apktool",
-        "d",
-        str(apk),
-        "-o",
-        str(apktool_dir),
-    ], check=True, stdout=subprocess.DEVNULL)
+    _run_tool(["apktool", "d", str(apk), "-o", str(apktool_dir)], "apktool")
 
-    subprocess.run([
-        "jadx",
-        "-d",
-        str(jadx_dir),
-        str(apk),
-    ], check=True, stdout=subprocess.DEVNULL)
+    _run_tool(["jadx", "-d", str(jadx_dir), str(apk)], "jadx")
 
     manifest = apktool_dir / "AndroidManifest.xml"
     perms: List[str] = []

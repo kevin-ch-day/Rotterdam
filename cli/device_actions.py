@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app_utils import app_display, app_menu_utils, app_renderers
+from app_utils import app_display, app_menu_utils, app_renderers, app_config
 from reporting import ieee_report
 from device_analysis import (
     device_discovery,
@@ -18,6 +18,7 @@ from device_analysis import (
     process_listing,
 )
 from apk_analysis import analyze_apk
+from sandbox import analyze_apk as sandbox_analyze
 
 
 def show_connected_devices() -> None:
@@ -149,6 +150,35 @@ def analyze_installed_app(serial: str) -> None:
     _display_manifest_insights(out)
     log = ieee_report.format_evidence_log([evidence])
     print(log)
+
+
+def sandbox_analyze_apk() -> None:
+    """Prompt for an APK path and run sandbox analysis."""
+    apk_path = input("Enter path to APK: ").strip()
+    if not apk_path:
+        print("Status: APK path is required.")
+        return
+
+    outdir = app_config.OUTPUT_DIR / f"{Path(apk_path).stem}_sandbox"
+    try:
+        results = sandbox_analyze(apk_path, outdir)
+    except Exception as e:  # pragma: no cover - broad catch for user feedback
+        app_display.fail(f"Sandbox analysis failed: {e}")
+        return
+
+    print(f"Status: Sandbox analysis completed. Results in {outdir}")
+
+    perms = results.get("permissions", [])
+    if perms:
+        app_display.print_section("Observed Permissions")
+        for p in perms:
+            print(p)
+
+    nets = results.get("network", [])
+    if nets:
+        app_display.print_section("Network Activity")
+        for n in nets:
+            print(f"{n.get('protocol', '')} -> {n.get('destination', '')}")
 
 
 def _display_manifest_insights(outdir: Path) -> None:
