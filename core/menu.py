@@ -8,25 +8,13 @@ Basic menu utilities for Android Tool.
 - Optional default choice on empty input.
 - Helper to run a loop that dispatches choices to a handler.
 
-No external dependencies.
+Uses :mod:`core.display` for consistent rendering.
 """
 
 from __future__ import annotations
-import shutil
 from typing import Callable, List, Optional
 
-
-# -------- layout helpers (local copy; avoids cross-module deps) --------
-
-def _term_width(default: int = 80) -> int:
-    try:
-        return shutil.get_terminal_size().columns
-    except Exception:
-        return default
-
-def _divider(char: str = "=", width: Optional[int] = None) -> str:
-    w = width or _term_width()
-    return (char * max(1, w)).rstrip()
+from . import display
 
 
 # -------- core renderer --------
@@ -64,46 +52,20 @@ def show_menu(
     if default_choice is not None and not (0 <= default_choice <= valid_max):
         default_choice = None  # sanitize
 
+    valid = {str(i) for i in range(valid_max + 1)}
+    default_str = str(default_choice) if default_choice is not None else None
+
     while True:
-        # Header
         print()
-        print(_divider("="))
-        print(title.strip())
-        print(_divider("-"))
+        print(display.render_menu(title, options, exit_label=exit_label))
 
-        # Options (1..N)
-        for i, label in enumerate(options, start=1):
-            print(f"[{i}] {label}")
-
-        # Exit (0)
-        print(f"[0] {exit_label}")
-
-        # Prompt (show default if set)
-        suffix = f" [default: {default_choice}]" if default_choice is not None else ""
-        try:
-            raw = input(f"{prompt}{suffix}: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            # Non-interactive or user interruption => Exit
-            return 0
-
-        if not raw:
-            if default_choice is not None:
-                return default_choice
-            # No default; fall through to re-prompt
-
-        # Quit shortcuts
-        if allow_quit_shortcuts:
-            lowered = raw.lower()
-            if lowered in ("q", "quit", "exit"):
+        choice = display.prompt_choice(valid, default_str, message=prompt)
+        if choice == "q":
+            if allow_quit_shortcuts:
                 return 0
-
-        # Numeric path
-        if raw.isdigit():
-            choice = int(raw)
-            if 0 <= choice <= valid_max:
-                return choice
-
-        print("Invalid choice. Please try again.")
+            display.warn("Invalid choice. Please try again.")
+            continue
+        return int(choice)
 
 
 # -------- convenience loop --------
