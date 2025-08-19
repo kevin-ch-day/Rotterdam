@@ -1,3 +1,5 @@
+import inspect
+
 from sandbox import permission_monitor
 from sandbox.permission_monitor import PermissionMonitor
 
@@ -21,3 +23,8 @@ def test_permission_monitor_summary(monkeypatch):
     monitor.clear()
     assert monitor.get_summary() == {}
     assert list(monitor.get_logs()) == []
+
+
+def test_single_collect_permissions_definition():
+    src = inspect.getsource(permission_monitor)
+    assert src.count("def collect_permissions") == 1
