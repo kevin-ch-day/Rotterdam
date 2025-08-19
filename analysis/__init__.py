@@ -42,6 +42,14 @@ __all__ = [
     "calculate_derived_metrics",
 ]
 
+# Optional: Androguard-based DEX inspection
+try:
+    from .androguard_utils import summarize_apk  # type: ignore[import-not-found]
+except Exception:
+    summarize_apk = None  # type: ignore[assignment]
+else:
+    __all__.append("summarize_apk")
+
 # Optional: YARA scanning utilities
 try:
     from .yara_scan import compile_rules, scan_directory  # type: ignore[import-not-found]

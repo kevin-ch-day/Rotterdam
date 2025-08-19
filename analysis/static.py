@@ -35,6 +35,11 @@ except Exception:  # pragma: no cover
     verify_signature = None  # type: ignore[assignment]
 
 try:
+    from .androguard_utils import summarize_apk  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover
+    summarize_apk = None  # type: ignore[assignment]
+
+try:
     from .cert_analysis import analyze_certificates  # type: ignore[import-not-found]
 except Exception:  # pragma: no cover
     analyze_certificates = None  # type: ignore[assignment]
@@ -122,10 +127,29 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     else:
         display.note("YARA scanning not available (yara_scan module not found)")
 
+    # Optional Androguard analysis for API usage
+    androguard_summary: Optional[Dict[str, Any]] = None
+    if summarize_apk:
+        try:
+            androguard_summary = summarize_apk(str(apk))
+            (out / "androguard_report.json").write_text(
+                json.dumps(androguard_summary, indent=2)
+            )
+        except Exception as e:  # pragma: no cover
+            display.warn(f"Androguard analysis failed: {e}")
+    else:
+        display.note("Androguard analysis not available (androguard_utils module not found)")
+
     # Derived metrics (static)
     metrics = calculate_derived_metrics(
         perm_details, components, sdk_info, features, metadata
     )
+
+    # Enrich metrics with Androguard rule matches if present
+    if androguard_summary:
+        rule_matches = androguard_summary.get("rule_matches", {})
+        for name, matches in rule_matches.items():
+            metrics[f"androguard_{name}_count"] = len(matches)
 
     # Evaluate rules against collected facts
     findings: List[Dict[str, Any]] = []
