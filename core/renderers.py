@@ -54,12 +54,21 @@ def print_package_inventory(packages: Iterable[Dict[str, Any]]) -> None:
 
 
 def print_permission_scan(results: Iterable[Dict[str, Any]]) -> None:
-    """Print packages that request dangerous permissions."""
-    rows: List[List[str]] = [
-        [r.get("package", ""), ", ".join(r.get("permissions", []))]
-        for r in results
-    ]
-    display.print_table(rows, headers=["Package", "Permissions"])
+    """Print packages that request risky permissions."""
+    rows: List[List[str]] = []
+    for r in results:
+        rendered_perms: List[str] = []
+        for p in r.get("permissions", []):
+            meta: List[str] = [p.get("category", "")]
+            if p.get("granted"):
+                meta.append("granted")
+            if p.get("mode"):
+                meta.append(p["mode"])
+            rendered_perms.append(f"{p['name']} ({','.join(m for m in meta if m)})")
+        perms = ", ".join(rendered_perms)
+        flags = ", ".join(r.get("risk_flags", []))
+        rows.append([r.get("package", ""), perms, flags])
+    display.print_table(rows, headers=["Package", "Permissions", "Risk Flags"])
 
 
 # ---------------------------------------------------------------------------

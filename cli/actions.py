@@ -107,7 +107,7 @@ def list_installed_packages(serial: str) -> None:
 
 
 def scan_dangerous_permissions(serial: str) -> None:
-    """Scan packages for dangerous permissions and display results."""
+    """Scan packages for risky permissions and display results."""
     with log_context(device=serial):
         logger.info("scan_dangerous_permissions")
         try:
@@ -117,12 +117,18 @@ def scan_dangerous_permissions(serial: str) -> None:
             display.fail(str(e))
             return
 
-        display.print_section("Apps with Dangerous Permissions")
+        display.print_section("Apps with Risky Permissions")
         if not risky:
             logger.info("no apps with dangerous permissions")
             print("No apps requesting dangerous permissions found.")
             return
         renderers.print_permission_scan(risky)
+        out_dir = Path("output")
+        packages.export_permission_scan(
+            risky,
+            json_path=out_dir / "permission_scan.json",
+            csv_path=out_dir / "permission_scan.csv",
+        )
 
 
 def list_running_processes(serial: str) -> None:

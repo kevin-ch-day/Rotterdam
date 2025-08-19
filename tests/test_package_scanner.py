@@ -37,10 +37,12 @@ def test_scan_for_dangerous_permissions(monkeypatch):
     def fake_get_permissions(serial, package):
         if package == "com.a":
             return [
-                "android.permission.CAMERA",
-                "android.permission.READ_SMS",
+                {"name": "android.permission.CAMERA", "granted": True, "category": "dangerous"},
+                {"name": "android.permission.INTERNET", "granted": True, "category": "other"},
             ]
-        return ["android.permission.INTERNET"]
+        return [
+            {"name": "android.permission.INTERNET", "granted": True, "category": "other"}
+        ]
 
     monkeypatch.setattr(packages, "_get_permissions", fake_get_permissions)
 
@@ -49,9 +51,9 @@ def test_scan_for_dangerous_permissions(monkeypatch):
         {
             "package": "com.a",
             "permissions": [
-                "android.permission.CAMERA",
-                "android.permission.READ_SMS",
+                {"name": "android.permission.CAMERA", "granted": True, "category": "dangerous"},
             ],
+            "risk_flags": ["Internet"],
         }
     ]
 
@@ -84,4 +86,53 @@ def test_inventory_packages_collects_details(monkeypatch):
     assert info[0]["high_value"] is True
     assert info[1]["package"] == "com.other"
     assert info[1]["high_value"] is False
+
+
+def test_export_permission_scan_writes_files(tmp_path):
+    data = [
+        {
+            "package": "com.a",
+            "permissions": [
+                {"name": "android.permission.CAMERA", "granted": True, "category": "dangerous"}
+            ],
+            "risk_flags": ["Internet"],
+        }
+    ]
+    json_p = tmp_path / "perm.json"
+    csv_p = tmp_path / "perm.csv"
+    packages.export_permission_scan(data, json_p, csv_p)
+    assert json_p.exists()
+    assert csv_p.exists()
+    assert "com.a" in json_p.read_text()
+    assert "com.a" in csv_p.read_text()
+
+
+def test_get_permissions_includes_appops(monkeypatch):
+    class Dummy:
+        def __init__(self, stdout=""):
+            self.stdout = stdout
+
+    def fake_run(args, timeout=0):
+        cmd = args[3:]
+        if cmd[:3] == ["shell", "dumpsys", "package"]:
+            return Dummy(
+                "uses-permission: android.permission.CAMERA\n"
+                "android.permission.CAMERA: granted=true\n"
+            )
+        if cmd[:3] == ["shell", "cmd", "appops"]:
+            return Dummy("CAMERA: allow\n")
+        raise AssertionError("unexpected command")
+
+    monkeypatch.setattr(packages, "_run_adb", fake_run)
+    monkeypatch.setattr(packages, "_adb_path", lambda: "adb")
+
+    perms = packages._get_permissions("SER", "com.a")
+    assert perms == [
+        {
+            "name": "android.permission.CAMERA",
+            "granted": True,
+            "category": "dangerous",
+            "mode": "allow",
+        }
+    ]
 
