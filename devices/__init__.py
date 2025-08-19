@@ -1,5 +1,5 @@
-from . import apk
-from .apk import pull_apk
+import sys
+from importlib import import_module
 
-__all__ = ["apk", "pull_apk"]
-
+_module = import_module('rotterdam.android.devices')
+sys.modules[__name__] = _module
