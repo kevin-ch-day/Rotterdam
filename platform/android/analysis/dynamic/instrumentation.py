@@ -17,7 +17,7 @@ class FridaInstrumentation:
 
     def __init__(self, scripts: Iterable[str], scripts_dir: Path | None = None) -> None:
         self.scripts = list(scripts)
-        self.scripts_dir = scripts_dir or Path(__file__).with_name("frida_scripts")
+        self.scripts_dir = scripts_dir or Path(__file__).with_name("frida")
         self.loaded_scripts: Dict[str, str] = {}
         self._active = False
         self._events: List[str] = []

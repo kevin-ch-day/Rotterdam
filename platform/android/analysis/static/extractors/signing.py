@@ -19,7 +19,7 @@ from apksigtool import (
 
 # Path to the default trust store containing trusted certificate fingerprints.
 TRUST_STORE_PATH = (
-    Path(__file__).resolve().parents[4]
+    Path(__file__).resolve().parents[5]
     / "data"
     / "trust_stores"
     / "android.json"
@@ -60,7 +60,7 @@ def verify_signature(
         Path to the APK file to inspect.
     trust_store:
         Optional path to an alternate trust store.  Defaults to
-        ``analysis/trust_store.json``.
+        ``data/trust_stores/android.json``.
 
     Returns
     -------

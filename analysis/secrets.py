@@ -1,4 +1,5 @@
 import sys
-from rotterdam.android.analysis.static.extractors import secrets as _impl
+from importlib import import_module
 
-sys.modules[__name__] = _impl
+_module = import_module("rotterdam.android.analysis.static.extractors.secrets")
+sys.modules[__name__] = _module
