@@ -1,30 +1,43 @@
 """Weighted risk scoring model for static and dynamic analysis metrics.
 
-The scoring model uses a configurable set of metric weights.  By default the
-weights are tuned for a handful of high‑signal static and dynamic indicators but
-callers may override them to experiment with alternate models.  Count‑based
-metrics are normalised to the range ``[0, 1]`` using per‑metric caps so that
-weights are applied consistently regardless of the raw scale of each metric.
+The scoring model uses a configurable set of metric weights. By default the
+weights are tuned for a handful of high-signal static and dynamic indicators,
+but callers may override them to experiment with alternate models.
+
+Count-based metrics are normalized to the range [0, 1] using per-metric caps so
+that weights are applied consistently regardless of the raw scale of each
+metric.
+
+Supported metrics (non-exhaustive):
+  Static:
+    - permission_density                (0..1)
+    - component_exposure                (0..1)
+    - untrusted_signature               (0 or 1; 1 = untrusted/missing)
+  Dynamic:
+    - permission_invocation_count       (count; capped)
+    - cleartext_endpoint_count          (count; capped)
+    - file_write_count                  (count; capped)
+    - malicious_endpoint_count          (count; capped)
 """
 
 from __future__ import annotations
 
 from typing import Any, Dict
 
-# Default weights for metrics.  These will be normalised to sum to ``1.0``
-# inside :func:`calculate_risk_score` so callers can provide partial overrides
-# without worrying about the sum of the values.
+# Default weights for metrics. These will be normalized to sum to 1.0
+# inside calculate_risk_score so callers can provide partial overrides.
 DEFAULT_WEIGHTS: Dict[str, float] = {
-    "permission_density": 0.3,
-    "component_exposure": 0.2,
+    "permission_density": 0.25,
+    "component_exposure": 0.15,
     "permission_invocation_count": 0.2,
-    "cleartext_endpoint_count": 0.2,
+    "cleartext_endpoint_count": 0.15,
     "file_write_count": 0.1,
     "malicious_endpoint_count": 0.1,
+    "untrusted_signature": 0.05,
 }
 
-# Normalisation caps for count based metrics.  The selected caps are heuristic
-# and merely prevent extremely large counts from dominating the score.
+# Normalization caps for count-based metrics. These are heuristic and prevent
+# extremely large counts from dominating the score.
 DEFAULT_CAPS: Dict[str, float] = {
     "permission_invocation_count": 50,
     "cleartext_endpoint_count": 10,
@@ -34,8 +47,10 @@ DEFAULT_CAPS: Dict[str, float] = {
 
 
 def _normalize_count(value: float, cap: float) -> float:
-    """Normalize ``value`` to ``[0, 1]`` using ``cap`` as an upper bound."""
+    """Normalize value to [0, 1] using cap as an upper bound."""
     if cap <= 0:
+        return 0.0
+    if value <= 0:
         return 0.0
     return min(value / cap, 1.0)
 
@@ -52,27 +67,29 @@ def calculate_risk_score(
     Parameters
     ----------
     static_metrics:
-        Metrics derived from static analysis such as ``permission_density``
-        and ``component_exposure``.
+        Metrics derived from static analysis such as `permission_density`,
+        `component_exposure`, and `untrusted_signature` (0 or 1).
     dynamic_metrics:
         Metrics from dynamic analysis such as permission invocation counts,
-        cleartext network endpoints, or file system writes.
+        cleartext/malicious endpoints, or file system writes.
     weights:
-        Optional weighting overrides.  Values are normalised so the final
-        weights sum to ``1.0``.
+        Optional weighting overrides. Values are normalized so the final
+        weights sum to 1.0.
     caps:
-        Optional overrides for the normalisation caps of count based metrics.
+        Optional overrides for the normalization caps of count-based metrics.
 
     Returns
     -------
     dict
-        ``{"score": float, "rationale": str, "breakdown": dict}``
+        {"score": float, "rationale": str, "breakdown": dict}
+        - score: 0..100 inclusive
+        - rationale: short human-readable explanation
+        - breakdown: per-metric weighted contribution in percentage points
     """
-
     static_metrics = static_metrics or {}
     dynamic_metrics = dynamic_metrics or {}
 
-    # Merge weights/caps with defaults and normalise weights to sum to 1.0.
+    # Merge weights/caps with defaults and normalize weights to sum to 1.0.
     weights = {**DEFAULT_WEIGHTS, **(weights or {})}
     total_weight = sum(weights.values()) or 1.0
     weights = {k: v / total_weight for k, v in weights.items()}
@@ -83,41 +100,47 @@ def calculate_risk_score(
 
     score = 0.0
     breakdown: Dict[str, float] = {}
-    for metric, weight in weights.items():
-        value = float(all_metrics.get(metric, 0.0))
-        if metric in caps:
-            value = _normalize_count(value, caps[metric])
-        score += value * weight
-        breakdown[metric] = round(value * weight * 100, 2)
 
-    # Generate human readable rationale using heuristic thresholds for the
-    # default metrics.  These can be expanded as additional metrics are added.
+    # Compute normalized value for each metric (counts via caps; others assumed 0..1).
+    for metric, weight in weights.items():
+        raw = float(all_metrics.get(metric, 0.0))
+        value = _normalize_count(raw, caps[metric]) if metric in caps else max(0.0, min(raw, 1.0))
+        contrib = value * weight
+        score += contrib
+        # Store weighted contribution in percentage points for readability.
+        breakdown[metric] = round(contrib * 100, 2)
+
+    # Generate human-readable rationale using normalized values where applicable.
     pd = float(static_metrics.get("permission_density", 0.0))
     ce = float(static_metrics.get("component_exposure", 0.0))
-    perm_inv = float(dynamic_metrics.get("permission_invocation_count", 0.0))
-    cleartext = float(dynamic_metrics.get("cleartext_endpoint_count", 0.0))
-    file_writes = float(dynamic_metrics.get("file_write_count", 0.0))
-    malicious = float(dynamic_metrics.get("malicious_endpoint_count", 0.0))
+    untrusted_sig = float(static_metrics.get("untrusted_signature", 0.0))
+
+    perm_inv_norm = _normalize_count(float(dynamic_metrics.get("permission_invocation_count", 0.0)),
+                                     caps.get("permission_invocation_count", 1.0))
+    cleartext_norm = _normalize_count(float(dynamic_metrics.get("cleartext_endpoint_count", 0.0)),
+                                      caps.get("cleartext_endpoint_count", 1.0))
+    file_writes_norm = _normalize_count(float(dynamic_metrics.get("file_write_count", 0.0)),
+                                        caps.get("file_write_count", 1.0))
+    malicious_norm = _normalize_count(float(dynamic_metrics.get("malicious_endpoint_count", 0.0)),
+                                      caps.get("malicious_endpoint_count", 1.0))
 
     rationale_parts: list[str] = []
     if pd > 0.5:
         rationale_parts.append("elevated permission density")
     if ce > 0.5:
         rationale_parts.append("many exported components")
-    if perm_inv > 10:
+    if untrusted_sig >= 1.0:
+        rationale_parts.append("untrusted or missing signature")
+    if perm_inv_norm > 0.5:
         rationale_parts.append("frequent permission use")
-    if cleartext > 0:
+    if cleartext_norm > 0:
         rationale_parts.append("cleartext network endpoints detected")
-    if file_writes > 0:
-        rationale_parts.append("file system writes observed")
-    if malicious > 0:
+    if malicious_norm > 0:
         rationale_parts.append("connections to known malicious endpoints")
+    if file_writes_norm > 0:
+        rationale_parts.append("file system writes observed")
 
-    rationale = (
-        "; ".join(rationale_parts)
-        if rationale_parts
-        else "no significant risk factors observed"
-    )
+    rationale = "; ".join(rationale_parts) if rationale_parts else "no significant risk factors observed"
 
     return {
         "score": round(score * 100, 2),
