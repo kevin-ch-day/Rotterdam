@@ -8,12 +8,12 @@ from devices import selection
 from . import actions
 
 
-def _ensure_device_selected(serial: str) -> bool:
-    """Return True if a device serial is provided, else warn the user."""
-    if not serial:
-        display.warn("No device selected. Use option 2 first.")
-        return False
-    return True
+def _ensure_device_selected(serial: str) -> str:
+    """Return a device serial, prompting the user if needed."""
+    if serial:
+        return serial
+    display.warn("No device selected.")
+    return selection.list_and_select_device() or ""
 
 
 def run_main_menu() -> None:
@@ -50,18 +50,22 @@ def run_main_menu() -> None:
         elif choice == 3:
             actions.show_detailed_devices()
         elif choice == 4:
-            if _ensure_device_selected(selected_serial):
+            selected_serial = _ensure_device_selected(selected_serial)
+            if selected_serial:
                 actions.list_installed_packages(selected_serial)
         elif choice == 5:
-            if _ensure_device_selected(selected_serial):
+            selected_serial = _ensure_device_selected(selected_serial)
+            if selected_serial:
                 actions.scan_dangerous_permissions(selected_serial)
         elif choice == 6:
-            if _ensure_device_selected(selected_serial):
+            selected_serial = _ensure_device_selected(selected_serial)
+            if selected_serial:
                 actions.list_running_processes(selected_serial)
         elif choice == 7:
             actions.analyze_apk_path()
         elif choice == 8:
-            if _ensure_device_selected(selected_serial):
+            selected_serial = _ensure_device_selected(selected_serial)
+            if selected_serial:
                 actions.analyze_installed_app(selected_serial)
         elif choice == 9:
             actions.sandbox_analyze_apk()
