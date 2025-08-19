@@ -1,4 +1,4 @@
-from device_analysis.device_discovery import parse_devices_l
+from devices.discovery import parse_devices_l
 
 def test_parse_devices_l_basic():
     output = """List of devices attached\nemulator-5554\tdevice product:sdk_gphone_x86 model:sdk_gphone_x86 device:emulator_x86 transport_id:1\nABCDEF123456\tunauthorized\n"""
@@ -13,7 +13,7 @@ def test_parse_devices_l_basic():
 
 
 def test_list_detailed_devices_trust(monkeypatch):
-    import device_analysis.device_discovery as dd
+    import devices.discovery as dd
 
     # Fake device list with one online device
     monkeypatch.setattr(dd, "check_connected_devices", lambda: "ignored")

@@ -1,6 +1,7 @@
 from pathlib import Path
+import json
 
-from apk_analysis import (
+from analysis import (
     extract_permissions,
     extract_permission_details,
     extract_components,
@@ -14,7 +15,7 @@ from apk_analysis import (
     calculate_derived_metrics,
 )
 from sandbox import compute_runtime_metrics
-from analysis_scoring import calculate_risk_score
+from risk_scoring import calculate_risk_score
 
 
 def test_extract_permissions():
@@ -163,18 +164,19 @@ def test_write_report(tmp_path: Path):
         metrics,
         risk,
     )
-    data = report.read_text()
-    assert "android.permission.INTERNET" in data
-    assert "Sample.java:10" in data
-    assert "Main" in data
-    assert "minSdkVersion" in data
-    assert "android.hardware.camera" in data
-    assert "debuggable" in data
-    assert "com.example.API_KEY" in data
-    assert "permission_density" in data
-    assert "feature_count" in data
-    assert "risk" in data
-    assert "rationale" in data
+    data = json.loads(report.read_text())
+    assert "android.permission.INTERNET" in str(data)
+    assert "Sample.java:10" in str(data)
+    assert "Main" in str(data)
+    assert "minSdkVersion" in str(data)
+    assert "android.hardware.camera" in str(data)
+    assert "debuggable" in str(data)
+    assert "com.example.API_KEY" in str(data)
+    assert "permission_density" in str(data)
+    assert "feature_count" in str(data)
+    assert "risk" in str(data)
+    assert "rationale" in str(data)
+    assert "permission_prefix_counts" in data["metrics"]
 
 
 def test_calculate_derived_metrics():
@@ -218,3 +220,4 @@ def test_calculate_derived_metrics():
     assert metrics["network_endpoint_count"] == 1
     assert metrics["filesystem_write_count"] == 1
     assert metrics["sdk_span"] == 9
+    assert metrics["permission_prefix_counts"]["READ"] == 1

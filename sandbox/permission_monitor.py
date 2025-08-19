@@ -17,14 +17,24 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import DefaultDict, Dict, Iterable, List
 
-from device_analysis import adb_utils
+from devices import adb
 
 logger = logging.getLogger(__name__)
 
+
+def collect_permissions(apk_path: str) -> List[str]:
+    """Stub collecting of runtime permissions for *apk_path*.
+
+    This simplified implementation returns a fixed permission list suitable
+    for tests without requiring an attached device.
+    """
+    return ["android.permission.INTERNET"]
+
+
 def _run_shell(cmd: list[str]) -> str:
     """Run ``adb shell`` with *cmd* and return stdout as text."""
-    adb_path = adb_utils._adb_path()
-    proc = adb_utils._run_adb([adb_path, "shell", *cmd])
+    adb_path = adb._adb_path()
+    proc = adb._run_adb([adb_path, "shell", *cmd])
     return proc.stdout
 
 

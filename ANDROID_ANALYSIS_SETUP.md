@@ -18,9 +18,12 @@ analyzing Android applications using both static and dynamic techniques.
   traffic (`usesCleartextTraffic="true"`).
 - Search the decompiled sources for API keys or secrets.
 - Check for insecure local storage such as world-readable files.
-- Run the built-in Python analyzer with
-  `python -m apk_analysis.apk_static <myapp.apk>` to automate the above steps
-  and generate a simple report in the `analysis/` directory.
+- Invoke the built-in analyzer from a Python shell or the CLI. For example:
+  ```python
+  from analysis import analyze_apk
+  analyze_apk("myapp.apk")
+  ```
+  This will generate a simple report in the `analysis/` directory.
 - Use the CLI to list running processes on a connected device for quick
   runtime inspection before deeper analysis.
 
@@ -41,7 +44,7 @@ analyzing Android applications using both static and dynamic techniques.
 
 ## 5. Automation and Maintenance
 - Schedule updates for tools like `apktool`, `jadx`, and the Android SDK.
-- Extend the `apk_analysis` Python module or add new utilities to automate
+- Extend the `analysis` Python module or add new utilities to automate
   dynamic testing and report generation.
 - Integrate checks into CI to analyze new APKs continuously.
 

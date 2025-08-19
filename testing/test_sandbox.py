@@ -1,5 +1,5 @@
 from pathlib import Path
-from sandbox import run_sandbox, collect_permissions, sniff_network, analyze_apk
+from sandbox import run_sandbox, collect_permissions, sniff_network, run_analysis
 
 
 def test_run_sandbox(tmp_path: Path):
@@ -18,8 +18,8 @@ def test_sniff_network():
     assert nets and nets[0]["destination"] == "example.com"
 
 
-def test_analyze_apk(tmp_path: Path):
-    result = analyze_apk("/tmp/app.apk", tmp_path)
+def test_run_analysis(tmp_path: Path):
+    result = run_analysis("/tmp/app.apk", tmp_path)
     assert (tmp_path / "permissions.json").exists()
     assert (tmp_path / "network.json").exists()
     assert result["permissions"]
