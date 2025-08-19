@@ -13,7 +13,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Any, MutableMapping, Optional, Mapping
+
+from config.loader import load as _load_config
 
 # -----------------------------
 # App metadata
@@ -68,6 +71,45 @@ def ensure_dirs() -> None:
     """Create required directories if missing."""
     for d in (OUTPUT_DIR, LOGS_DIR, SCREENSHOTS_DIR, STORAGE_DIR):
         d.mkdir(parents=True, exist_ok=True)
+
+
+# -----------------------------
+# Global configuration
+# -----------------------------
+
+
+@dataclass
+class GlobalConfig:
+    """Container for runtime configuration loaded from file."""
+
+    data: MutableMapping[str, Any] = field(default_factory=dict)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.data.get(key, default)
+
+    def __getitem__(self, key: str) -> Any:
+        return self.data[key]
+
+    def __contains__(self, key: str) -> bool:  # pragma: no cover - trivial
+        return key in self.data
+
+    def load(
+        self,
+        path: Optional[Path] = None,
+        *,
+        schema: Mapping[str, type] | None = None,
+        defaults: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Load configuration from ``path`` using :mod:`config.loader`."""
+        target = path or Path(os.getenv("AT_CONFIG", PROJECT_ROOT / "config.yaml"))
+        if target.exists():
+            self.data = _load_config(target, schema=schema, defaults=defaults)
+        else:
+            self.data = dict(defaults) if defaults else {}
+
+
+CONFIG = GlobalConfig()
+
 
 
 # -----------------------------
@@ -139,3 +181,7 @@ def debug_summary() -> str:
         f"SDK Root      : {get_sdk_root()}",
         f"ADB Path      : {get_adb_path()}",
     ])
+
+
+# Load configuration on import
+CONFIG.load()
