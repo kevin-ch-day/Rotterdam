@@ -6,7 +6,9 @@ output for the user interface.
 
 from __future__ import annotations
 
+import csv
 import json
+import re
 from pathlib import Path
 from contextlib import contextmanager
 from typing import Any, Dict, Optional
@@ -86,7 +88,17 @@ def show_detailed_devices() -> None:
     print(report)
 
 
-def list_installed_packages(serial: str) -> None:
+def list_installed_packages(
+    serial: str,
+    *,
+    user: bool = False,
+    system: bool = False,
+    high_value: bool = False,
+    regex: Optional[str] = None,
+    csv_path: Optional[str] = None,
+    json_path: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> None:
     """Display packages installed on the device."""
     with log_context(device=serial):
         logger.info("list_installed_packages")
@@ -97,6 +109,30 @@ def list_installed_packages(serial: str) -> None:
             display.fail(str(e))
             return
 
+        if user:
+            pkg_info = [p for p in pkg_info if not p.get("system")]
+        if system:
+            pkg_info = [p for p in pkg_info if p.get("system")]
+        if high_value:
+            pkg_info = [p for p in pkg_info if p.get("high_value")]
+        if regex:
+            try:
+                pattern = re.compile(regex)
+                pkg_info = [p for p in pkg_info if pattern.search(p.get("package", ""))]
+            except re.error as exc:
+                display.fail(f"Invalid regex: {exc}")
+                return
+
+        pkg_info.sort(
+            key=lambda p: (
+                0 if p.get("high_value") else 1,
+                0 if not p.get("system") else 1,
+                p.get("package", ""),
+            )
+        )
+        if limit is not None:
+            pkg_info = pkg_info[:limit]
+
         display.print_section("Application Inventory")
         if not pkg_info:
             logger.info("no packages found")
@@ -104,6 +140,33 @@ def list_installed_packages(serial: str) -> None:
             return
 
         renderers.print_package_inventory(pkg_info)
+
+        if csv_path:
+            try:
+                with open(csv_path, "w", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(
+                        f,
+                        fieldnames=[
+                            "package",
+                            "version_name",
+                            "installer",
+                            "uid",
+                            "system",
+                            "priv",
+                            "high_value",
+                        ],
+                    )
+                    writer.writeheader()
+                    writer.writerows(pkg_info)
+            except OSError as e:
+                display.fail(f"Failed to write CSV: {e}")
+
+        if json_path:
+            try:
+                with open(json_path, "w", encoding="utf-8") as f:
+                    json.dump(pkg_info, f, indent=2)
+            except OSError as e:
+                display.fail(f"Failed to write JSON: {e}")
 
 
 def scan_dangerous_permissions(serial: str) -> None:
@@ -359,9 +422,32 @@ def main(argv: list[str] | None = None) -> None:
     p_serve.add_argument("--host", default="127.0.0.1")
     p_serve.add_argument("--port", type=int, default=8000)
 
+    p_list = sub.add_parser("list-packages", help="list installed packages")
+    p_list.add_argument("serial", help="device serial")
+    p_list.add_argument("--user", action="store_true", help="show only user apps")
+    p_list.add_argument("--system", action="store_true", help="show only system apps")
+    p_list.add_argument(
+        "--high-value", action="store_true", help="show only high-value apps"
+    )
+    p_list.add_argument("--regex", help="filter packages by regex")
+    p_list.add_argument("--csv", help="export results to CSV at path")
+    p_list.add_argument("--json", dest="json_path", help="export results to JSON")
+    p_list.add_argument("--limit", type=int, help="limit number of results")
+
     args = parser.parse_args(argv)
     if args.cmd == "serve":
         run_server(args.host, args.port)
+    elif args.cmd == "list-packages":
+        list_installed_packages(
+            args.serial,
+            user=args.user,
+            system=args.system,
+            high_value=args.high_value,
+            regex=args.regex,
+            csv_path=args.csv,
+            json_path=args.json_path,
+            limit=args.limit,
+        )
     else:
         parser.print_help()
 

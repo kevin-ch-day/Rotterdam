@@ -100,7 +100,7 @@ def inventory_packages(serial: str) -> List[Dict[str, Any]]:
     except subprocess.CalledProcessError:
         return []
 
-    packages: List[Dict[str, str]] = []
+    packages: List[Dict[str, Any]] = []
     for line in (proc.stdout or "").splitlines():
         line = line.strip()
         if not line.startswith("package:"):
@@ -117,6 +117,8 @@ def inventory_packages(serial: str) -> List[Dict[str, Any]]:
             path, pkg = pkg_part.split("=", 1)
         else:
             pkg = pkg_part
+        system_app = bool(path) and not path.startswith("/data/")
+        priv_app = "/priv-app/" in path
         info: Dict[str, str] = {
             "package": pkg,
             "path": path,
@@ -124,9 +126,12 @@ def inventory_packages(serial: str) -> List[Dict[str, Any]]:
             "version_name": "",
             "version_code": "",
             "high_value": pkg in HIGH_VALUE_PACKAGES,
+            "uid": "",
+            "system": system_app,
+            "priv": priv_app,
         }
 
-        # Fetch version details
+        # Fetch version details and additional metadata
         try:
             dump = _run_adb(
                 [adb, "-s", serial, "shell", "dumpsys", "package", pkg], timeout=10
@@ -137,8 +142,14 @@ def inventory_packages(serial: str) -> List[Dict[str, Any]]:
                     info["version_name"] = ln.split("=", 1)[1]
                 elif ln.startswith("versionCode="):
                     info["version_code"] = ln.split("=", 1)[1].split()[0]
-                if info["version_name"] and info["version_code"]:
-                    break
+                elif ln.startswith("userId=") or ln.startswith("uid="):
+                    info["uid"] = ln.split("=", 1)[1].split()[0]
+                elif ln.startswith("pkgFlags=") or ln.startswith("flags="):
+                    flags = ln.split("[", 1)[-1].split("]", 1)[0].replace(",", " ")
+                    if "SYSTEM" in flags:
+                        info["system"] = True
+                    if "PRIVILEGED" in flags:
+                        info["priv"] = True
         except subprocess.CalledProcessError:
             pass
 
