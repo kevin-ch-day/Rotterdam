@@ -82,7 +82,11 @@ def scan_dangerous_permissions(serial: str) -> None:
 
 def list_running_processes(serial: str) -> None:
     """List running processes on the device."""
-    procs = process_listing.list_processes(serial)
+    try:
+        procs = process_listing.list_processes(serial)
+    except RuntimeError as e:
+        app_display.fail(str(e))
+        return
     app_display.print_section("Running Processes")
     if not procs:
         print("No process data available.")
@@ -107,7 +111,11 @@ def analyze_apk_path() -> None:
 
 def analyze_installed_app(serial: str) -> None:
     """Select an installed app, pull its APK, and run static analysis."""
-    packages = package_scanner.list_installed_packages(serial)
+    try:
+        packages = package_scanner.list_installed_packages(serial)
+    except RuntimeError as e:
+        app_display.fail(str(e))
+        return
     if not packages:
         print("Status: No packages found.")
         return

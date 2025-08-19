@@ -39,8 +39,8 @@ def list_installed_packages(serial: str) -> List[str]:
     adb = _adb_path()
     try:
         proc = _run_adb([adb, "-s", serial, "shell", "pm", "list", "packages"], timeout=10)
-    except subprocess.CalledProcessError:
-        return []
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(f"Failed to list packages on device {serial}: {exc}") from exc
 
     packages: List[str] = []
     for line in (proc.stdout or "").splitlines():

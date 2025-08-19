@@ -1,3 +1,7 @@
+import subprocess
+
+import pytest
+
 from device_analysis import package_scanner
 
 
@@ -10,6 +14,17 @@ def test_list_installed_packages_parses_output(monkeypatch):
 
     pkgs = package_scanner.list_installed_packages("serial")
     assert pkgs == ["com.a", "com.b"]
+
+
+def test_list_installed_packages_error(monkeypatch):
+    def fake_run(*a, **k):
+        raise subprocess.CalledProcessError(1, a[0])
+
+    monkeypatch.setattr(package_scanner, "_run_adb", fake_run)
+    monkeypatch.setattr(package_scanner, "_adb_path", lambda: "adb")
+
+    with pytest.raises(RuntimeError, match="Failed to list packages"):
+        package_scanner.list_installed_packages("serial")
 
 
 def test_scan_for_dangerous_permissions(monkeypatch):
