@@ -1,94 +1,166 @@
-"""Main menu loop for the Android Tool CLI."""
+"""CLI menus for the Android Tool."""
 
 from __future__ import annotations
 
-from core import config, display, menu
+from typing import Any, Dict, Optional
+
+from core import config, display, menu as core_menu
 from devices import selection
+from devices.adb import _adb_path, _run_adb
 
 from . import actions
 
 
-def _ensure_device_selected(serial: str) -> str:
-    """Return a device serial, prompting the user if needed."""
-    if serial:
-        return serial
-    display.warn("No device selected.")
-    return selection.list_and_select_device() or ""
+def device_online(serial: str) -> bool:
+    """Return True if the device is online according to ``adb get-state``."""
+    adb = _adb_path()
+    try:
+        proc = _run_adb([adb, "-s", serial, "get-state"])
+    except Exception:
+        return False
+    return (proc.stdout or "").strip() == "device"
 
 
-def run_main_menu() -> None:
+def run_device_menu(serial: str, *, json_mode: bool = False) -> Optional[str | Dict[str, Any]]:
+    """Launch the device submenu for a selected device."""
+    if not serial:
+        display.warn("No device serial provided.")
+        return None
+
+    options = [
+        "List installed packages",
+        "Scan installed apps for dangerous permissions",
+        "List running processes",
+        "Analyze a local APK (static)",
+        "Pull and analyze an installed app",
+        "Sandbox analyze a local APK",
+    ]
+
+    if json_mode:
+        return {
+            "title": "Device Menu",
+            "serial": serial,
+            "options": [
+                {"key": str(i + 1), "label": opt} for i, opt in enumerate(options)
+            ],
+            "exit": "Back",
+        }
+
+    if not device_online(serial):
+        display.warn(f"Device {serial} is no longer online.")
+        return None
+
+    valid = {str(i) for i in range(len(options) + 1)}
+
+    while True:
+        if not device_online(serial):
+            display.warn(f"Device {serial} is no longer online.")
+            return None
+
+        print()
+        print(
+            display.render_menu(
+                "Device Menu",
+                options,
+                exit_label="Back",
+                serial=serial,
+            )
+        )
+
+        choice = display.prompt_choice(valid, message="Select option")
+        if choice == "q":
+            return "quit"
+        if choice == "0":
+            return None
+
+        if not device_online(serial):
+            display.warn(f"Device {serial} is no longer online.")
+            return None
+
+        num = int(choice)
+        if num == 1:
+            actions.list_installed_packages(serial)
+        elif num == 2:
+            actions.scan_dangerous_permissions(serial)
+        elif num == 3:
+            actions.list_running_processes(serial)
+        elif num == 4:
+            actions.analyze_apk_path()
+        elif num == 5:
+            actions.analyze_installed_app(serial)
+        elif num == 6:
+            actions.sandbox_analyze_apk()
+        else:  # pragma: no cover - defensive
+            display.warn("Invalid choice. Please try again.")
+
+
+def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
     """Launch the interactive main menu."""
+
+    options = [
+        "Check for connected devices",
+        "List detailed devices",
+        "Scan for devices",
+        "Connect to a device",
+        "Launch Web app",
+        "Check Application Status",
+        "Database",
+        "About Application",
+    ]
+
+    if json_mode:
+        return {
+            "title": "Main Menu",
+            "options": [
+                {"key": str(i + 1), "label": opt} for i, opt in enumerate(options)
+            ],
+            "exit": "Exit",
+        }
+
     # Ensure required directories exist
     config.ensure_dirs()
 
     # App banner
     display.print_app_banner()
 
-    selected_serial = ""
-
-    options = [
-        "Check for connected devices",
-        "Connect to a device",
-        "List detailed devices",
-        "List installed packages on selected device",
-        "Scan installed apps for dangerous permissions",
-        "List running processes on selected device",
-        "Analyze a local APK for permissions and secrets",
-        "Pull and analyze an installed app",
-        "Sandbox analyze a local APK",
-        "Explore installed app UI",
-    ]
-
-    class _RefreshMenu(Exception):
-        """Internal exception used to refresh the menu title."""
-
-    def handle_choice(choice: int, label: str) -> None:
-        nonlocal selected_serial
-        if choice == 1:
-            actions.show_connected_devices()
-        elif choice == 2:
-            selected_serial = selection.list_and_select_device() or ""
-        elif choice == 3:
-            actions.show_detailed_devices()
-        elif choice == 4:
-            selected_serial = _ensure_device_selected(selected_serial)
-            if selected_serial:
-                actions.list_installed_packages(selected_serial)
-        elif choice == 5:
-            selected_serial = _ensure_device_selected(selected_serial)
-            if selected_serial:
-                actions.scan_dangerous_permissions(selected_serial)
-        elif choice == 6:
-            selected_serial = _ensure_device_selected(selected_serial)
-            if selected_serial:
-                actions.list_running_processes(selected_serial)
-        elif choice == 7:
-            actions.analyze_apk_path()
-        elif choice == 8:
-            selected_serial = _ensure_device_selected(selected_serial)
-            if selected_serial:
-                actions.analyze_installed_app(selected_serial)
-        elif choice == 9:
-            actions.sandbox_analyze_apk()
-        elif choice == 10:
-            selected_serial = _ensure_device_selected(selected_serial)
-            if selected_serial:
-                actions.explore_installed_app(selected_serial)
-        else:
-            display.warn(f"Unhandled choice: {choice}")
-        raise _RefreshMenu
-
     while True:
-        current = selected_serial or "None"
-        try:
-            menu.run_menu_loop(
-                f"Main Menu — Device: {current}\n--------------------------------",
-                options,
-                handler=handle_choice,
-                exit_label="Exit App",
-            )
-            break
-        except _RefreshMenu:
-            continue
+        num = core_menu.show_menu("Main Menu", options, exit_label="Exit")
+        if num == 0:
+            display.good("Exiting App")
+            return None
 
-    display.good("Exiting App")
+        if num == 1:
+            actions.show_connected_devices()
+        elif num == 2:
+            actions.show_detailed_devices()
+        elif num == 3:
+            actions.scan_for_devices()
+        elif num == 4:
+            device = selection.list_and_select_device()
+            if device:
+                display.print_section("Device Summary")
+                display.print_kv(
+                    [
+                        ("Serial", device.get("serial", "")),
+                        ("Model", device.get("model", "")),
+                        ("Android", device.get("android_release", "")),
+                    ]
+                )
+                result = run_device_menu(device.get("serial", ""))
+                if result == "quit":
+                    display.good("Exiting App")
+                    return None
+        elif num == 5:
+            display.info("Web app launch not implemented yet.")
+        elif num == 6:
+            display.info("Application status check not implemented yet.")
+        elif num == 7:
+            display.info("Database feature not implemented yet.")
+        elif num == 8:
+            display.info("About information not implemented yet.")
+        else:  # pragma: no cover - defensive
+            display.warn("Invalid choice. Please try again.")
+
+
+__all__ = ["run_main_menu", "run_device_menu"]
+
