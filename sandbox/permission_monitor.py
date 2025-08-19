@@ -21,7 +21,6 @@ from device_analysis import adb_utils
 
 logger = logging.getLogger(__name__)
 
-
 def _run_shell(cmd: list[str]) -> str:
     """Run ``adb shell`` with *cmd* and return stdout as text."""
     adb_path = adb_utils._adb_path()

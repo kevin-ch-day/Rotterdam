@@ -48,6 +48,8 @@ def run_main_menu() -> None:
         elif choice == 8:
             if _ensure_device_selected(selected_serial):
                 device_actions.analyze_installed_app(selected_serial)
+        elif choice == 9:
+            device_actions.sandbox_analyze_apk()
         else:
             app_display.warn(f"Unhandled choice: {choice}")
 
@@ -62,6 +64,7 @@ def run_main_menu() -> None:
             "List running processes on selected device",
             "Analyze a local APK for permissions and secrets",
             "Pull and analyze an installed app",
+            "Sandbox analyze a local APK",
         ],
         handler=handle_choice,
         exit_label="Exit App",
