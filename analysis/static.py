@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import subprocess
 from pathlib import Path
-from typing import Dict, List, Any, Sequence
+from typing import Dict, List, Any, Sequence, Optional
 
 from core import display, config
 from .manifest import (
@@ -20,9 +20,21 @@ from .manifest import (
 from .permissions import categorize_permissions
 from .secrets import scan_for_secrets
 from .report import calculate_derived_metrics, write_report
-from .signature import verify_signature
-from risk_scoring import calculate_risk_score
 from .diff import diff_snapshots
+
+# Optional imports (degrade gracefully if unavailable)
+try:
+    from .yara_scan import scan_directory  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover
+    scan_directory = None  # type: ignore[assignment]
+
+try:
+    from .signature import verify_signature  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover
+    verify_signature = None  # type: ignore[assignment]
+
+# Risk scoring (assumed available)
+from risk_scoring import calculate_risk_score
 
 
 def _run_tool(cmd: Sequence[str], tool_name: str) -> None:
@@ -49,7 +61,6 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     jadx_dir = out / "jadx"
 
     _run_tool(["apktool", "d", str(apk), "-o", str(apktool_dir)], "apktool")
-
     _run_tool(["jadx", "-d", str(jadx_dir), str(apk)], "jadx")
 
     manifest = apktool_dir / "AndroidManifest.xml"
@@ -61,37 +72,73 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     features: List[Dict[str, Any]] = []
     app_flags: Dict[str, bool] = {}
     metadata: List[Dict[str, str]] = []
+
     if manifest.exists():
         manifest_text = manifest.read_text()
         perm_uses = extract_permission_details(manifest_text)
         perms = extract_permissions(manifest_text)
         (out / "permissions.txt").write_text("\n".join(perms))
+
         perm_details = categorize_permissions(perm_uses)
         (out / "permission_details.json").write_text(json.dumps(perm_details, indent=2))
+
         components = extract_components(manifest_text)
         (out / "components.json").write_text(json.dumps(components, indent=2))
+
         sdk_info = extract_sdk_info(manifest_text)
         (out / "sdk_info.json").write_text(json.dumps(sdk_info, indent=2))
+
         features = extract_features(manifest_text)
         (out / "features.json").write_text(json.dumps(features, indent=2))
+
         app_flags = extract_app_flags(manifest_text)
         (out / "app_flags.json").write_text(json.dumps(app_flags, indent=2))
+
         metadata = extract_metadata(manifest_text)
         (out / "metadata.json").write_text(json.dumps(metadata, indent=2))
+    else:
+        display.warn("AndroidManifest.xml not found after apktool decompile")
 
+    # Secrets (from decompiled code/resources)
     secrets = scan_for_secrets(jadx_dir)
     if secrets:
         (out / "secrets.txt").write_text("\n".join(secrets))
 
+    # Optional YARA scan (if available)
+    yara_matches: Optional[Dict[str, List[str]]] = None
+    if scan_directory:
+        try:
+            yara_matches = scan_directory(apktool_dir)
+            if yara_matches:
+                (out / "yara_matches.json").write_text(json.dumps(yara_matches, indent=2))
+        except RuntimeError as e:
+            display.warn(str(e))
+    else:
+        display.note("YARA scanning not available (yara_scan module not found)")
+
+    # Derived metrics (static)
     metrics = calculate_derived_metrics(
         perm_details, components, sdk_info, features, metadata
     )
-    sig_info = verify_signature(apk_path)
-    metrics["untrusted_signature"] = 0 if sig_info.get("trusted") else 1
+
+    # Optional signature verification (if available)
+    if verify_signature:
+        try:
+            sig_info = verify_signature(apk_path)
+            metrics["untrusted_signature"] = 0 if sig_info.get("trusted") else 1
+            (out / "signature.json").write_text(json.dumps(sig_info, indent=2))
+        except Exception as e:  # pragma: no cover
+            display.warn(f"Signature verification failed: {e}")
+    else:
+        metrics["untrusted_signature"] = 0  # neutral if we cannot verify
+        display.note("Signature verification not available (signature module not found)")
+
     (out / "derived_metrics.json").write_text(json.dumps(metrics, indent=2))
 
-    # Placeholder for dynamic metrics; future instrumentation can populate these
+    # Placeholder for dynamic metrics; future instrumentation can populate these.
     dynamic_metrics: Dict[str, float] = {}
+
+    # Risk scoring (merges static+dynamic inside the model)
     risk = calculate_risk_score(metrics, dynamic_metrics)
     (out / "risk_score.json").write_text(json.dumps(risk, indent=2))
 
@@ -106,11 +153,14 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     version = len(existing) + 1
     snap_path = config.STORAGE_DIR / f"{base}_v{version}.json"
     snap_path.write_text(json.dumps(snapshot, indent=2))
-    diff = None
+
+    diff: Optional[Dict[str, Any]] = None
     if existing:
         prev_path = existing[-1]
         diff = diff_snapshots(prev_path, snap_path)
+        (out / "snapshot_diff.json").write_text(json.dumps(diff, indent=2))
 
+    # Final consolidated report (supports both yara_matches and diff)
     write_report(
         out,
         perms,
@@ -122,7 +172,8 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
         app_flags,
         metadata,
         metrics,
-        risk,
+        risk,             # placed into "metrics" bucket as additional fields
+        yara_matches,
         diff,
     )
 

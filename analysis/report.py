@@ -12,11 +12,10 @@ def _permission_prefix_counts(permission_details: List[Dict[str, Any]]) -> Dict[
     """Return counts of permission name prefixes.
 
     The prefix is taken from the last segment of the permission name up to the
-    first underscore.  For example, ``android.permission.READ_CONTACTS`` maps to
-    the ``READ`` prefix.  These counts help highlight broad capability patterns
+    first underscore. For example, ``android.permission.READ_CONTACTS`` maps to
+    the ``READ`` prefix. These counts help highlight broad capability patterns
     requested by an application.
     """
-
     prefixes: List[str] = []
     for p in permission_details:
         name = p.get("name", "")
@@ -38,30 +37,20 @@ def calculate_derived_metrics(
     """Compute metrics derived from manifest data.
 
     In addition to density ratios, this function exposes basic counts
-    to help downstream tooling build rich feature vectors.  All inputs
+    to help downstream tooling build rich feature vectors. All inputs
     are optional except ``permission_details`` and ``components``.
 
     Returned metrics include:
 
-    ``permission_density``
-        Ratio of dangerous permissions to total declared permissions.
-
-    ``component_exposure``
-        Ratio of exported components to total components.
-
-    ``total_permission_count`` / ``dangerous_permission_count``
-        Raw permission counts for feature engineering.
-
-    ``total_component_count`` / ``exported_component_count``
-        Raw component counts.
-
-    ``feature_count`` / ``metadata_count``
-        Number of ``uses-feature`` and ``meta-data`` entries.
-
-    ``min_sdk`` / ``target_sdk`` / ``max_sdk`` / ``sdk_span``
-        SDK version information and span between min and target.
+    ``permission_density``            Ratio of dangerous to total permissions.
+    ``component_exposure``            Ratio of exported to total components.
+    ``total_permission_count``        Raw permission count.
+    ``dangerous_permission_count``    Raw dangerous permission count.
+    ``total_component_count``         Raw component count.
+    ``exported_component_count``      Raw exported component count.
+    ``feature_count`` / ``metadata_count``  uses-feature/meta-data counts.
+    ``min_sdk`` / ``target_sdk`` / ``max_sdk`` / ``sdk_span``  SDK info.
     """
-
     features = features or []
     metadata = metadata or []
     sdk_info = sdk_info or {}
@@ -82,7 +71,7 @@ def calculate_derived_metrics(
     max_sdk = sdk_info.get("maxSdkVersion", 0)
     sdk_span = (target_sdk - min_sdk) if min_sdk and target_sdk else 0
 
-    metrics: Dict[str, float] = {
+    metrics: Dict[str, Any] = {
         "permission_density": round(perm_density, 3),
         "component_exposure": round(comp_exposure, 3),
         "total_permission_count": total_perms,
@@ -101,14 +90,10 @@ def calculate_derived_metrics(
     if prefix_counts:
         metrics["permission_prefix_counts"] = prefix_counts
 
-    # Merge any provided dynamic metrics into the result.  Dynamic metrics may
-    # include runtime observations such as permission usage counts or network
-    # endpoints discovered during sandbox execution.
+    # Merge provided dynamic metrics (runtime observations).
     metrics.update(dynamic_metrics)
 
-    # Compute combined metrics that relate runtime behaviour to static
-    # declarations.  For example, measure coverage of declared permissions
-    # actually used at runtime.
+    # Combined metrics tying runtime behavior to static declarations.
     perm_usage = dynamic_metrics.get("permission_usage_counts")
     runtime_perm_count = dynamic_metrics.get("unique_permission_count")
     if perm_usage and runtime_perm_count is None:
@@ -123,8 +108,12 @@ def calculate_derived_metrics(
     if "network_endpoints" in dynamic_metrics and "network_endpoint_count" not in metrics:
         metrics["network_endpoint_count"] = len(dynamic_metrics["network_endpoints"])
 
+    # Prefer new name; add legacy alias for downstream compatibility.
     if "filesystem_writes" in dynamic_metrics and "filesystem_write_count" not in metrics:
         metrics["filesystem_write_count"] = len(dynamic_metrics["filesystem_writes"])
+    if "filesystem_write_count" in metrics and "file_write_count" not in metrics:
+        # Back-compat with older consumers expecting file_write_count.
+        metrics["file_write_count"] = metrics["filesystem_write_count"]
 
     return metrics
 
@@ -139,15 +128,16 @@ def write_report(
     features: List[Dict[str, Any]],
     app_flags: Dict[str, bool],
     metadata: List[Dict[str, str]],
-    metrics: Dict[str, float] | None = None,
+    metrics: Dict[str, Any] | None = None,
     dynamic_metrics: Dict[str, Any] | None = None,
+    yara_matches: Dict[str, List[str]] | None = None,
     diff: Dict[str, Any] | None = None,
 ) -> Path:
     """Write a JSON report containing analysis results."""
     report_path = out / "report.json"
-    all_metrics = {**(metrics or {}), **(dynamic_metrics or {})}
+    all_metrics: Dict[str, Any] = {**(metrics or {}), **(dynamic_metrics or {})}
 
-    data = {
+    data: Dict[str, Any] = {
         "permissions": permissions,
         "permission_details": permission_details,
         "secrets": secrets,
@@ -158,7 +148,10 @@ def write_report(
         "metadata": metadata,
         "metrics": all_metrics,
     }
-    if diff:
+    if yara_matches is not None:
+        data["yara_matches"] = yara_matches
+    if diff is not None:
         data["diff"] = diff
+
     report_path.write_text(json.dumps(data, indent=2))
     return report_path
