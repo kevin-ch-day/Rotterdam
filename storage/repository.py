@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from sqlalchemy import create_engine, select
+from sqlalchemy import select
+
+from .engine_compat import create_engine_safe
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -29,7 +31,7 @@ def init_db(
 
     db_url = url or get_database_url()
     try:
-        engine = create_engine(
+        engine = create_engine_safe(
             db_url,
             pool_pre_ping=True,
             pool_size=pool_size,

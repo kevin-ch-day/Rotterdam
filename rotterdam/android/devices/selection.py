@@ -6,7 +6,7 @@ with numbered selection for easier navigation.
 """
 
 from core import display, menu
-from devices import discovery
+from . import discovery
 
 
 def list_and_select_device() -> str:
