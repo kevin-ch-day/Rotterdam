@@ -21,6 +21,7 @@ from .permissions import categorize_permissions
 from .secrets import scan_for_secrets
 from .report import calculate_derived_metrics, write_report
 from .diff import diff_snapshots
+from .rules_engine import load_rules, evaluate_rules
 
 # Optional imports (degrade gracefully if unavailable)
 try:
@@ -126,6 +127,27 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
         perm_details, components, sdk_info, features, metadata
     )
 
+    # Evaluate rules against collected facts
+    findings: List[Dict[str, Any]] = []
+    try:
+        rule_dir = Path(__file__).resolve().parent.parent / "rules" / "android"
+        rules = load_rules(rule_dir)
+        facts = {
+            "permissions": perms,
+            "permission_details": perm_details,
+            "components": components,
+            "sdk_info": sdk_info,
+            "features": features,
+            "app_flags": app_flags,
+            "metadata": metadata,
+            "metrics": metrics,
+        }
+        findings = evaluate_rules(rules, facts)
+        if findings:
+            (out / "findings.json").write_text(json.dumps(findings, indent=2))
+    except Exception as e:  # pragma: no cover
+        display.warn(f"Rule evaluation failed: {e}")
+
     # Optional signature verification (if available)
     if verify_signature:
         try:
@@ -196,6 +218,7 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
         risk,             # placed into "metrics" bucket as additional fields
         yara_matches,
         diff,
+        findings,
     )
 
     return out
