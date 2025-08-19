@@ -38,6 +38,7 @@ def run_device_menu(
         "Analyze a local APK (static)",
         "Pull and analyze an installed app",
         "Sandbox analyze a local APK",
+        "Explore installed app UI",
     ]
 
     if json_mode:
@@ -94,6 +95,8 @@ def run_device_menu(
             actions.analyze_installed_app(serial)
         elif num == 6:
             actions.sandbox_analyze_apk()
+        elif num == 7:
+            actions.explore_installed_app(serial)
         else:  # pragma: no cover - defensive
             display.warn("Invalid choice. Please try again.")
 

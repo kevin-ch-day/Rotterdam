@@ -600,6 +600,37 @@ def _display_manifest_insights(outdir: Path) -> None:
                 print(f"Removed {kind.title()}s: {', '.join(names)}")
 
 
+def launch_web_app(host: str = "127.0.0.1", port: int = 8000) -> None:
+    """Launch the web interface, starting the server if needed."""
+    import socket
+    import threading
+    import time
+    import webbrowser
+    import uvicorn
+
+    logger.info("launch_web_app", extra={"host": host, "port": port})
+
+    def _port_open() -> bool:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            try:
+                sock.connect((host, port))
+                return True
+            except OSError:
+                return False
+
+    if not _port_open():
+        thread = threading.Thread(
+            target=uvicorn.run,
+            args=("server:app",),
+            kwargs={"host": host, "port": port},
+            daemon=True,
+        )
+        thread.start()
+        time.sleep(0.5)
+
+    webbrowser.open(f"http://{host}:{port}")
+
+
 def run_server(host: str = "127.0.0.1", port: int = 8000) -> None:
     """Start the API server using uvicorn."""
     import uvicorn
