@@ -8,7 +8,7 @@ from typing import Iterable, List
 
 def discover_scripts(scripts_dir: Path | None = None) -> List[str]:
     """Return a sorted list of available hook script names without extension."""
-    scripts_dir = scripts_dir or Path(__file__).with_name("frida_scripts")
+    scripts_dir = scripts_dir or Path(__file__).with_name("frida")
     return sorted(p.stem for p in scripts_dir.glob("*.js"))
 
 
