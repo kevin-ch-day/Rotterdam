@@ -13,6 +13,8 @@ Supported metrics (non-exhaustive):
     - permission_density                (0..1)
     - component_exposure                (0..1)
     - untrusted_signature               (0 or 1; 1 = untrusted/missing)
+    - expired_certificate               (0 or 1)
+    - self_signed_certificate           (0 or 1)
     - vulnerable_dependency_count       (count; capped)
   Dynamic:
     - permission_invocation_count       (count; capped)
@@ -36,6 +38,8 @@ DEFAULT_WEIGHTS: Dict[str, float] = {
     "malicious_endpoint_count": 0.09,
     "vulnerable_dependency_count": 0.1,
     "untrusted_signature": 0.05,
+    "expired_certificate": 0.04,
+    "self_signed_certificate": 0.04,
 }
 
 # Normalization caps for count-based metrics. These are heuristic and prevent
@@ -118,6 +122,8 @@ def calculate_risk_score(
     pd = float(static_metrics.get("permission_density", 0.0))
     ce = float(static_metrics.get("component_exposure", 0.0))
     untrusted_sig = float(static_metrics.get("untrusted_signature", 0.0))
+    expired_cert = float(static_metrics.get("expired_certificate", 0.0))
+    self_signed = float(static_metrics.get("self_signed_certificate", 0.0))
 
     perm_inv_norm = _normalize_count(
         float(dynamic_metrics.get("permission_invocation_count", 0.0)),
@@ -147,6 +153,10 @@ def calculate_risk_score(
         rationale_parts.append("many exported components")
     if untrusted_sig >= 1.0:
         rationale_parts.append("untrusted or missing signature")
+    if expired_cert >= 1.0:
+        rationale_parts.append("expired signing certificate")
+    if self_signed >= 1.0:
+        rationale_parts.append("self-signed signing certificate")
     if perm_inv_norm > 0.5:
         rationale_parts.append("frequent permission use")
     if cleartext_norm > 0:

@@ -60,3 +60,12 @@ except Exception:
     verify_signature = None  # type: ignore[assignment]
 else:
     __all__.append("verify_signature")
+
+# Optional: certificate analysis utilities
+try:
+    from .cert_analysis import analyze_certificates  # type: ignore[import-not-found]
+
+except Exception:  # pragma: no cover - missing dependencies
+    analyze_certificates = None  # type: ignore[assignment]
+else:
+    __all__.append("analyze_certificates")

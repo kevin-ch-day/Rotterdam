@@ -33,6 +33,11 @@ try:
 except Exception:  # pragma: no cover
     verify_signature = None  # type: ignore[assignment]
 
+try:
+    from .cert_analysis import analyze_certificates  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover
+    analyze_certificates = None  # type: ignore[assignment]
+
 # Risk scoring (assumed available)
 from risk_scoring import calculate_risk_score
 
@@ -132,6 +137,22 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     else:
         metrics["untrusted_signature"] = 0  # neutral if we cannot verify
         display.note("Signature verification not available (signature module not found)")
+
+    # Signing certificate analysis (expiry, self-signed, etc.)
+    if analyze_certificates:
+        try:
+            cert_info = analyze_certificates(apk_path)
+            metrics["expired_certificate"] = 1 if cert_info.get("expired") else 0
+            metrics["self_signed_certificate"] = (
+                1 if cert_info.get("self_signed") else 0
+            )
+            (out / "cert_info.json").write_text(json.dumps(cert_info, indent=2))
+        except Exception as e:  # pragma: no cover
+            display.warn(f"Certificate analysis failed: {e}")
+    else:
+        metrics.setdefault("expired_certificate", 0)
+        metrics.setdefault("self_signed_certificate", 0)
+        display.note("Certificate analysis not available (cert_analysis module not found)")
 
     (out / "derived_metrics.json").write_text(json.dumps(metrics, indent=2))
 
