@@ -1,12 +1,17 @@
-from device_analysis.process_listing import parse_ps
+import subprocess
+
+import pytest
+
+from device_analysis import process_listing
 
 
-def test_parse_ps_parses_lines():
-    sample = (
-        "USER PID PPID VSIZE RSS WCHAN ADDR S NAME\n"
-        "u0_a123 12345 100 123456 1234 ffffffff 00000000 S com.example.app\n"
-        "system 1 0 1234 123 - 0 S init\n"
-    )
-    procs = parse_ps(sample)
-    assert procs[0] == {"user": "u0_a123", "pid": "12345", "name": "com.example.app"}
-    assert procs[1]["name"] == "init"
+def test_list_processes_error(monkeypatch):
+    monkeypatch.setattr(process_listing, "_adb_path", lambda: "adb")
+
+    def fake_run(*a, **k):
+        raise subprocess.CalledProcessError(1, a[0])
+
+    monkeypatch.setattr(process_listing, "_run_adb", fake_run)
+
+    with pytest.raises(RuntimeError, match="Failed to list processes"):
+        process_listing.list_processes("SER")
