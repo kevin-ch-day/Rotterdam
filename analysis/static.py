@@ -21,6 +21,7 @@ from .permissions import categorize_permissions
 from .secrets import scan_for_secrets
 from .report import calculate_derived_metrics, write_report
 from .diff import diff_snapshots
+from .rules_engine import load_rules, evaluate_rules
 
 # Optional imports (degrade gracefully if unavailable)
 try:
@@ -37,9 +38,11 @@ try:
     from .androguard_utils import summarize_apk  # type: ignore[import-not-found]
 except Exception:  # pragma: no cover
     summarize_apk = None  # type: ignore[assignment]
-else:
-    # keep linter happy if unused when optional module missing
-    summarize_apk = summarize_apk
+
+try:
+    from .cert_analysis import analyze_certificates  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover
+    analyze_certificates = None  # type: ignore[assignment]
 
 # Risk scoring (assumed available)
 from risk_scoring import calculate_risk_score
@@ -142,10 +145,32 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
         perm_details, components, sdk_info, features, metadata
     )
 
+    # Enrich metrics with Androguard rule matches if present
     if androguard_summary:
         rule_matches = androguard_summary.get("rule_matches", {})
         for name, matches in rule_matches.items():
             metrics[f"androguard_{name}_count"] = len(matches)
+
+    # Evaluate rules against collected facts
+    findings: List[Dict[str, Any]] = []
+    try:
+        rule_dir = Path(__file__).resolve().parent.parent / "rules" / "android"
+        rules = load_rules(rule_dir)
+        facts = {
+            "permissions": perms,
+            "permission_details": perm_details,
+            "components": components,
+            "sdk_info": sdk_info,
+            "features": features,
+            "app_flags": app_flags,
+            "metadata": metadata,
+            "metrics": metrics,
+        }
+        findings = evaluate_rules(rules, facts)
+        if findings:
+            (out / "findings.json").write_text(json.dumps(findings, indent=2))
+    except Exception as e:  # pragma: no cover
+        display.warn(f"Rule evaluation failed: {e}")
 
     # Optional signature verification (if available)
     if verify_signature:
@@ -158,6 +183,22 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     else:
         metrics["untrusted_signature"] = 0  # neutral if we cannot verify
         display.note("Signature verification not available (signature module not found)")
+
+    # Signing certificate analysis (expiry, self-signed, etc.)
+    if analyze_certificates:
+        try:
+            cert_info = analyze_certificates(apk_path)
+            metrics["expired_certificate"] = 1 if cert_info.get("expired") else 0
+            metrics["self_signed_certificate"] = (
+                1 if cert_info.get("self_signed") else 0
+            )
+            (out / "cert_info.json").write_text(json.dumps(cert_info, indent=2))
+        except Exception as e:  # pragma: no cover
+            display.warn(f"Certificate analysis failed: {e}")
+    else:
+        metrics.setdefault("expired_certificate", 0)
+        metrics.setdefault("self_signed_certificate", 0)
+        display.note("Certificate analysis not available (cert_analysis module not found)")
 
     (out / "derived_metrics.json").write_text(json.dumps(metrics, indent=2))
 
@@ -201,6 +242,7 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
         risk,             # placed into "metrics" bucket as additional fields
         yara_matches,
         diff,
+        findings,
     )
 
     return out
