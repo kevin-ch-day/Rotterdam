@@ -2,26 +2,43 @@
 
 from __future__ import annotations
 
-import os
-from typing import Iterable, List, Optional
+from typing import List, Optional
 
 from sqlalchemy import create_engine, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
+
+from core.config import get_database_url
 
 from .models import Base, RiskReport
 
 
-def init_db(url: str | None = None) -> sessionmaker:
+def init_db(
+    url: str | None = None,
+    *,
+    pool_size: int = 5,
+    max_overflow: int = 10,
+) -> sessionmaker:
     """Initialise a database and return a ``sessionmaker`` factory.
 
     The URL can point to any SQLAlchemy-supported backend, e.g. SQLite or
-    MySQL.  If omitted, the ``DATABASE_URL`` environment variable is inspected
-    and finally an in-memory SQLite database is used as a fallback.
+    MySQL.  If omitted, the environment is inspected for connection
+    information and finally an in-memory SQLite database is used as a
+    fallback.
     """
 
-    db_url = url or os.environ.get("DATABASE_URL", "sqlite:///:memory:")
-    engine = create_engine(db_url, future=True)
-    Base.metadata.create_all(engine)
+    db_url = url or get_database_url()
+    try:
+        engine = create_engine(
+            db_url,
+            pool_pre_ping=True,
+            pool_size=pool_size,
+            max_overflow=max_overflow,
+            future=True,
+        )
+        Base.metadata.create_all(engine)
+    except SQLAlchemyError as exc:
+        raise RuntimeError(f"Failed to initialise database: {exc}") from exc
     return sessionmaker(bind=engine, expire_on_commit=False, future=True)
 
 
