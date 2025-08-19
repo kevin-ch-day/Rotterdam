@@ -18,7 +18,7 @@ from .manifest_utils import (
 )
 from .permission_utils import categorize_permissions
 from .secret_utils import scan_for_secrets
-from .report_utils import write_report
+from .report_utils import calculate_derived_metrics, write_report
 
 
 def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
@@ -78,6 +78,11 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     if secrets:
         (out / "secrets.txt").write_text("\n".join(secrets))
 
+    metrics = calculate_derived_metrics(
+        perm_details, components, sdk_info, features, metadata
+    )
+    (out / "derived_metrics.json").write_text(json.dumps(metrics, indent=2))
+
     write_report(
         out,
         perms,
@@ -88,6 +93,7 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
         features,
         app_flags,
         metadata,
+        metrics,
     )
 
     return out
