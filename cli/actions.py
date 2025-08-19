@@ -24,6 +24,8 @@ from devices import (
 from analysis import analyze_apk
 from sandbox import run_analysis as sandbox_analyze, compute_runtime_metrics
 from sandbox import ui_driver
+from sqlalchemy import text
+from storage.repository import session_scope, DATABASE_URL, ping_db
 
 # Optional logging integration
 try:
@@ -43,6 +45,46 @@ except Exception:  # pragma: no cover
     @contextmanager
     def log_context(**_: Any):  # type: ignore
         yield
+
+
+def _redact(url: str) -> str:
+    if "://" not in url:
+        return url
+    scheme, rest = url.split("://", 1)
+    if "@" in rest and ":" in rest.split("@", 1)[0]:
+        creds, hostpart = rest.split("@", 1)
+        user = creds.split(":", 1)[0]
+        rest = f"{user}:***@{hostpart}"
+    return f"{scheme}://{rest}"
+
+
+def show_database_status() -> None:
+    display.print_section("Database")
+    print(f"DSN: {_redact(DATABASE_URL)}")
+    ok, ver_or_err, ms = ping_db()
+    if ok:
+        display.good(f"MySQL version: {ver_or_err} ({ms:.1f} ms)")
+    else:
+        display.warn(f"DB check failed in {ms:.1f} ms → {ver_or_err}")
+        return
+
+    try:
+        with session_scope() as s:
+            counts = {}
+            for tbl in [
+                "devices",
+                "packages",
+                "device_packages",
+                "analyses",
+                "analysis_findings",
+                "permissions_snapshots",
+                "permission_items",
+            ]:
+                counts[tbl] = s.execute(text(f"SELECT COUNT(*) FROM {tbl}")).scalar()
+        for k, v in counts.items():
+            print(f"  - {k:24s} {v}")
+    except Exception as e:
+        display.warn(f"Count query failed: {e}")
 
 
 def show_connected_devices() -> None:

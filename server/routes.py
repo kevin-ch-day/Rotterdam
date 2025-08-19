@@ -9,17 +9,26 @@ import uuid
 from pathlib import Path
 import hashlib
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, UploadFile, Response, status
 from fastapi.responses import FileResponse
 
 from orchestrator.scheduler import scheduler
 from risk_reporting import create_risk_report
-from storage.repository import RiskReportRepository
+from storage.repository import ping_db
 
 router = APIRouter()
 
-# Repository instance to persist and retrieve risk reports
-_repo = RiskReportRepository()
+
+@router.get("/health/db")
+def health_db():
+    ok, info, ms = ping_db()
+    if ok:
+        return {"status": "ok", "version": info, "latency_ms": round(ms, 1)}
+    return Response(
+        content=f'{{"status":"fail","error":{info!r},"latency_ms":{round(ms,1)}}}',
+        media_type="application/json",
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    )
 
 # Directory for analysis outputs and uploaded files
 _ANALYSIS_ROOT = Path("analysis")
@@ -35,8 +44,8 @@ def _process_apk(apk_path: str) -> dict[str, str]:
     path = Path(apk_path)
     package_name = path.stem
 
-    # Generate a risk report and persist via the repository
-    result = create_risk_report(package_name, repository=_repo)
+    # Generate a risk report
+    result = create_risk_report(package_name)
 
     # Write JSON and HTML versions to a unique directory
     out_dir = _ANALYSIS_ROOT / uuid.uuid4().hex
@@ -98,10 +107,11 @@ async def get_scan(scan_id: str) -> dict[str, object]:
 
     job = scheduler.get_job(scan_id)
     if status == "completed" and job and job.result:
-        package = job.result.get("package_name")
-        if package:
-            latest = _repo.get_latest(package)
-            report = latest.to_dict() if latest else None
+        analysis_dir = job.result.get("analysis_dir")
+        if analysis_dir:
+            report_path = Path(analysis_dir) / "report.json"
+            if report_path.exists():
+                report = json.loads(report_path.read_text())
 
     info: dict[str, object] = {"scan_id": scan_id, "status": status, "report": report}
     if job and job.result:

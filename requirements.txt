@@ -14,3 +14,4 @@ SQLAlchemy==2.0.43
 starlette==0.47.2
 uvicorn==0.35.0
 yara==1.7.7
+mysql-connector-python==9.4.0
