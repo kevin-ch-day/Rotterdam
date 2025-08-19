@@ -6,7 +6,10 @@ output for the user interface.
 
 from __future__ import annotations
 
-from app_utils import app_display, app_menu_utils
+import json
+from pathlib import Path
+
+from app_utils import app_display, app_menu_utils, app_renderers
 from reporting import ieee_report
 from device_analysis import (
     device_discovery,
@@ -31,21 +34,7 @@ def show_connected_devices() -> None:
         print("No devices attached.")
         return
 
-    rows = [
-        [
-            d.get("serial", ""),
-            d.get("state", ""),
-            d.get("product", "-"),
-            d.get("model", "-"),
-            d.get("device", "-"),
-            d.get("transport_id", "-"),
-        ]
-        for d in devs
-    ]
-    app_display.print_table(
-        rows,
-        headers=["Serial", "State", "Product", "Model", "Device", "Transport"],
-    )
+    app_renderers.print_basic_device_table(devs)
 
 
 def show_detailed_devices() -> None:
@@ -68,13 +57,12 @@ def show_detailed_devices() -> None:
 def list_installed_packages(serial: str) -> None:
     """Display packages installed on the device."""
     packages = package_scanner.inventory_packages(serial)
+    app_display.print_section("Application Inventory")
     if not packages:
-        app_display.print_section("Application Inventory")
         print("No packages found.")
         return
 
-    report = ieee_report.format_package_inventory(packages)
-    print(report)
+    app_renderers.print_package_inventory(packages)
 
 
 def scan_dangerous_permissions(serial: str) -> None:
@@ -89,8 +77,7 @@ def scan_dangerous_permissions(serial: str) -> None:
     if not risky:
         print("No apps requesting dangerous permissions found.")
         return
-    rows = [[r["package"], ", ".join(r["permissions"])] for r in risky]
-    app_display.print_table(rows, headers=["Package", "Permissions"])
+    app_renderers.print_permission_scan(risky)
 
 
 def list_running_processes(serial: str) -> None:
@@ -100,8 +87,7 @@ def list_running_processes(serial: str) -> None:
     if not procs:
         print("No process data available.")
         return
-    rows = [[p["pid"], p["user"], p["name"]] for p in procs]
-    app_display.print_table(rows, headers=["PID", "User", "Name"])
+    app_renderers.print_process_table(procs)
 
 
 def analyze_apk_path() -> None:
@@ -116,6 +102,7 @@ def analyze_apk_path() -> None:
         app_display.fail(f"Analysis failed: {e}")
         return
     print(f"Status: Static analysis completed. Results in {out}")
+    _display_manifest_insights(out)
 
 
 def analyze_installed_app(serial: str) -> None:
@@ -151,5 +138,28 @@ def analyze_installed_app(serial: str) -> None:
     print(
         f"Status: Static analysis completed. Report at {out / 'report.json'}"
     )
+    _display_manifest_insights(out)
     log = ieee_report.format_evidence_log([evidence])
     print(log)
+
+
+def _display_manifest_insights(outdir: Path) -> None:
+    """Load manifest-derived data and display tables."""
+    try:
+        components = json.loads((outdir / "components.json").read_text())
+    except Exception:
+        components = {}
+    try:
+        features = json.loads((outdir / "features.json").read_text())
+    except Exception:
+        features = []
+
+    if features:
+        app_display.print_section("Requested Features")
+        app_renderers.print_feature_list(features)
+
+    if components:
+        for kind in ["activity", "service", "receiver", "provider"]:
+            if components.get(kind):
+                app_display.print_section(f"{kind.title()}s")
+                app_renderers.print_component_table(components, kind)

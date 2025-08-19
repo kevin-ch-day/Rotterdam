@@ -9,7 +9,7 @@ import getpass
 from datetime import datetime
 from typing import Dict
 
-from .device_discovery import _adb_path, _run_adb
+from .adb_utils import _adb_path, _run_adb
 
 
 def pull_apk(serial: str, package: str, dest_dir: str = "output/apks") -> Path:
