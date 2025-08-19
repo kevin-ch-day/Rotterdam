@@ -32,8 +32,10 @@ from storage.repository import AnalysisRepository
 
 # Optional logging integration
 try:
-    from logging_config import get_logger, log_context  # type: ignore
-    logger = get_logger(__name__)  # type: ignore
+    from logging_config import StructuredLogger  # type: ignore
+
+    logger = StructuredLogger.get_logger(__name__)  # type: ignore
+    log_context = StructuredLogger.context  # type: ignore
 except Exception:  # pragma: no cover
     import logging
 
@@ -50,18 +52,36 @@ except Exception:  # pragma: no cover
         yield
 
 
+@contextmanager
+def _action_context(
+    action: str,
+    *,
+    device_serial: str | None = None,
+    apk_path: str | None = None,
+):
+    """Wrapper around :func:`log_context` to reduce repetition in actions."""
+    with log_context(
+        action=action,
+        device_serial=device_serial,
+        apk_path=apk_path,
+    ):
+        yield
+
+
 def run_doctor() -> None:
     """Check availability of required binaries and Python modules."""
-
     checks = [
         *(BinaryCheck(b) for b in ["adb", "aapt2", "apktool", "jadx", "yara", "java"]),
-        *(ModuleCheck(m) for m in [
-            "androguard",
-            "fastapi",
-            "uvicorn",
-            "sqlalchemy",
-            "mysql.connector",
-        ]),
+        *(
+            ModuleCheck(m)
+            for m in [
+                "androguard",
+                "fastapi",
+                "uvicorn",
+                "sqlalchemy",
+                "mysql.connector",
+            ]
+        ),
     ]
 
     doctor = SystemDoctor(checks)
@@ -87,43 +107,46 @@ def run_doctor() -> None:
 
 def show_connected_devices() -> None:
     """List connected devices using basic ``adb devices`` output."""
-    logger.info("show_connected_devices")
-    try:
-        output = discovery.check_connected_devices()
-        devs = discovery.parse_devices_l(output)  # keep API as defined in devices.discovery
-    except RuntimeError as e:
-        logger.exception("failed to check connected devices")
-        display.fail(str(e))
-        return
+    with _action_context("show_connected_devices"):
+        logger.info("show_connected_devices")
+        try:
+            output = discovery.check_connected_devices()
+            # keep API as defined in devices.discovery
+            devs = discovery.parse_devices_l(output)
+        except RuntimeError as e:
+            logger.exception("failed to check connected devices")
+            display.fail(str(e))
+            return
 
-    display.print_section("ADB Devices")
-    if not devs:
-        logger.info("no devices attached")
-        print("No devices attached.")
-        return
+        display.print_section("ADB Devices")
+        if not devs:
+            logger.info("no devices attached")
+            print("No devices attached.")
+            return
 
-    renderers.print_basic_device_table(devs)
+        renderers.print_basic_device_table(devs)
 
 
 def show_detailed_devices() -> None:
     """List devices with manufacturer and OS details."""
-    logger.info("show_detailed_devices")
-    try:
-        detailed = discovery.list_detailed_devices()
-    except RuntimeError as e:
-        logger.exception("failed to list detailed devices")
-        display.fail(str(e))
-        return
+    with _action_context("show_detailed_devices"):
+        logger.info("show_detailed_devices")
+        try:
+            detailed = discovery.list_detailed_devices()
+        except RuntimeError as e:
+            logger.exception("failed to list detailed devices")
+            display.fail(str(e))
+            return
 
-    if not detailed:
-        logger.info("no devices attached")
-        display.print_section("Connected Devices (Detailed)")
-        print("No devices attached.")
-        return
+        if not detailed:
+            logger.info("no devices attached")
+            display.print_section("Connected Devices (Detailed)")
+            print("No devices attached.")
+            return
 
-    report = ieee.format_device_inventory(detailed)
-    logger.info("found %d devices", len(detailed))
-    print(report)
+        report = ieee.format_device_inventory(detailed)
+        logger.info("found %d devices", len(detailed))
+        print(report)
 
 
 def list_installed_packages(
@@ -138,7 +161,7 @@ def list_installed_packages(
     limit: Optional[int] = None,
 ) -> None:
     """Display packages installed on the device."""
-    with log_context(device=serial):
+    with _action_context("list_installed_packages", device_serial=serial):
         logger.info("list_installed_packages")
         try:
             pkg_info = packages.inventory_packages(serial)
@@ -147,6 +170,7 @@ def list_installed_packages(
             display.fail(str(e))
             return
 
+        # Filters
         if user:
             pkg_info = [p for p in pkg_info if not p.get("system")]
         if system:
@@ -161,6 +185,7 @@ def list_installed_packages(
                 display.fail(f"Invalid regex: {exc}")
                 return
 
+        # Sort and limit
         pkg_info.sort(
             key=lambda p: (
                 0 if p.get("high_value") else 1,
@@ -179,6 +204,7 @@ def list_installed_packages(
 
         renderers.print_package_inventory(pkg_info)
 
+        # Optional exports
         if csv_path:
             try:
                 with open(csv_path, "w", newline="", encoding="utf-8") as f:
@@ -209,7 +235,7 @@ def list_installed_packages(
 
 def scan_dangerous_permissions(serial: str) -> None:
     """Scan packages for dangerous permissions and display results."""
-    with log_context(device=serial):
+    with _action_context("scan_dangerous_permissions", device_serial=serial):
         logger.info("scan_dangerous_permissions")
         try:
             risky = packages.scan_for_dangerous_permissions(serial)
@@ -228,21 +254,22 @@ def scan_dangerous_permissions(serial: str) -> None:
 
 def scan_for_devices() -> None:
     """Rescan ADB for devices and display the results."""
-    logger.info("scan_for_devices")
-    try:
-        detailed = selection.refresh_devices()
-    except RuntimeError as e:
-        logger.exception("device scan failed")
-        display.fail(str(e))
-        return
+    with _action_context("scan_for_devices"):
+        logger.info("scan_for_devices")
+        try:
+            detailed = selection.refresh_devices()
+        except RuntimeError as e:
+            logger.exception("device scan failed")
+            display.fail(str(e))
+            return
 
-    display.print_section("Scan Results")
-    if not detailed:
-        logger.info("no devices discovered")
-        print("No devices discovered.")
-        return
+        display.print_section("Scan Results")
+        if not detailed:
+            logger.info("no devices discovered")
+            print("No devices discovered.")
+            return
 
-    renderers.print_basic_device_table(detailed)
+        renderers.print_basic_device_table(detailed)
 
 
 def export_device_report(serial: str) -> None:
@@ -257,7 +284,7 @@ def quick_security_scan(serial: str) -> None:
 
 def list_running_processes(serial: str) -> None:
     """List running processes on the device."""
-    with log_context(device=serial):
+    with _action_context("list_running_processes", device_serial=serial):
         logger.info("list_running_processes")
         try:
             procs = processes.list_processes(serial)
@@ -284,7 +311,7 @@ def analyze_apk_path() -> None:
         return
 
     app_name = Path(apk_path).stem
-    with log_context(app=app_name):
+    with _action_context("analyze_apk_path", apk_path=apk_path):
         logger.info("analyze_apk_path", extra={"apk": apk_path})
         outdir = config.OUTPUT_DIR / config.ts()
         try:
@@ -305,7 +332,7 @@ def analyze_apk_path() -> None:
 
 def analyze_installed_app(serial: str) -> None:
     """Select an installed app, pull its APK, and run static analysis."""
-    with log_context(device=serial):
+    with _action_context("analyze_installed_app", device_serial=serial):
         logger.info("analyze_installed_app")
         try:
             pkgs = packages.list_installed_packages(serial)
@@ -318,10 +345,7 @@ def analyze_installed_app(serial: str) -> None:
             print("Status: No packages found.")
             return
 
-        options = [
-            (pkg + (" (Twitter)" if pkg == "com.twitter.android" else ""), pkg)
-            for pkg in pkgs
-        ]
+        options = [(pkg + (" (Twitter)" if pkg == "com.twitter.android" else ""), pkg) for pkg in pkgs]
         choice = menu.show_menu(
             "Installed Packages",
             [label for label, _ in options],
@@ -334,27 +358,30 @@ def analyze_installed_app(serial: str) -> None:
             return
         package = options[choice - 1][1]
 
-        with log_context(app=package):
-            outdir = config.OUTPUT_DIR / config.ts()
-            try:
-                evidence = apk.acquire_apk(serial, package, dest_dir=str(outdir))
-                logger.info("apk extracted", extra={"output": str(outdir)})
-                print("Status: Application package extracted successfully.")
-                out = analyze_apk(str(evidence["artifact"]), outdir=outdir)
-            except Exception as e:  # pragma: no cover
-                logger.exception("analysis failed")
-                display.fail(f"Analysis failed: {e}")
-                return
-            report_path = out / "report.json"
-            try:
-                AnalysisRepository().upsert(package, str(report_path))
-            except Exception:
-                logger.exception("failed to record analysis")
-            logger.info("analysis completed", extra={"report": str(report_path)})
-            print(f"Status: Static analysis completed. Report at {report_path}")
-            _display_manifest_insights(out)
-            log = ieee.format_evidence_log([evidence])
-            print(log)
+        outdir = config.OUTPUT_DIR / config.ts()
+        try:
+            evidence = apk.acquire_apk(serial, package, dest_dir=str(outdir))
+            apk_path = str(evidence["artifact"])
+            logger.info("apk extracted", extra={"output": str(outdir)})
+            print("Status: Application package extracted successfully.")
+            # Narrower context with known apk_path
+            with _action_context("analyze_installed_app", device_serial=serial, apk_path=apk_path):
+                out = analyze_apk(apk_path, outdir=outdir)
+        except Exception as e:  # pragma: no cover
+            logger.exception("analysis failed")
+            display.fail(f"Analysis failed: {e}")
+            return
+
+        report_path = out / "report.json"
+        try:
+            AnalysisRepository().upsert(package, str(report_path))
+        except Exception:
+            logger.exception("failed to record analysis")
+        logger.info("analysis completed", extra={"report": str(report_path)})
+        print(f"Status: Static analysis completed. Report at {report_path}")
+        _display_manifest_insights(out)
+        log = ieee.format_evidence_log([evidence])
+        print(log)
 
 
 def sandbox_analyze_apk() -> None:
@@ -368,7 +395,7 @@ def sandbox_analyze_apk() -> None:
 
     app_name = Path(apk_path).stem
     outdir = config.OUTPUT_DIR / config.ts()
-    with log_context(app=app_name):
+    with _action_context("sandbox_analyze_apk", apk_path=apk_path):
         logger.info("sandbox_analyze_apk", extra={"apk": apk_path})
         try:
             results = sandbox_analyze(apk_path, outdir)
@@ -383,6 +410,7 @@ def sandbox_analyze_apk() -> None:
             AnalysisRepository().upsert(app_name, str(target_path))
         except Exception:
             logger.exception("failed to record analysis")
+
         logger.info("sandbox analysis completed", extra={"output": str(outdir)})
         print(f"Status: Sandbox analysis completed. Results in {outdir}")
 
@@ -401,36 +429,37 @@ def sandbox_analyze_apk() -> None:
 
 def explore_installed_app(serial: str) -> None:
     """Select an installed package and run automated UI exploration."""
-    try:
-        pkgs = packages.list_installed_packages(serial)
-    except RuntimeError as e:
-        display.fail(str(e))
-        return
-    if not pkgs:
-        print("Status: No packages found.")
-        return
+    with _action_context("explore_installed_app", device_serial=serial):
+        try:
+            pkgs = packages.list_installed_packages(serial)
+        except RuntimeError as e:
+            display.fail(str(e))
+            return
+        if not pkgs:
+            print("Status: No packages found.")
+            return
 
-    choice = menu.show_menu(
-        "Installed Packages",
-        pkgs,
-        exit_label="Cancel",
-        prompt="Select package",
-    )
-    if choice == 0:
-        print("Status: No package selected.")
-        return
+        choice = menu.show_menu(
+            "Installed Packages",
+            pkgs,
+            exit_label="Cancel",
+            prompt="Select package",
+        )
+        if choice == 0:
+            print("Status: No package selected.")
+            return
 
-    package = pkgs[choice - 1]
-    activities = ui_driver.run_monkey(serial, package)
-    metrics = compute_runtime_metrics([], [], [], activities)
+        package = pkgs[choice - 1]
+        activities = ui_driver.run_monkey(serial, package)
+        metrics = compute_runtime_metrics([], [], [], activities)
 
-    display.print_section("Visited Activities")
-    if metrics.get("activities"):
-        for act in metrics["activities"]:
-            print(act)
-        print(f"Total: {metrics['activity_count']}")
-    else:
-        print("No activity coverage recorded.")
+        display.print_section("Visited Activities")
+        if metrics.get("activities"):
+            for act in metrics["activities"]:
+                print(act)
+            print(f"Total: {metrics['activity_count']}")
+        else:
+            print("No activity coverage recorded.")
 
 
 def _display_manifest_insights(outdir: Path) -> None:
@@ -489,7 +518,8 @@ def run_server(host: str = "127.0.0.1", port: int = 8000) -> None:
     """Start the API server using uvicorn."""
     import uvicorn
 
-    uvicorn.run("server:app", host=host, port=port)
+    with _action_context("run_server"):
+        uvicorn.run("server:app", host=host, port=port)
 
 
 def main(argv: list[str] | None = None) -> None:

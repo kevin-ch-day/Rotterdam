@@ -17,9 +17,9 @@ from datetime import datetime, timezone
 from typing import DefaultDict, Dict, Iterable, List
 
 from devices import adb
-from logging_config import get_logger, log_context
+from logging_config import StructuredLogger
 
-logger = get_logger(__name__)
+logger = StructuredLogger.get_logger(__name__)
 
 
 def _run_shell(cmd: list[str]) -> str:
@@ -76,7 +76,7 @@ class PermissionMonitor:
             comp = match.group("comp")
             timestamp = datetime.now(tz=timezone.utc).isoformat()
             access = PermissionAccess(timestamp, perm, comp)
-            with log_context(app=self.package):
+            with StructuredLogger.context(action="permission_monitor", apk_path=self.package):
                 logger.info("%s | %s accessed by %s", timestamp, perm, comp)
             self._summary[perm] += 1
             self._logs.append(access)
