@@ -10,6 +10,7 @@ def compute_runtime_metrics(
     permission_events: Iterable[str],
     network_events: Iterable[str],
     file_write_events: Iterable[str],
+    activity_events: Iterable[str] = (),
 ) -> Dict[str, Any]:
     """Aggregate sandbox execution data into simple metrics.
 
@@ -21,6 +22,10 @@ def compute_runtime_metrics(
         Iterable of network endpoints contacted (e.g., hostnames or URLs).
     file_write_events:
         Iterable of filesystem paths written to during execution.
+    activity_events:
+        Iterable of fully-qualified activity names visited during UI
+        exploration.  Defaults to an empty iterable if no coverage information
+        is available.
 
     Returns
     -------
@@ -35,10 +40,14 @@ def compute_runtime_metrics(
             Sorted list of unique network endpoints contacted and their count.
         ``filesystem_writes`` / ``filesystem_write_count``
             Sorted list of unique file paths written to and their count.
+        ``activities`` / ``activity_count``
+            Sorted list of unique activities exercised during automated UI
+            exploration and their count.
     """
     perm_counts = Counter(permission_events)
     endpoints = sorted(set(network_events))
     writes = sorted(set(file_write_events))
+    activities = sorted(set(activity_events))
 
     return {
         "permission_usage_counts": dict(perm_counts),
@@ -47,4 +56,6 @@ def compute_runtime_metrics(
         "network_endpoint_count": len(endpoints),
         "filesystem_writes": writes,
         "filesystem_write_count": len(writes),
+        "activities": activities,
+        "activity_count": len(activities),
     }
