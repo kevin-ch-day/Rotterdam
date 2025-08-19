@@ -5,39 +5,33 @@ Allows users to list connected devices and select one to connect to,
 with numbered selection for easier navigation.
 """
 
+from typing import Any, Dict, List, Optional
+
 from core import display, menu
 from . import discovery
 
+_cached_devices: List[Dict[str, Any]] = []
 
-def list_and_select_device() -> str:
-    """Display connected devices and return the chosen serial."""
+
+def refresh_devices() -> List[Dict[str, Any]]:
+    """Refresh and return the cached device list."""
+    global _cached_devices
+    _cached_devices = discovery.list_detailed_devices()
+    return _cached_devices
+
+
+def list_and_select_device() -> Optional[Dict[str, Any]]:
+    """Display connected devices and return the chosen device dict."""
     try:
-        devices = discovery.list_detailed_devices()
+        devices = _cached_devices or refresh_devices()
         connected = [d for d in devices if d.get("state") == "device"]
 
         if not connected:
             display.warn("No devices attached.")
-            return ""
+            return None
 
         if len(connected) == 1:
-            selected = connected[0]
-            dtype = selected.get("type", "unknown")
-            display.good(f"Selected {dtype} device: {selected['serial']}")
-
-            display.print_section("Device Details")
-            display.print_kv(
-                [
-                    ("Serial", selected.get("serial", "")),
-                    ("Model", selected.get("model", "")),
-                    ("Manufacturer", selected.get("manufacturer", "")),
-                    ("Android", selected.get("android_release", "")),
-                    ("SDK", selected.get("sdk", "")),
-                    ("Connection", selected.get("connection", "")),
-                    ("Type", dtype),
-                ]
-            )
-
-            return selected.get("serial", "")
+            return connected[0]
 
         labels = [
             f"{d.get('serial')} | {d.get('model') or '-'} | {d.get('type', '')}"
@@ -53,27 +47,10 @@ def list_and_select_device() -> str:
 
         if choice == 0:
             display.warn("No device selected.")
-            return ""
+            return None
 
-        selected = connected[choice - 1]
-        dtype = selected.get("type", "unknown")
-        display.good(f"Selected device: {selected['serial']}")
-
-        display.print_section("Device Details")
-        display.print_kv(
-            [
-                ("Serial", selected.get("serial", "")),
-                ("Model", selected.get("model", "")),
-                ("Manufacturer", selected.get("manufacturer", "")),
-                ("Android", selected.get("android_release", "")),
-                ("SDK", selected.get("sdk", "")),
-                ("Connection", selected.get("connection", "")),
-                ("Type", dtype),
-            ]
-        )
-
-        return selected.get("serial", "")
+        return connected[choice - 1]
 
     except RuntimeError as e:
         display.fail(str(e))
-        return ""
+        return None

@@ -3,6 +3,7 @@ cryptography==45.0.6
 fastapi==0.116.1
 httpx==0.28.1
 jmespath==1.0.1
+mysql-connector-python>=9.0.0
 pydantic==2.11.7
 pytest==8.4.1
 pytest-cov==6.2.1
@@ -13,5 +14,4 @@ scapy==2.6.1
 SQLAlchemy==2.0.43
 starlette==0.47.2
 uvicorn==0.35.0
-yara==1.7.7
-mysql-connector-python==9.4.0
+yara-python>=4.5.0
