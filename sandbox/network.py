@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Iterable, Optional
 
 from devices.adb import _adb_path, _run_adb
+from . import intel
 
 
 # Define HTTP methods to search in packets
@@ -164,8 +165,13 @@ def parse_pcap(pcap: str | Path, expected_domains: Optional[Iterable[str]] = Non
         "unexpected_domain_count": 0,
         "unique_ips": [],
         "unique_ip_count": 0,
-        "ip_flows": [],  # list of dicts with src/dst/count
+        "ip_flows": [],  # list of dicts with src/dst/count and reputation
         "ip_flow_count": 0,
+        "malicious_ips": [],
+        "malicious_ip_count": 0,
+        "malicious_domains": [],
+        "malicious_domain_count": 0,
+        "malicious_endpoint_count": 0,
     }
 
     try:
@@ -177,6 +183,7 @@ def parse_pcap(pcap: str | Path, expected_domains: Optional[Iterable[str]] = Non
     seen_unexpected: set[str] = set()
     unique_ips: set[str] = set()
     flow_counts: dict[tuple[str, str], int] = {}
+    malicious_domains: set[str] = set()
 
     for pkt in packets:
         src = dst = ""
@@ -197,6 +204,7 @@ def parse_pcap(pcap: str | Path, expected_domains: Optional[Iterable[str]] = Non
                 parts = first_line.split()
                 method = parts[0] if parts else ""
                 path = parts[1] if len(parts) > 1 else ""
+                host_rep = intel.score_domain(host) if host else 0
                 summary["unencrypted_http_requests"].append(
                     {
                         "method": method,
@@ -204,19 +212,37 @@ def parse_pcap(pcap: str | Path, expected_domains: Optional[Iterable[str]] = Non
                         "path": path,
                         "src_ip": src,
                         "dst_ip": dst,
+                        "reputation": host_rep,
                     }
                 )
                 h_lower = host.lower()
+                if host_rep:
+                    malicious_domains.add(h_lower)
                 if h_lower and h_lower not in expected:
                     seen_unexpected.add(h_lower)
+
+    ip_reputation = {ip: intel.score_ip(ip) for ip in unique_ips}
+    malicious_ips = {ip for ip, score in ip_reputation.items() if score > 0}
 
     summary["unexpected_domains"] = sorted(seen_unexpected)
     summary["unencrypted_http_request_count"] = len(summary["unencrypted_http_requests"])
     summary["unexpected_domain_count"] = len(summary["unexpected_domains"])
     summary["unique_ips"] = sorted(unique_ips)
     summary["unique_ip_count"] = len(unique_ips)
+    summary["malicious_ips"] = sorted(malicious_ips)
+    summary["malicious_ip_count"] = len(malicious_ips)
+    summary["malicious_domains"] = sorted(malicious_domains)
+    summary["malicious_domain_count"] = len(malicious_domains)
+    summary["malicious_endpoint_count"] = summary["malicious_ip_count"] + summary["malicious_domain_count"]
     summary["ip_flows"] = [
-        {"src": s, "dst": d, "count": c} for (s, d), c in sorted(flow_counts.items())
+        {
+            "src": s,
+            "dst": d,
+            "count": c,
+            "src_rep": ip_reputation.get(s, 0),
+            "dst_rep": ip_reputation.get(d, 0),
+        }
+        for (s, d), c in sorted(flow_counts.items())
     ]
     summary["ip_flow_count"] = len(flow_counts)
     return summary
