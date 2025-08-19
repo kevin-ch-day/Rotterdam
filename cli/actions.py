@@ -17,10 +17,11 @@ from .prompts import prompt_existing_path
 from reports import ieee
 from devices import (
     discovery,
-    packages,
+    packages as device_packages,
     apk,
     processes,
 )
+from apps import packages as app_packages
 from analysis import analyze_apk
 from sandbox import run_analysis as sandbox_analyze, compute_runtime_metrics
 from sandbox import ui_driver
@@ -86,13 +87,18 @@ def show_detailed_devices() -> None:
     print(report)
 
 
-def list_installed_packages(serial: str) -> None:
-    """Display packages installed on the device."""
+def list_installed_packages(serial: str, fast: bool = False) -> None:
+    """Display packages installed on the device.
+
+    ``fast`` skips expensive ``dumpsys`` lookups for version and flags.
+    """
+
     with log_context(device=serial):
         logger.info("list_installed_packages")
         try:
-            pkg_info = packages.inventory_packages(serial)
-        except RuntimeError as e:
+            adb = device_packages._adb_path()
+            pkg_info = app_packages.normalize_inventory(adb, serial, fast=fast)
+        except RuntimeError as e:  # pragma: no cover - unexpected
             logger.exception("failed to inventory packages")
             display.fail(str(e))
             return
@@ -111,7 +117,7 @@ def scan_dangerous_permissions(serial: str) -> None:
     with log_context(device=serial):
         logger.info("scan_dangerous_permissions")
         try:
-            risky = packages.scan_for_dangerous_permissions(serial)
+            risky = device_packages.scan_for_dangerous_permissions(serial)
         except RuntimeError as e:
             logger.exception("permission scan failed")
             display.fail(str(e))
@@ -172,7 +178,7 @@ def analyze_installed_app(serial: str) -> None:
     with log_context(device=serial):
         logger.info("analyze_installed_app")
         try:
-            pkgs = packages.list_installed_packages(serial)
+            pkgs = device_packages.list_installed_packages(serial)
         except RuntimeError as e:
             logger.exception("failed to list installed packages")
             display.fail(str(e))
@@ -260,7 +266,7 @@ def sandbox_analyze_apk() -> None:
 def explore_installed_app(serial: str) -> None:
     """Select an installed package and run automated UI exploration."""
     try:
-        pkgs = packages.list_installed_packages(serial)
+        pkgs = device_packages.list_installed_packages(serial)
     except RuntimeError as e:
         display.fail(str(e))
         return

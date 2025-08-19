@@ -41,7 +41,7 @@ def print_package_inventory(packages: Iterable[Dict[str, Any]]) -> None:
     rows: List[List[str]] = [
         [
             p.get("package", ""),
-            p.get("version_name", ""),
+            p.get("version", ""),
             p.get("installer", ""),
             "yes" if p.get("high_value") else "no",
         ]
