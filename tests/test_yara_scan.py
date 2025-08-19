@@ -5,7 +5,10 @@ from pathlib import Path
 from analysis.yara_scan import compile_rules, scan_directory
 
 
-yara = pytest.importorskip("yara")
+try:  # Skip if libyara is missing
+    yara = pytest.importorskip("yara")
+except OSError:  # pragma: no cover - environment dependent
+    pytest.skip("libyara not available", allow_module_level=True)
 
 
 def test_scan_directory(tmp_path: Path):

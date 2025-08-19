@@ -49,13 +49,13 @@ except Exception:  # pragma: no cover
 from risk_scoring import calculate_risk_score
 
 
-def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
+def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
     """Decompile an APK and run simple static analysis.
 
     Returns the output directory used for analysis.
     """
     apk = Path(apk_path)
-    out = Path(outdir)
+    out = Path(outdir) if outdir else config.OUTPUT_DIR / config.ts()
     out.mkdir(parents=True, exist_ok=True)
     apktool_dir = out / "apktool"
     jadx_dir = out / "jadx"

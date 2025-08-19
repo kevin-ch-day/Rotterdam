@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import List, Optional
+import datetime as _dt
 
 from sqlalchemy import select
 
@@ -12,7 +13,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from core.config import get_database_url
 
-from .models import Base, RiskReport
+from .models import Base, RiskReport, Analysis
 
 
 def init_db(
@@ -97,3 +98,30 @@ class RiskReportRepository:
             if report is not None:
                 session.delete(report)
                 session.commit()
+
+
+class AnalysisRepository:
+    """Repository for persisting :class:`Analysis` records."""
+
+    def __init__(
+        self, session_factory: sessionmaker | None = None, *, db_url: str | None = None
+    ):
+        self._session_factory = session_factory or init_db(db_url)
+
+    def _session(self) -> Session:
+        return self._session_factory()
+
+    def upsert(self, target: str, report_path: str) -> Analysis:
+        """Insert or update an analysis record for ``target``."""
+        with self._session() as session:
+            stmt = select(Analysis).where(Analysis.target == target)
+            record = session.scalars(stmt).first()
+            if record:
+                record.report_path = report_path
+                record.created_at = _dt.datetime.utcnow()
+            else:
+                record = Analysis(target=target, report_path=report_path)
+                session.add(record)
+            session.commit()
+            session.refresh(record)
+            return record
