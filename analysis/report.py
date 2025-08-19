@@ -141,6 +141,7 @@ def write_report(
     metadata: List[Dict[str, str]],
     metrics: Dict[str, float] | None = None,
     dynamic_metrics: Dict[str, Any] | None = None,
+    yara_matches: Dict[str, List[str]] | None = None,
 ) -> Path:
     """Write a JSON report containing analysis results."""
     report_path = out / "report.json"
@@ -158,6 +159,7 @@ def write_report(
                 "app_flags": app_flags,
                 "metadata": metadata,
                 "metrics": all_metrics,
+                "yara_matches": yara_matches or {},
             },
             indent=2,
         )

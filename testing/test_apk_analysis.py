@@ -163,6 +163,7 @@ def test_write_report(tmp_path: Path):
         metadata,
         metrics,
         risk,
+        {"Sample.java": ["TestRule"]},
     )
     data = json.loads(report.read_text())
     assert "android.permission.INTERNET" in str(data)
@@ -177,6 +178,7 @@ def test_write_report(tmp_path: Path):
     assert "risk" in str(data)
     assert "rationale" in str(data)
     assert "permission_prefix_counts" in data["metrics"]
+    assert data["yara_matches"]["Sample.java"] == ["TestRule"]
 
 
 def test_calculate_derived_metrics():

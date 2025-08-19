@@ -19,6 +19,7 @@ from .manifest import (
 )
 from .permissions import categorize_permissions
 from .secrets import scan_for_secrets
+from .yara_scan import scan_directory
 from .report import calculate_derived_metrics, write_report
 from risk_scoring import calculate_risk_score
 
@@ -81,6 +82,16 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     if secrets:
         (out / "secrets.txt").write_text("\n".join(secrets))
 
+    yara_matches: Dict[str, List[str]] = {}
+    try:
+        yara_matches = scan_directory(apktool_dir)
+        if yara_matches:
+            (out / "yara_matches.json").write_text(
+                json.dumps(yara_matches, indent=2)
+            )
+    except RuntimeError as e:
+        display.warn(str(e))
+
     metrics = calculate_derived_metrics(
         perm_details, components, sdk_info, features, metadata
     )
@@ -103,6 +114,7 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
         metadata,
         metrics,
         risk,
+        yara_matches,
     )
 
     return out

@@ -13,6 +13,7 @@ from .manifest import (
 )
 from .permissions import categorize_permissions
 from .secrets import scan_for_secrets
+from .yara_scan import compile_rules, scan_directory
 
 __all__ = [
     "analyze_apk",
@@ -25,6 +26,8 @@ __all__ = [
     "extract_metadata",
     "categorize_permissions",
     "scan_for_secrets",
+    "compile_rules",
+    "scan_directory",
     "write_report",
     "calculate_derived_metrics",
 ]

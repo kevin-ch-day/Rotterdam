@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import io
 from contextlib import redirect_stdout
-from typing import Iterable, Sequence, Any, List
+from typing import Iterable, Sequence, Any, List, Dict
 
 from core import table
 
@@ -136,3 +136,17 @@ def format_risk_summary(risk: dict[str, Any]) -> str:
     table = ieee_table("Risk Breakdown", ["Metric", "Contribution"], rows, 4)
     obs = f"Observation: Overall risk score is {score:.2f}."
     return f"{heading}\n{sub}\n{rationale}\n\n{table}\n\n{obs}"
+
+
+def format_yara_matches(matches: Dict[str, List[str]]) -> str:
+    """Render YARA scan results."""
+    heading = major_heading("YARA Scan", 5)
+    sub = subsection_heading("Rule Matches", 5, "A")
+    rows = [(path, ", ".join(rules)) for path, rules in sorted(matches.items())]
+    table = ieee_table("YARA Matches", ["File", "Rules"], rows, 5)
+    obs = (
+        "Observation: YARA identified {} file(s) with rule matches.".format(len(rows))
+        if rows
+        else "Observation: No YARA matches were found."
+    )
+    return f"{heading}\n{sub}\n{table}\n\n{obs}"
