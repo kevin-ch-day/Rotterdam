@@ -23,7 +23,9 @@ def device_online(serial: str) -> bool:
     return (proc.stdout or "").strip() == "device"
 
 
-def run_device_menu(serial: str, *, json_mode: bool = False) -> Optional[str | Dict[str, Any]]:
+def run_device_menu(
+    serial: str, *, json_mode: bool = False
+) -> Optional[str | Dict[str, Any]]:
     """Launch the device submenu for a selected device."""
     if not serial:
         display.warn("No device serial provided.")

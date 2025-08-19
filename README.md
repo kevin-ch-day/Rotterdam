@@ -43,6 +43,13 @@ python main.py
 
 Analysis results are written to the `output/` directory.
 
+### Database status
+
+The interactive menu provides a **Database** option that performs a
+connectivity check, reports table counts and lists the most recent analyses.
+This helps surface misconfiguration or missing tables early during
+development.
+
 ## API Server
 
 A lightweight REST API can be launched to submit APKs for analysis and
