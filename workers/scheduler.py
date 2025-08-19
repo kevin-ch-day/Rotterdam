@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import queue
 import threading
+import time
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable
@@ -19,6 +20,7 @@ class Job:
     status: str = "queued"
     result: Any | None = None
     error: str | None = None
+    created_at: float = field(default_factory=time.time)
 
 
 class Scheduler:
@@ -53,6 +55,7 @@ class Scheduler:
             job.status = "completed"
             job.result = result
         self._queue.task_done()
+        self.prune_jobs()
 
     def mark_failed(self, job: Job, exc: Exception) -> None:
         """Record a job failure."""
@@ -60,6 +63,7 @@ class Scheduler:
             job.status = "failed"
             job.error = str(exc)
         self._queue.task_done()
+        self.prune_jobs()
 
     def job_status(self, job_id: str) -> str:
         """Return the status for ``job_id``."""
@@ -86,6 +90,18 @@ class Scheduler:
         """Return mapping of job IDs to their statuses."""
         with self._lock:
             return {job_id: job.status for job_id, job in self._jobs.items()}
+
+    def prune_jobs(self, ttl: float = 3600.0) -> None:
+        """Remove completed/failed jobs older than ``ttl`` seconds."""
+        cutoff = time.time() - ttl
+        with self._lock:
+            to_delete = [
+                job_id
+                for job_id, job in self._jobs.items()
+                if job.status in {"completed", "failed"} and job.created_at < cutoff
+            ]
+            for job_id in to_delete:
+                del self._jobs[job_id]
 
     def wait_for_all(self) -> None:
         """Block until all queued jobs are processed."""
