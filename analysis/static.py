@@ -33,6 +33,14 @@ try:
 except Exception:  # pragma: no cover
     verify_signature = None  # type: ignore[assignment]
 
+try:
+    from .androguard_utils import summarize_apk  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover
+    summarize_apk = None  # type: ignore[assignment]
+else:
+    # keep linter happy if unused when optional module missing
+    summarize_apk = summarize_apk
+
 # Risk scoring (assumed available)
 from risk_scoring import calculate_risk_score
 
@@ -116,10 +124,28 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     else:
         display.note("YARA scanning not available (yara_scan module not found)")
 
+    # Optional Androguard analysis for API usage
+    androguard_summary: Optional[Dict[str, Any]] = None
+    if summarize_apk:
+        try:
+            androguard_summary = summarize_apk(str(apk))
+            (out / "androguard_report.json").write_text(
+                json.dumps(androguard_summary, indent=2)
+            )
+        except Exception as e:  # pragma: no cover
+            display.warn(f"Androguard analysis failed: {e}")
+    else:
+        display.note("Androguard analysis not available (androguard_utils module not found)")
+
     # Derived metrics (static)
     metrics = calculate_derived_metrics(
         perm_details, components, sdk_info, features, metadata
     )
+
+    if androguard_summary:
+        rule_matches = androguard_summary.get("rule_matches", {})
+        for name, matches in rule_matches.items():
+            metrics[f"androguard_{name}_count"] = len(matches)
 
     # Optional signature verification (if available)
     if verify_signature:
