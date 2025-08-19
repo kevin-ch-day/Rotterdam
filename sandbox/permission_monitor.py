@@ -28,6 +28,20 @@ def _run_shell(cmd: list[str]) -> str:
     return proc.stdout
 
 
+def collect_permissions(apk_path: str) -> List[str]:
+    """Return a mocked list of permissions requested by *apk_path*.
+
+    This helper is a lightweight stand-in for a real APK parser. It simply
+    returns a few common permissions so higher-level utilities and tests can
+    exercise expected workflows without requiring the Android tooling.
+    """
+
+    return [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+    ]
+
+
 class PermissionMonitor:
     """Monitor permission accesses for a device or specific package."""
 
@@ -88,4 +102,4 @@ class PermissionAccess:
     component: str
 
 
-__all__ = ["PermissionMonitor", "PermissionAccess"]
+__all__ = ["collect_permissions", "PermissionMonitor", "PermissionAccess"]

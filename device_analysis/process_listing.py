@@ -38,10 +38,12 @@ def list_processes(serial: str) -> List[Dict[str, str]]:
     except subprocess.CalledProcessError as exc:
         # Improved error logging for clarity
         log_exception(f"Failed to list processes on device {serial}", exc)
-        return []
+        raise RuntimeError("Failed to list processes") from exc
     except Exception as exc:
         # Catch any other exceptions to prevent crash and log the error
-        log_exception(f"Unexpected error when listing processes on device {serial}", exc)
-        return []
+        log_exception(
+            f"Unexpected error when listing processes on device {serial}", exc
+        )
+        raise RuntimeError("Failed to list processes") from exc
     
     return parse_ps(proc.stdout or "")

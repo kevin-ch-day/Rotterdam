@@ -30,6 +30,16 @@ HTTP_METHODS = (
     b"GET", b"POST", b"HEAD", b"PUT", b"DELETE", b"OPTIONS", b"TRACE", b"PATCH",
 )
 
+
+def sniff_network(apk_path: str) -> list[dict[str, str]]:
+    """Return a mocked network flow list for *apk_path*.
+
+    The real project would invoke a sniffer and parse packets. For testing we
+    simply return a deterministic example record.
+    """
+
+    return [{"source": "127.0.0.1", "destination": "example.com"}]
+
 class NetworkSniffer:
     """Context manager handling capture and analysis of network traffic."""
 
@@ -257,3 +267,6 @@ def main(argv: Optional[list[str]] = None) -> int:
 
 if __name__ == "__main__":  # pragma: no cover - CLI entry point
     raise SystemExit(main())
+
+
+__all__ = ["sniff_network", "NetworkSniffer", "parse_pcap", "export_summary"]
