@@ -21,6 +21,7 @@ from .permissions import categorize_permissions
 from .secrets import scan_for_secrets
 from .report import calculate_derived_metrics, write_report
 from .diff import diff_snapshots
+from .network_security import extract_network_security
 
 # Optional imports (degrade gracefully if unavailable)
 try:
@@ -72,6 +73,7 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     features: List[Dict[str, Any]] = []
     app_flags: Dict[str, bool] = {}
     metadata: List[Dict[str, str]] = []
+    network_security: Dict[str, bool] = {}
 
     if manifest.exists():
         manifest_text = manifest.read_text()
@@ -96,6 +98,12 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
 
         metadata = extract_metadata(manifest_text)
         (out / "metadata.json").write_text(json.dumps(metadata, indent=2))
+
+        network_security = extract_network_security(apktool_dir)
+        if network_security:
+            (out / "network_security.json").write_text(
+                json.dumps(network_security, indent=2)
+            )
     else:
         display.warn("AndroidManifest.xml not found after apktool decompile")
 
@@ -120,6 +128,17 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     metrics = calculate_derived_metrics(
         perm_details, components, sdk_info, features, metadata
     )
+
+    if network_security:
+        metrics["cleartext_traffic_permitted"] = (
+            1 if network_security.get("cleartext_permitted") else 0
+        )
+        metrics["missing_certificate_pinning"] = (
+            0 if network_security.get("certificate_pinning") else 1
+        )
+        metrics["debug_overrides"] = (
+            1 if network_security.get("debug_overrides") else 0
+        )
 
     # Optional signature verification (if available)
     if verify_signature:

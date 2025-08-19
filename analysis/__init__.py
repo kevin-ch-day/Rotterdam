@@ -22,6 +22,7 @@ from .dependencies import (
     find_vulnerable_dependencies,
     analyze_dependencies,
 )
+from .network_security import parse_network_security_config, extract_network_security
 
 __all__ = [
     "analyze_apk",
@@ -40,6 +41,8 @@ __all__ = [
     "analyze_dependencies",
     "write_report",
     "calculate_derived_metrics",
+    "parse_network_security_config",
+    "extract_network_security",
 ]
 
 # Optional: YARA scanning utilities
