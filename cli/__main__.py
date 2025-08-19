@@ -5,8 +5,5 @@ from . import run_main_menu
 
 
 def main() -> None:
+    """Execute the interactive main menu."""
     run_main_menu()
-
-
-if __name__ == "__main__":  # pragma: no cover - simple CLI
-    main()
