@@ -10,7 +10,6 @@ generation.
 
 from __future__ import annotations
 
-import logging
 import re
 from collections import defaultdict
 from dataclasses import dataclass
@@ -18,8 +17,9 @@ from datetime import datetime, timezone
 from typing import DefaultDict, Dict, Iterable, List
 
 from devices import adb
+from logging_config import get_logger, log_context
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def collect_permissions(apk_path: str) -> List[str]:
@@ -85,7 +85,8 @@ class PermissionMonitor:
             comp = match.group("comp")
             timestamp = datetime.now(tz=timezone.utc).isoformat()
             access = PermissionAccess(timestamp, perm, comp)
-            logger.info("%s | %s accessed by %s", timestamp, perm, comp)
+            with log_context(app=self.package):
+                logger.info("%s | %s accessed by %s", timestamp, perm, comp)
             self._summary[perm] += 1
             self._logs.append(access)
 

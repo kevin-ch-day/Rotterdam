@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Optional
 import xml.etree.ElementTree as ET
+
+from logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def log_exception(message: str, exc: Exception) -> None:
     """Log an exception with a standard format."""
-    logging.error("%s: %s", message, exc)
+    logger.error("%s: %s", message, exc)
 
 
 def safe_fromstring(xml_text: str, *, description: str = "XML") -> Optional[ET.Element]:
