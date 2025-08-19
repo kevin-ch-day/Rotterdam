@@ -97,6 +97,89 @@ def print_section(title: str, underline: str = "=") -> None:
     print()
 
 
+def render_menu(
+    title: str,
+    options: Sequence[str],
+    exit_label: str = "Back",
+    *,
+    serial: Optional[str] = None,
+) -> str:
+    """Return a framed menu string.
+
+    The menu is rendered inside a simple box using box-drawing characters.
+    ``serial`` can be supplied to show contextual information (e.g. the
+    connected device serial).
+    """
+
+    header = title.strip()
+    if serial:
+        header = f"{header} (serial: {serial})"
+
+    # Determine width based on longest line
+    body = [f"[{i}] {opt}" for i, opt in enumerate(options, start=1)]
+    body.append(f"[0] {exit_label}")
+    width = max(len(header), *(len(line) for line in body)) + 4
+
+    top = "╭" + "─" * (width - 2) + "╮"
+    sep = "├" + "─" * (width - 2) + "┤"
+    bottom = "╰" + "─" * (width - 2) + "╯"
+
+    lines = [top, f"│ {header.ljust(width - 4)} │", sep]
+    for line in body:
+        lines.append(f"│ {line.ljust(width - 4)} │")
+    lines.append(bottom)
+    return "\n".join(lines)
+
+
+def print_menu(title: str, options: Sequence[str], exit_label: str = "Exit") -> None:
+    """Convenience wrapper around :func:`render_menu` that prints the menu."""
+    print(render_menu(title, options, exit_label))
+
+
+def prompt_choice(
+    valid_options: Iterable[str],
+    default: Optional[str] = None,
+    message: str = "Select an option",
+) -> str:
+    """Prompt the user until a valid option is entered.
+
+    Parameters
+    ----------
+    valid_options:
+        Iterable of accepted string choices.
+    default:
+        Value returned when the user presses Enter without input.
+
+    Returns
+    -------
+    str
+        The chosen option. ``"q"`` is returned if the user requests to quit
+        via ``q``/``Q`` or triggers EOF/KeyboardInterrupt.
+    """
+
+    options = {str(opt) for opt in valid_options}
+
+    while True:
+        try:
+            raw = input(f"{message}: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            return "q"
+
+        if not raw:
+            if default is not None:
+                return default
+            warn("Invalid choice. Please try again.")
+            continue
+
+        if raw.lower() == "q":
+            return "q"
+
+        if raw in options:
+            return raw
+
+        warn("Invalid choice. Please try again.")
+
+
 # -----------------------------
 # Simple text helpers
 # -----------------------------
