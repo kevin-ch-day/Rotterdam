@@ -16,6 +16,10 @@ from .props import (
     _infer_root_status,
     _short_fingerprint,
 )
+from logging_config import get_logger
+
+
+logger = get_logger(__name__)
 
 
 # -----------------------------
@@ -25,21 +29,27 @@ from .props import (
 def check_connected_devices() -> str:
     """Run `adb devices -l` and return the raw stdout."""
     adb = _adb_path()
+    logger.info("checking connected devices", extra={"adb": adb})
     try:
         result = _run_adb([adb, "devices", "-l"])
     except PermissionError as e:
+        logger.exception("adb not executable")
         raise RuntimeError(
             f"adb at '{adb}' is not executable (Permission denied). "
             "Fix perms/SELinux or use system 'adb' (dnf install android-tools)."
         ) from e
     except FileNotFoundError as e:
+        logger.exception("adb not found")
         raise RuntimeError(
             "adb not found. Install platform-tools or `dnf install android-tools`, and ensure it's on PATH."
         ) from e
     except subprocess.CalledProcessError as e:
+        logger.exception("error running adb")
         raise RuntimeError(f"Error running adb: {e}") from e
 
-    return (result.stdout or "").strip()
+    output = (result.stdout or "").strip()
+    logger.info("adb devices output received")
+    return output
 
 
 # -----------------------------
@@ -50,6 +60,7 @@ def parse_devices_l(output: str) -> List[Dict[str, str]]:
     """Parse `adb devices -l` into a list of dicts."""
     lines = [ln.strip() for ln in (output or "").splitlines() if ln.strip()]
     if not lines:
+        logger.info("no devices in adb output")
         return []
     if lines[0].lower().startswith("list of devices"):
         lines = lines[1:]
@@ -67,6 +78,7 @@ def parse_devices_l(output: str) -> List[Dict[str, str]]:
                 k, v = p.split(":", 1)
                 meta[k] = v
         devices.append({"serial": serial, "state": state, **meta})
+    logger.info("parsed %d devices", len(devices))
     return devices
 
 
@@ -76,6 +88,7 @@ def parse_devices_l(output: str) -> List[Dict[str, str]]:
 
 def list_detailed_devices() -> List[Dict[str, Any]]:
     """Return a list of enriched device dicts for display/selection."""
+    logger.info("list_detailed_devices")
     raw = check_connected_devices()
     base = parse_devices_l(raw)
 
