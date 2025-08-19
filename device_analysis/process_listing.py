@@ -34,6 +34,6 @@ def list_processes(serial: str) -> List[Dict[str, str]]:
     adb = _adb_path()
     try:
         proc = _run_adb([adb, "-s", serial, "shell", "ps"], timeout=10)
-    except subprocess.CalledProcessError:
-        return []
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(f"Failed to list processes on device {serial}: {exc}") from exc
     return parse_ps(proc.stdout or "")
