@@ -13,6 +13,12 @@ from .manifest import (
 )
 from .permissions import categorize_permissions
 from .secrets import scan_for_secrets
+from .dependencies import (
+    parse_apk_dependencies,
+    load_cve_db,
+    find_vulnerable_dependencies,
+    analyze_dependencies,
+)
 
 __all__ = [
     "analyze_apk",
@@ -25,6 +31,10 @@ __all__ = [
     "extract_metadata",
     "categorize_permissions",
     "scan_for_secrets",
+    "parse_apk_dependencies",
+    "load_cve_db",
+    "find_vulnerable_dependencies",
+    "analyze_dependencies",
     "write_report",
     "calculate_derived_metrics",
 ]

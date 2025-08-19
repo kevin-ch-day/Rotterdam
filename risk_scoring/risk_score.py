@@ -20,6 +20,7 @@ DEFAULT_WEIGHTS: Dict[str, float] = {
     "permission_invocation_count": 0.2,
     "cleartext_endpoint_count": 0.2,
     "file_write_count": 0.1,
+    "vulnerable_dependency_count": 0.1,
 }
 
 # Normalisation caps for count based metrics.  The selected caps are heuristic
@@ -28,6 +29,7 @@ DEFAULT_CAPS: Dict[str, float] = {
     "permission_invocation_count": 50,
     "cleartext_endpoint_count": 10,
     "file_write_count": 100,
+    "vulnerable_dependency_count": 50,
 }
 
 
@@ -95,6 +97,7 @@ def calculate_risk_score(
     perm_inv = float(dynamic_metrics.get("permission_invocation_count", 0.0))
     cleartext = float(dynamic_metrics.get("cleartext_endpoint_count", 0.0))
     file_writes = float(dynamic_metrics.get("file_write_count", 0.0))
+    vulnerable_deps = float(static_metrics.get("vulnerable_dependency_count", 0.0))
 
     rationale_parts: list[str] = []
     if pd > 0.5:
@@ -107,6 +110,8 @@ def calculate_risk_score(
         rationale_parts.append("cleartext network endpoints detected")
     if file_writes > 0:
         rationale_parts.append("file system writes observed")
+    if vulnerable_deps > 0:
+        rationale_parts.append("known vulnerable dependencies found")
 
     rationale = (
         "; ".join(rationale_parts)
