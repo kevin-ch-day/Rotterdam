@@ -6,7 +6,7 @@ from __future__ import annotations
 import subprocess
 from typing import List, Dict, Any
 
-from device_analysis.device_discovery import _adb_path, _run_adb
+from .adb_utils import _adb_path, _run_adb
 
 # A small, non-exhaustive set of permissions considered risky for demos.
 DANGEROUS_PERMISSIONS = {

@@ -1,6 +1,5 @@
 from device_analysis.device_discovery import parse_devices_l
 
-
 def test_parse_devices_l_basic():
     output = """List of devices attached\nemulator-5554\tdevice product:sdk_gphone_x86 model:sdk_gphone_x86 device:emulator_x86 transport_id:1\nABCDEF123456\tunauthorized\n"""
     devices = parse_devices_l(output)
@@ -21,7 +20,7 @@ def test_list_detailed_devices_trust(monkeypatch):
     monkeypatch.setattr(dd, "parse_devices_l", lambda out: [{"serial": "SER", "state": "device"}])
 
     # Provide properties indicating a developer/rooted build
-    def fake_props(serial, keys):
+    def fake_props(serial):
         return {
             "ro.product.manufacturer": "Acme",
             "ro.product.model": "Model",
@@ -38,7 +37,7 @@ def test_list_detailed_devices_trust(monkeypatch):
             "ro.secure": "0",
         }
 
-    monkeypatch.setattr(dd, "_shell_getprops", fake_props)
+    monkeypatch.setattr(dd, "get_props", fake_props)
 
     devices = dd.list_detailed_devices()
     assert devices[0]["is_rooted"] is True

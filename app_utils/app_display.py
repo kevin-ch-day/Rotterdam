@@ -13,14 +13,13 @@ General display utilities for Android Tool.
 from __future__ import annotations
 
 import os
-import sys
 import shutil
 from textwrap import wrap
 from typing import Iterable, Sequence, Any, Optional
 
 from . import app_config
 from . import app_table_display as tables
-from .app_helpers import truncate_middle
+from .status_display import info, good, warn, fail
 
 # -----------------------------
 # Terminal / layout
@@ -79,30 +78,7 @@ def clear_screen() -> None:
     os.system("cls" if os.name == "nt" else "clear")
 
 
-# -----------------------------
-# Status lines
-# -----------------------------
-
-OK   = "[OK]"
-INF  = "[*]"
-WARN = "[!]"
-ERR  = "[X]"
-
-def _emit(prefix: str, msg: str, *, ts: bool = False, stream = sys.stdout) -> None:
-    stamp = f"{app_config.ts()} | " if ts else ""
-    print(f"{prefix} {stamp}{msg}", file=stream)
-
-def info(msg: str, *, ts: bool = False) -> None:
-    _emit(INF, msg, ts=ts, stream=sys.stdout)
-
-def good(msg: str, *, ts: bool = False) -> None:
-    _emit(OK, msg, ts=ts, stream=sys.stdout)
-
-def warn(msg: str, *, ts: bool = False) -> None:
-    _emit(WARN, msg, ts=ts, stream=sys.stderr)
-
-def fail(msg: str, *, ts: bool = False) -> None:
-    _emit(ERR, msg, ts=ts, stream=sys.stderr)
+# Status line helpers re-exported from status_display
 
 
 # -----------------------------
