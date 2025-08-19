@@ -11,6 +11,7 @@ from apk_analysis import (
     categorize_permissions,
     scan_for_secrets,
     write_report,
+    calculate_derived_metrics,
 )
 
 
@@ -133,16 +134,24 @@ def test_write_report(tmp_path: Path):
         }
     ]
     metadata = [{"name": "com.example.API_KEY", "value": "123"}]
+    metrics = calculate_derived_metrics(
+        perm_details,
+        comps,
+        {"minSdkVersion": 21, "targetSdkVersion": 30},
+        [{"name": "android.hardware.camera", "required": False}],
+        metadata,
+    )
     report = write_report(
         tmp_path,
         ["android.permission.INTERNET"],
         perm_details,
         ["Sample.java:10"],
         comps,
-        {"minSdkVersion": 21},
+        {"minSdkVersion": 21, "targetSdkVersion": 30},
         [{"name": "android.hardware.camera", "required": False}],
         {"debuggable": True},
         metadata,
+        metrics,
     )
     data = report.read_text()
     assert "android.permission.INTERNET" in data
@@ -152,3 +161,38 @@ def test_write_report(tmp_path: Path):
     assert "android.hardware.camera" in data
     assert "debuggable" in data
     assert "com.example.API_KEY" in data
+    assert "permission_density" in data
+    assert "feature_count" in data
+
+
+def test_calculate_derived_metrics():
+    perm_details = [
+        {"name": "android.permission.INTERNET", "dangerous": False},
+        {"name": "android.permission.READ_CONTACTS", "dangerous": True},
+    ]
+    comps = {
+        "activity": [
+            {"name": "MainActivity", "exported": True, "permission": ""},
+            {"name": "OtherActivity", "exported": False, "permission": ""},
+        ],
+        "service": [],
+        "receiver": [],
+        "provider": [],
+    }
+    sdk_info = {"minSdkVersion": 21, "targetSdkVersion": 30}
+    features = [{"name": "android.hardware.camera", "required": False}]
+    metadata = [{"name": "com.example.API_KEY", "value": "123"}]
+    metrics = calculate_derived_metrics(
+        perm_details, comps, sdk_info, features, metadata
+    )
+    assert metrics["permission_density"] == 0.5
+    assert metrics["component_exposure"] == 0.5
+    assert metrics["total_permission_count"] == 2
+    assert metrics["dangerous_permission_count"] == 1
+    assert metrics["total_component_count"] == 2
+    assert metrics["exported_component_count"] == 1
+    assert metrics["feature_count"] == 1
+    assert metrics["metadata_count"] == 1
+    assert metrics["min_sdk"] == 21
+    assert metrics["target_sdk"] == 30
+    assert metrics["sdk_span"] == 9

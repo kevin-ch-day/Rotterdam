@@ -1,7 +1,7 @@
 """APK analysis helpers."""
 
 from .apk_static import analyze_apk
-from .report_utils import write_report
+from .report_utils import calculate_derived_metrics, write_report
 from .manifest_utils import (
     extract_app_flags,
     extract_components,
@@ -26,4 +26,5 @@ __all__ = [
     "categorize_permissions",
     "scan_for_secrets",
     "write_report",
+    "calculate_derived_metrics",
 ]
