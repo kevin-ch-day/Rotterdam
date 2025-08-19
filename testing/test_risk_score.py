@@ -1,4 +1,4 @@
-from analysis_scoring import calculate_risk_score
+from risk_scoring import calculate_risk_score
 
 
 def test_calculate_risk_score_outputs_score_and_rationale():

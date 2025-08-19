@@ -1,4 +1,4 @@
-from reporting import ieee_report
+from reports import ieee
 
 
 def test_format_device_inventory_creates_section_and_table():
@@ -10,7 +10,7 @@ def test_format_device_inventory_creates_section_and_table():
             "trust": "high",
         }
     ]
-    out = ieee_report.format_device_inventory(devices)
+    out = ieee.format_device_inventory(devices)
     assert "SECTION I: DEVICE ENUMERATION" in out
     assert "I.A – Detecting Connected Devices" in out
     assert "Table I. Connected Devices" in out
@@ -27,7 +27,7 @@ def test_format_package_inventory_heading_and_caption():
             "high_value": True,
         }
     ]
-    out = ieee_report.format_package_inventory(packages)
+    out = ieee.format_package_inventory(packages)
     assert "SECTION II: APPLICATION INVENTORY" in out
     assert "II.A – Application Discovery" in out
     assert "Table II. Installed Applications" in out
@@ -45,7 +45,7 @@ def test_format_evidence_log_outputs_section_and_table():
             "operator": "tester",
         }
     ]
-    out = ieee_report.format_evidence_log(entries)
+    out = ieee.format_evidence_log(entries)
     assert "SECTION III: EVIDENCE LOG" in out
     assert "III.A – Acquisition Evidence" in out
     assert "Table III. Acquisition Evidence" in out
@@ -59,7 +59,7 @@ def test_format_risk_summary_includes_score_and_breakdown():
         "rationale": "Example rationale",
         "breakdown": {"permission_density": 12.3},
     }
-    out = ieee_report.format_risk_summary(risk)
+    out = ieee.format_risk_summary(risk)
     assert "SECTION IV: RISK ASSESSMENT" in out
     assert "IV.A – Aggregated Risk Score" in out
     assert "Table IV. Risk Breakdown" in out

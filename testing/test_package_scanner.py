@@ -2,17 +2,17 @@ import subprocess
 
 import pytest
 
-from device_analysis import package_scanner
+from devices import packages
 
 
 def test_list_installed_packages_parses_output(monkeypatch):
     class FakeProc:
         stdout = "package:com.a\npackage:com.b\n"
 
-    monkeypatch.setattr(package_scanner, "_run_adb", lambda *a, **k: FakeProc())
-    monkeypatch.setattr(package_scanner, "_adb_path", lambda: "adb")
+    monkeypatch.setattr(packages, "_run_adb", lambda *a, **k: FakeProc())
+    monkeypatch.setattr(packages, "_adb_path", lambda: "adb")
 
-    pkgs = package_scanner.list_installed_packages("serial")
+    pkgs = packages.list_installed_packages("serial")
     assert pkgs == ["com.a", "com.b"]
 
 
@@ -20,16 +20,16 @@ def test_list_installed_packages_error(monkeypatch):
     def fake_run(*a, **k):
         raise subprocess.CalledProcessError(1, a[0])
 
-    monkeypatch.setattr(package_scanner, "_run_adb", fake_run)
-    monkeypatch.setattr(package_scanner, "_adb_path", lambda: "adb")
+    monkeypatch.setattr(packages, "_run_adb", fake_run)
+    monkeypatch.setattr(packages, "_adb_path", lambda: "adb")
 
     with pytest.raises(RuntimeError, match="Failed to list packages"):
-        package_scanner.list_installed_packages("serial")
+        packages.list_installed_packages("serial")
 
 
 def test_scan_for_dangerous_permissions(monkeypatch):
     monkeypatch.setattr(
-        package_scanner,
+        packages,
         "list_installed_packages",
         lambda serial: ["com.a", "com.b"],
     )
@@ -42,9 +42,9 @@ def test_scan_for_dangerous_permissions(monkeypatch):
             ]
         return ["android.permission.INTERNET"]
 
-    monkeypatch.setattr(package_scanner, "_get_permissions", fake_get_permissions)
+    monkeypatch.setattr(packages, "_get_permissions", fake_get_permissions)
 
-    results = package_scanner.scan_for_dangerous_permissions("serial")
+    results = packages.scan_for_dangerous_permissions("serial")
     assert results == [
         {
             "package": "com.a",
@@ -74,10 +74,10 @@ def test_inventory_packages_collects_details(monkeypatch):
             return Dummy("")
         return Dummy("")
 
-    monkeypatch.setattr(package_scanner, "_run_adb", fake_run)
-    monkeypatch.setattr(package_scanner, "_adb_path", lambda: "adb")
+    monkeypatch.setattr(packages, "_run_adb", fake_run)
+    monkeypatch.setattr(packages, "_adb_path", lambda: "adb")
 
-    info = package_scanner.inventory_packages("SER")
+    info = packages.inventory_packages("SER")
     assert info[0]["package"] == "com.twitter.android"
     assert info[0]["version_name"] == "1.0"
     assert info[0]["installer"] == "com.android.vending"

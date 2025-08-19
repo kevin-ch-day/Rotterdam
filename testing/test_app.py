@@ -1,5 +1,5 @@
-from app_utils.app_helpers import truncate_middle
-from device_analysis.device_discovery import parse_devices_l
+from core.helpers import truncate_middle
+from devices.discovery import parse_devices_l
 
 
 def test_truncate_middle():

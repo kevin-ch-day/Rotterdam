@@ -1,11 +1,11 @@
-from app_utils import status_display
+from core import status
 
 
 def test_status_lines(capsys):
-    status_display.info("hello")
-    status_display.good("there")
-    status_display.warn("warn")
-    status_display.fail("fail")
+    status.info("hello")
+    status.good("there")
+    status.warn("warn")
+    status.fail("fail")
 
     out = capsys.readouterr()
     assert "[OK]" in out.out

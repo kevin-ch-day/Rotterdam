@@ -1,13 +1,13 @@
 import hashlib
 
-from device_analysis import apk_extractor
+from devices import apk
 
 
 def test_acquire_apk_hashes_and_logs(tmp_path, monkeypatch):
     sample = tmp_path / "sample.apk"
     sample.write_bytes(b"hello")
 
-    monkeypatch.setattr(apk_extractor, "pull_apk", lambda *a, **k: sample)
+    monkeypatch.setattr(apk, "pull_apk", lambda *a, **k: sample)
 
     class FakeDT:
         @staticmethod
@@ -16,9 +16,9 @@ def test_acquire_apk_hashes_and_logs(tmp_path, monkeypatch):
 
             return datetime(2023, 1, 1, 0, 0, 0)
 
-    monkeypatch.setattr(apk_extractor, "datetime", FakeDT)
+    monkeypatch.setattr(apk, "datetime", FakeDT)
 
-    entry = apk_extractor.acquire_apk("SER", "com.app", operator="tester")
+    entry = apk.acquire_apk("SER", "com.app", operator="tester")
 
     assert entry["artifact"] == str(sample)
     assert entry["sha256"] == hashlib.sha256(b"hello").hexdigest()
