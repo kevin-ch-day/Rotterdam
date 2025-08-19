@@ -13,6 +13,7 @@ Supported metrics (non-exhaustive):
     - permission_density                (0..1)
     - component_exposure                (0..1)
     - untrusted_signature               (0 or 1; 1 = untrusted/missing)
+    - vulnerable_dependency_count       (count; capped)
   Dynamic:
     - permission_invocation_count       (count; capped)
     - cleartext_endpoint_count          (count; capped)
@@ -27,12 +28,13 @@ from typing import Any, Dict
 # Default weights for metrics. These will be normalized to sum to 1.0
 # inside calculate_risk_score so callers can provide partial overrides.
 DEFAULT_WEIGHTS: Dict[str, float] = {
-    "permission_density": 0.25,
+    "permission_density": 0.23,
     "component_exposure": 0.15,
-    "permission_invocation_count": 0.2,
-    "cleartext_endpoint_count": 0.15,
-    "file_write_count": 0.1,
-    "malicious_endpoint_count": 0.1,
+    "permission_invocation_count": 0.18,
+    "cleartext_endpoint_count": 0.12,
+    "file_write_count": 0.08,
+    "malicious_endpoint_count": 0.09,
+    "vulnerable_dependency_count": 0.1,
     "untrusted_signature": 0.05,
 }
 
@@ -43,6 +45,7 @@ DEFAULT_CAPS: Dict[str, float] = {
     "cleartext_endpoint_count": 10,
     "file_write_count": 100,
     "malicious_endpoint_count": 10,
+    "vulnerable_dependency_count": 50,
 }
 
 
@@ -68,7 +71,8 @@ def calculate_risk_score(
     ----------
     static_metrics:
         Metrics derived from static analysis such as `permission_density`,
-        `component_exposure`, and `untrusted_signature` (0 or 1).
+        `component_exposure`, `untrusted_signature` (0 or 1),
+        and `vulnerable_dependency_count` (count; capped).
     dynamic_metrics:
         Metrics from dynamic analysis such as permission invocation counts,
         cleartext/malicious endpoints, or file system writes.
@@ -115,14 +119,26 @@ def calculate_risk_score(
     ce = float(static_metrics.get("component_exposure", 0.0))
     untrusted_sig = float(static_metrics.get("untrusted_signature", 0.0))
 
-    perm_inv_norm = _normalize_count(float(dynamic_metrics.get("permission_invocation_count", 0.0)),
-                                     caps.get("permission_invocation_count", 1.0))
-    cleartext_norm = _normalize_count(float(dynamic_metrics.get("cleartext_endpoint_count", 0.0)),
-                                      caps.get("cleartext_endpoint_count", 1.0))
-    file_writes_norm = _normalize_count(float(dynamic_metrics.get("file_write_count", 0.0)),
-                                        caps.get("file_write_count", 1.0))
-    malicious_norm = _normalize_count(float(dynamic_metrics.get("malicious_endpoint_count", 0.0)),
-                                      caps.get("malicious_endpoint_count", 1.0))
+    perm_inv_norm = _normalize_count(
+        float(dynamic_metrics.get("permission_invocation_count", 0.0)),
+        caps.get("permission_invocation_count", 1.0),
+    )
+    cleartext_norm = _normalize_count(
+        float(dynamic_metrics.get("cleartext_endpoint_count", 0.0)),
+        caps.get("cleartext_endpoint_count", 1.0),
+    )
+    file_writes_norm = _normalize_count(
+        float(dynamic_metrics.get("file_write_count", 0.0)),
+        caps.get("file_write_count", 1.0),
+    )
+    malicious_norm = _normalize_count(
+        float(dynamic_metrics.get("malicious_endpoint_count", 0.0)),
+        caps.get("malicious_endpoint_count", 1.0),
+    )
+    vulnerable_deps_norm = _normalize_count(
+        float(static_metrics.get("vulnerable_dependency_count", 0.0)),
+        caps.get("vulnerable_dependency_count", 1.0),
+    )
 
     rationale_parts: list[str] = []
     if pd > 0.5:
@@ -139,6 +155,8 @@ def calculate_risk_score(
         rationale_parts.append("connections to known malicious endpoints")
     if file_writes_norm > 0:
         rationale_parts.append("file system writes observed")
+    if vulnerable_deps_norm > 0:
+        rationale_parts.append("known vulnerable dependencies found")
 
     rationale = "; ".join(rationale_parts) if rationale_parts else "no significant risk factors observed"
 
