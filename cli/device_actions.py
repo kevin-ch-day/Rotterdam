@@ -7,6 +7,7 @@ output for the user interface.
 from __future__ import annotations
 
 from app_utils import app_display, app_menu_utils
+from reporting import ieee_report
 from device_analysis import (
     device_discovery,
     package_scanner,
@@ -55,37 +56,25 @@ def show_detailed_devices() -> None:
         app_display.fail(str(e))
         return
 
-    app_display.print_section("Connected Devices (Detailed)")
     if not detailed:
+        app_display.print_section("Connected Devices (Detailed)")
         print("No devices attached.")
         return
 
-    rows = [
-        [
-            d.get("serial", ""),
-            d.get("manufacturer", ""),
-            d.get("model", ""),
-            d.get("android_release", ""),
-            d.get("connection", ""),
-            d.get("type", ""),
-        ]
-        for d in detailed
-    ]
-    app_display.print_table(
-        rows,
-        headers=["Serial", "Manufacturer", "Model", "Android", "Conn", "Type"],
-    )
+    report = ieee_report.format_device_inventory(detailed)
+    print(report)
 
 
 def list_installed_packages(serial: str) -> None:
     """Display packages installed on the device."""
-    packages = package_scanner.list_installed_packages(serial)
-    app_display.print_section("Installed Packages")
+    packages = package_scanner.inventory_packages(serial)
     if not packages:
+        app_display.print_section("Application Inventory")
         print("No packages found.")
         return
-    rows = [[str(i + 1), pkg] for i, pkg in enumerate(packages)]
-    app_display.print_table(rows, headers=["#", "Package"])
+
+    report = ieee_report.format_package_inventory(packages)
+    print(report)
 
 
 def scan_dangerous_permissions(serial: str) -> None:
@@ -119,21 +108,21 @@ def analyze_apk_path() -> None:
     """Prompt for an APK path and run the static analyzer."""
     apk_path = input("Enter path to APK: ").strip()
     if not apk_path:
-        app_display.warn("APK path is required.")
+        print("Status: APK path is required.")
         return
     try:
         out = analyze_apk(apk_path)
     except Exception as e:  # pragma: no cover - broad catch for user feedback
         app_display.fail(f"Analysis failed: {e}")
         return
-    app_display.good(f"Static analysis complete. Results in {out}")
+    print(f"Status: Static analysis completed. Results in {out}")
 
 
 def analyze_installed_app(serial: str) -> None:
     """Select an installed app, pull its APK, and run static analysis."""
     packages = package_scanner.list_installed_packages(serial)
     if not packages:
-        app_display.warn("No packages found.")
+        print("Status: No packages found.")
         return
 
     options = [
@@ -147,15 +136,20 @@ def analyze_installed_app(serial: str) -> None:
         prompt="Select package",
     )
     if choice == 0:
-        app_display.warn("No package selected.")
+        print("Status: No package selected.")
         return
     package = options[choice - 1][1]
     try:
-        apk_path = apk_extractor.pull_apk(serial, package, dest_dir=f"output/{package}")
-        out = analyze_apk(str(apk_path), outdir=f"output/{package}")
+        evidence = apk_extractor.acquire_apk(
+            serial, package, dest_dir=f"output/{package}"
+        )
+        print("Status: Application package extracted successfully.")
+        out = analyze_apk(str(evidence["artifact"]), outdir=f"output/{package}")
     except Exception as e:  # pragma: no cover
         app_display.fail(f"Analysis failed: {e}")
         return
-    app_display.good(
-        f"Analysis for {package} complete. Report at {out / 'report.json'}"
+    print(
+        f"Status: Static analysis completed. Report at {out / 'report.json'}"
     )
+    log = ieee_report.format_evidence_log([evidence])
+    print(log)

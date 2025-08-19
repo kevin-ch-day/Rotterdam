@@ -7,7 +7,7 @@ Helpers for discovering and enriching connected Android devices via ADB.
 from __future__ import annotations
 import shutil
 import subprocess
-from typing import List, Dict
+from typing import List, Dict, Any
 from app_utils import app_config
 
 
@@ -109,6 +109,11 @@ _PROP_KEYS = [
     "ro.hardware",
     "ro.boot.qemu",
     "ro.build.fingerprint",
+    # Properties useful for basic trust / rooting heuristics
+    "ro.build.tags",
+    "ro.build.type",
+    "ro.debuggable",
+    "ro.secure",
 ]
 
 def _shell_getprops(serial: str, keys: list[str]) -> Dict[str, str]:
@@ -178,6 +183,25 @@ def _infer_is_emulator(serial: str, props: Dict[str, str], meta: Dict[str, str])
     return False
 
 
+def _infer_root_status(props: Dict[str, str]) -> bool:
+    """Best-effort check for signs of a rooted or developer build."""
+    # ro.secure=0 indicates a non-secure build
+    if props.get("ro.secure") == "0":
+        return True
+    # ro.debuggable=1 allows adb shell with root-like capabilities
+    if props.get("ro.debuggable") == "1":
+        return True
+    # test-keys in build tags often means an engineering build
+    tags = (props.get("ro.build.tags") or "").lower()
+    if "test-keys" in tags:
+        return True
+    # eng/userdebug builds are typically non-production
+    build_type = props.get("ro.build.type", "")
+    if build_type in {"eng", "userdebug"}:
+        return True
+    return False
+
+
 def _short_fingerprint(fp: str, maxlen: int = 48) -> str:
     if not fp:
         return ""
@@ -190,7 +214,7 @@ def _short_fingerprint(fp: str, maxlen: int = 48) -> str:
 # Public: list detailed devices
 # -----------------------------
 
-def list_detailed_devices() -> List[Dict[str, str]]:
+def list_detailed_devices() -> List[Dict[str, Any]]:
     """
     Returns a list of enriched device dicts for display/selection.
     Each item has:
@@ -202,6 +226,8 @@ def list_detailed_devices() -> List[Dict[str, str]]:
       - abi, platform, hardware
       - product, device (from -l)
       - fingerprint_short
+      - build_tags, build_type, debuggable, secure
+      - is_rooted and a simple trust classification
     """
     raw = check_connected_devices()
     base = parse_devices_l(raw)
@@ -224,6 +250,12 @@ def list_detailed_devices() -> List[Dict[str, str]]:
             "abi": "",
             "platform": "",
             "hardware": "",
+            "build_tags": "",
+            "build_type": "",
+            "debuggable": "",
+            "secure": "",
+            "is_rooted": False,
+            "trust": "unknown",
             "product": d.get("product", ""),
             "device": d.get("device", ""),
             "transport_id": d.get("transport_id", d.get("transport", "")),
@@ -240,9 +272,16 @@ def list_detailed_devices() -> List[Dict[str, str]]:
             info["abi"]            = props.get("ro.product.cpu.abi", "")
             info["platform"]       = props.get("ro.board.platform", "")
             info["hardware"]       = props.get("ro.hardware", "")
+            info["build_tags"]     = props.get("ro.build.tags", "")
+            info["build_type"]     = props.get("ro.build.type", "")
+            info["debuggable"]     = props.get("ro.debuggable", "")
+            info["secure"]         = props.get("ro.secure", "")
             fp                     = props.get("ro.build.fingerprint", "")
             info["fingerprint_short"] = _short_fingerprint(fp)
             info["type"] = "emulator" if _infer_is_emulator(serial, props, d) else "physical"
+            rooted = _infer_root_status(props)
+            info["is_rooted"] = rooted
+            info["trust"] = "low" if rooted else "high"
         else:
             # unauthorized / offline / recovery / sideload etc. → skip props
             info["type"] = "unknown"
