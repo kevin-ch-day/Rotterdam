@@ -37,6 +37,7 @@ def run_main_menu() -> None:
         "Pull and analyze an installed app",
         "Sandbox analyze a local APK",
         "Explore installed app UI",
+        "Launch web app",
     ]
 
     class _RefreshMenu(Exception):
@@ -74,6 +75,8 @@ def run_main_menu() -> None:
             selected_serial = _ensure_device_selected(selected_serial)
             if selected_serial:
                 actions.explore_installed_app(selected_serial)
+        elif choice == 11:
+            actions.launch_web_app()
         else:
             display.warn(f"Unhandled choice: {choice}")
         raise _RefreshMenu
