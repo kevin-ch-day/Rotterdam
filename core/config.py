@@ -111,6 +111,38 @@ class GlobalConfig:
 CONFIG = GlobalConfig()
 
 
+# -----------------------------
+# Database configuration
+# -----------------------------
+
+
+def get_database_url() -> str:
+    """Return a SQLAlchemy database URL constructed from the environment.
+
+    The resolution order is:
+
+    1. ``DATABASE_URL`` if set.
+    2. Individual MySQL settings (``DB_USER``, ``DB_PASSWORD``, ``DB_HOST``,
+       ``DB_PORT``, ``DB_NAME``).
+    3. Fallback to an in-memory SQLite database.
+    """
+
+    url = os.getenv("DATABASE_URL")
+    if url:
+        return url
+
+    user = os.getenv("DB_USER")
+    name = os.getenv("DB_NAME")
+    if user and name:
+        password = os.getenv("DB_PASSWORD", "")
+        host = os.getenv("DB_HOST", "localhost")
+        port = os.getenv("DB_PORT", "3306")
+        auth = f":{password}" if password else ""
+        return f"mysql+pymysql://{user}{auth}@{host}:{port}/{name}"
+
+    return "sqlite:///:memory:"
+
+
 
 # -----------------------------
 # Timestamp helpers

@@ -132,6 +132,7 @@ def write_report(
     dynamic_metrics: Dict[str, Any] | None = None,
     yara_matches: Dict[str, List[str]] | None = None,
     diff: Dict[str, Any] | None = None,
+    findings: List[Dict[str, Any]] | None = None,
 ) -> Path:
     """Write a JSON report containing analysis results."""
     report_path = out / "report.json"
@@ -152,6 +153,8 @@ def write_report(
         data["yara_matches"] = yara_matches
     if diff is not None:
         data["diff"] = diff
+    if findings is not None:
+        data["findings"] = findings
 
     report_path.write_text(json.dumps(data, indent=2))
     return report_path

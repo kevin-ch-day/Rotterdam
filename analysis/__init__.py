@@ -45,6 +45,14 @@ __all__ = [
     "extract_network_security",
 ]
 
+# Optional: Androguard-based DEX inspection
+try:
+    from .androguard_utils import summarize_apk  # type: ignore[import-not-found]
+except Exception:
+    summarize_apk = None  # type: ignore[assignment]
+else:
+    __all__.append("summarize_apk")
+
 # Optional: YARA scanning utilities
 try:
     from .yara_scan import compile_rules, scan_directory  # type: ignore[import-not-found]
@@ -63,3 +71,12 @@ except Exception:
     verify_signature = None  # type: ignore[assignment]
 else:
     __all__.append("verify_signature")
+
+# Optional: certificate analysis utilities
+try:
+    from .cert_analysis import analyze_certificates  # type: ignore[import-not-found]
+
+except Exception:  # pragma: no cover - missing dependencies
+    analyze_certificates = None  # type: ignore[assignment]
+else:
+    __all__.append("analyze_certificates")

@@ -24,3 +24,12 @@ def test_weights_can_be_overridden():
     # Heavily emphasise permission density
     override = calculate_risk_score(static, weights={"permission_density": 10.0})
     assert override["score"] > default["score"]
+
+
+def test_certificate_metrics_influence_score_and_rationale():
+    static = {"expired_certificate": 1.0, "self_signed_certificate": 1.0}
+    result = calculate_risk_score(static)
+    assert result["score"] > 0
+    assert "expired" in result["rationale"]
+    assert "self-signed" in result["rationale"]
+    assert "expired_certificate" in result["breakdown"]

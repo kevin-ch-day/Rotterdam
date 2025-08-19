@@ -1,0 +1,9 @@
+rules:
+  - id: dangerous_permissions
+    severity: medium
+    selector: permission_details[?dangerous].name[]
+    remediation: Review dangerous permissions and remove those not required.
+  - id: exported_components
+    severity: high
+    selector: components.*[?exported==`true`].name[]
+    remediation: Restrict exported components or protect them with permissions.
