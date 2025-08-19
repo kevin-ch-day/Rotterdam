@@ -14,6 +14,7 @@ from apk_analysis import (
     calculate_derived_metrics,
 )
 from sandbox import compute_runtime_metrics
+from analysis_scoring import calculate_risk_score
 
 
 def test_extract_permissions():
@@ -148,6 +149,7 @@ def test_write_report(tmp_path: Path):
         metadata,
         runtime_metrics,
     )
+    risk = calculate_risk_score(metrics, {})
     report = write_report(
         tmp_path,
         ["android.permission.INTERNET"],
@@ -159,7 +161,7 @@ def test_write_report(tmp_path: Path):
         {"debuggable": True},
         metadata,
         metrics,
-        runtime_metrics,
+        risk,
     )
     data = report.read_text()
     assert "android.permission.INTERNET" in data
@@ -171,7 +173,8 @@ def test_write_report(tmp_path: Path):
     assert "com.example.API_KEY" in data
     assert "permission_density" in data
     assert "feature_count" in data
-    assert "network_endpoint_count" in data
+    assert "risk" in data
+    assert "rationale" in data
 
 
 def test_calculate_derived_metrics():

@@ -52,3 +52,17 @@ def test_format_evidence_log_outputs_section_and_table():
     assert "Observation:" in out
     assert "file.apk" in out
 
+
+def test_format_risk_summary_includes_score_and_breakdown():
+    risk = {
+        "score": 42.5,
+        "rationale": "Example rationale",
+        "breakdown": {"permission_density": 12.3},
+    }
+    out = ieee_report.format_risk_summary(risk)
+    assert "SECTION IV: RISK ASSESSMENT" in out
+    assert "IV.A – Aggregated Risk Score" in out
+    assert "Table IV. Risk Breakdown" in out
+    assert "42.5" in out
+    assert "Example rationale" in out
+
