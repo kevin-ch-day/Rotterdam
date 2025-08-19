@@ -6,13 +6,16 @@ output for the user interface.
 
 from __future__ import annotations
 
+import csv
 import json
+import re
 from pathlib import Path
 from contextlib import contextmanager
 from typing import Any, Dict, Optional
 import argparse
 
 from core import display, menu, renderers, config
+from core.diagnostics import SystemDoctor, BinaryCheck, ModuleCheck
 from .prompts import prompt_existing_path
 from reports import ieee
 from devices import (
@@ -20,6 +23,7 @@ from devices import (
     packages,
     apk,
     processes,
+    selection,
 )
 from analysis import analyze_apk
 from sandbox import run_analysis as sandbox_analyze, compute_runtime_metrics
@@ -44,6 +48,41 @@ except Exception:  # pragma: no cover
     @contextmanager
     def log_context(**_: Any):  # type: ignore
         yield
+
+
+def run_doctor() -> None:
+    """Check availability of required binaries and Python modules."""
+
+    checks = [
+        *(BinaryCheck(b) for b in ["adb", "aapt2", "apktool", "jadx", "yara", "java"]),
+        *(ModuleCheck(m) for m in [
+            "androguard",
+            "fastapi",
+            "uvicorn",
+            "sqlalchemy",
+            "mysql.connector",
+        ]),
+    ]
+
+    doctor = SystemDoctor(checks)
+    results = doctor.run()
+
+    display.print_section("Binary Dependencies")
+    for res in (r for r in results if r.category == "binary"):
+        if res.ok:
+            display.good(f"{res.name} : {res.detail}")
+        else:
+            display.fail(f"{res.name} : {res.detail}")
+
+    display.print_section("Python Modules")
+    for res in (r for r in results if r.category == "module"):
+        if res.ok:
+            display.good(f"{res.name} : {res.detail}")
+        else:
+            display.fail(f"{res.name} : {res.detail}")
+
+    if doctor.has_issues:
+        display.warn("One or more diagnostics failed. Review the flags above.")
 
 
 def show_connected_devices() -> None:
@@ -87,7 +126,17 @@ def show_detailed_devices() -> None:
     print(report)
 
 
-def list_installed_packages(serial: str) -> None:
+def list_installed_packages(
+    serial: str,
+    *,
+    user: bool = False,
+    system: bool = False,
+    high_value: bool = False,
+    regex: Optional[str] = None,
+    csv_path: Optional[str] = None,
+    json_path: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> None:
     """Display packages installed on the device."""
     with log_context(device=serial):
         logger.info("list_installed_packages")
@@ -98,6 +147,30 @@ def list_installed_packages(serial: str) -> None:
             display.fail(str(e))
             return
 
+        if user:
+            pkg_info = [p for p in pkg_info if not p.get("system")]
+        if system:
+            pkg_info = [p for p in pkg_info if p.get("system")]
+        if high_value:
+            pkg_info = [p for p in pkg_info if p.get("high_value")]
+        if regex:
+            try:
+                pattern = re.compile(regex)
+                pkg_info = [p for p in pkg_info if pattern.search(p.get("package", ""))]
+            except re.error as exc:
+                display.fail(f"Invalid regex: {exc}")
+                return
+
+        pkg_info.sort(
+            key=lambda p: (
+                0 if p.get("high_value") else 1,
+                0 if not p.get("system") else 1,
+                p.get("package", ""),
+            )
+        )
+        if limit is not None:
+            pkg_info = pkg_info[:limit]
+
         display.print_section("Application Inventory")
         if not pkg_info:
             logger.info("no packages found")
@@ -105,6 +178,33 @@ def list_installed_packages(serial: str) -> None:
             return
 
         renderers.print_package_inventory(pkg_info)
+
+        if csv_path:
+            try:
+                with open(csv_path, "w", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(
+                        f,
+                        fieldnames=[
+                            "package",
+                            "version_name",
+                            "installer",
+                            "uid",
+                            "system",
+                            "priv",
+                            "high_value",
+                        ],
+                    )
+                    writer.writeheader()
+                    writer.writerows(pkg_info)
+            except OSError as e:
+                display.fail(f"Failed to write CSV: {e}")
+
+        if json_path:
+            try:
+                with open(json_path, "w", encoding="utf-8") as f:
+                    json.dump(pkg_info, f, indent=2)
+            except OSError as e:
+                display.fail(f"Failed to write JSON: {e}")
 
 
 def scan_dangerous_permissions(serial: str) -> None:
@@ -124,6 +224,35 @@ def scan_dangerous_permissions(serial: str) -> None:
             print("No apps requesting dangerous permissions found.")
             return
         renderers.print_permission_scan(risky)
+
+
+def scan_for_devices() -> None:
+    """Rescan ADB for devices and display the results."""
+    logger.info("scan_for_devices")
+    try:
+        detailed = selection.refresh_devices()
+    except RuntimeError as e:
+        logger.exception("device scan failed")
+        display.fail(str(e))
+        return
+
+    display.print_section("Scan Results")
+    if not detailed:
+        logger.info("no devices discovered")
+        print("No devices discovered.")
+        return
+
+    renderers.print_basic_device_table(detailed)
+
+
+def export_device_report(serial: str) -> None:
+    """Placeholder for exporting a device report."""
+    display.info("Export device report not implemented yet.")
+
+
+def quick_security_scan(serial: str) -> None:
+    """Placeholder for quick security scan."""
+    display.info("Quick security scan not implemented yet.")
 
 
 def list_running_processes(serial: str) -> None:
@@ -372,9 +501,32 @@ def main(argv: list[str] | None = None) -> None:
     p_serve.add_argument("--host", default="127.0.0.1")
     p_serve.add_argument("--port", type=int, default=8000)
 
+    p_list = sub.add_parser("list-packages", help="list installed packages")
+    p_list.add_argument("serial", help="device serial")
+    p_list.add_argument("--user", action="store_true", help="show only user apps")
+    p_list.add_argument("--system", action="store_true", help="show only system apps")
+    p_list.add_argument(
+        "--high-value", action="store_true", help="show only high-value apps"
+    )
+    p_list.add_argument("--regex", help="filter packages by regex")
+    p_list.add_argument("--csv", help="export results to CSV at path")
+    p_list.add_argument("--json", dest="json_path", help="export results to JSON")
+    p_list.add_argument("--limit", type=int, help="limit number of results")
+
     args = parser.parse_args(argv)
     if args.cmd == "serve":
         run_server(args.host, args.port)
+    elif args.cmd == "list-packages":
+        list_installed_packages(
+            args.serial,
+            user=args.user,
+            system=args.system,
+            high_value=args.high_value,
+            regex=args.regex,
+            csv_path=args.csv,
+            json_path=args.json_path,
+            limit=args.limit,
+        )
     else:
         parser.print_help()
 
