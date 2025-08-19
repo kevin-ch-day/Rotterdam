@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
 from typing import Any, Dict, List
+
+from app_utils.error_utils import safe_fromstring
 
 
 def extract_permission_details(manifest_text: str) -> List[Dict[str, Any]]:
@@ -15,7 +16,9 @@ def extract_permission_details(manifest_text: str) -> List[Dict[str, Any]]:
     """
 
     ns = {"android": "http://schemas.android.com/apk/res/android"}
-    root = ET.fromstring(manifest_text)
+    root = safe_fromstring(manifest_text, description="manifest")
+    if root is None:
+        return []
     details: List[Dict[str, Any]] = []
     for tag in ["uses-permission", "uses-permission-sdk-23"]:
         for elem in root.findall(tag):
@@ -45,8 +48,10 @@ def extract_components(manifest_text: str) -> Dict[str, List[Dict[str, Any]]]:
     any associated ``permission``.
     """
     ns = {"android": "http://schemas.android.com/apk/res/android"}
-    root = ET.fromstring(manifest_text)
     result: Dict[str, List[Dict[str, Any]]] = {tag: [] for tag in ["activity", "service", "receiver", "provider"]}
+    root = safe_fromstring(manifest_text, description="manifest")
+    if root is None:
+        return result
 
     app = root.find("application")
     if app is None:
@@ -70,7 +75,9 @@ def extract_components(manifest_text: str) -> Dict[str, List[Dict[str, Any]]]:
 def extract_sdk_info(manifest_text: str) -> Dict[str, int]:
     """Return SDK version information from the manifest."""
     ns = {"android": "http://schemas.android.com/apk/res/android"}
-    root = ET.fromstring(manifest_text)
+    root = safe_fromstring(manifest_text, description="manifest")
+    if root is None:
+        return {}
     info: Dict[str, int] = {}
     sdk = root.find("uses-sdk")
     if sdk is None:
@@ -85,8 +92,10 @@ def extract_sdk_info(manifest_text: str) -> Dict[str, int]:
 def extract_features(manifest_text: str) -> List[Dict[str, Any]]:
     """Return a list of features requested by the app."""
     ns = {"android": "http://schemas.android.com/apk/res/android"}
-    root = ET.fromstring(manifest_text)
     features: List[Dict[str, Any]] = []
+    root = safe_fromstring(manifest_text, description="manifest")
+    if root is None:
+        return features
     for feat in root.findall("uses-feature"):
         name = feat.get(f"{{{ns['android']}}}name") or ""
         required = feat.get(f"{{{ns['android']}}}required")
@@ -97,7 +106,9 @@ def extract_features(manifest_text: str) -> List[Dict[str, Any]]:
 def extract_app_flags(manifest_text: str) -> Dict[str, bool]:
     """Return notable boolean flags from the <application> tag."""
     ns = {"android": "http://schemas.android.com/apk/res/android"}
-    root = ET.fromstring(manifest_text)
+    root = safe_fromstring(manifest_text, description="manifest")
+    if root is None:
+        return {}
     app = root.find("application")
     if app is None:
         return {}
@@ -112,7 +123,9 @@ def extract_app_flags(manifest_text: str) -> Dict[str, bool]:
 def extract_metadata(manifest_text: str) -> List[Dict[str, str]]:
     """Return ``meta-data`` entries from the ``application`` tag."""
     ns = {"android": "http://schemas.android.com/apk/res/android"}
-    root = ET.fromstring(manifest_text)
+    root = safe_fromstring(manifest_text, description="manifest")
+    if root is None:
+        return []
     app = root.find("application")
     if app is None:
         return []

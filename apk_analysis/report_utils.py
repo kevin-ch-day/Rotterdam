@@ -13,6 +13,7 @@ def calculate_derived_metrics(
     sdk_info: Dict[str, int] | None = None,
     features: List[Dict[str, Any]] | None = None,
     metadata: List[Dict[str, str]] | None = None,
+    dynamic_metrics: Dict[str, Any] | None = None,
 ) -> Dict[str, float]:
     """Compute metrics derived from manifest data.
 
@@ -44,6 +45,7 @@ def calculate_derived_metrics(
     features = features or []
     metadata = metadata or []
     sdk_info = sdk_info or {}
+    dynamic_metrics = dynamic_metrics or {}
 
     total_perms = len(permission_details)
     dangerous_perms = sum(1 for p in permission_details if p.get("dangerous"))
@@ -60,7 +62,7 @@ def calculate_derived_metrics(
     max_sdk = sdk_info.get("maxSdkVersion", 0)
     sdk_span = (target_sdk - min_sdk) if min_sdk and target_sdk else 0
 
-    return {
+    metrics: Dict[str, float] = {
         "permission_density": round(perm_density, 3),
         "component_exposure": round(comp_exposure, 3),
         "total_permission_count": total_perms,
@@ -75,6 +77,33 @@ def calculate_derived_metrics(
         "sdk_span": sdk_span,
     }
 
+    # Merge any provided dynamic metrics into the result.  Dynamic metrics may
+    # include runtime observations such as permission usage counts or network
+    # endpoints discovered during sandbox execution.
+    metrics.update(dynamic_metrics)
+
+    # Compute combined metrics that relate runtime behaviour to static
+    # declarations.  For example, measure coverage of declared permissions
+    # actually used at runtime.
+    perm_usage = dynamic_metrics.get("permission_usage_counts")
+    runtime_perm_count = dynamic_metrics.get("unique_permission_count")
+    if perm_usage and runtime_perm_count is None:
+        runtime_perm_count = len(perm_usage)
+
+    if runtime_perm_count is not None:
+        metrics["runtime_permission_count"] = runtime_perm_count
+        metrics["unused_permission_count"] = max(total_perms - runtime_perm_count, 0)
+        coverage = runtime_perm_count / total_perms if total_perms else 0.0
+        metrics["runtime_permission_coverage"] = round(coverage, 3)
+
+    if "network_endpoints" in dynamic_metrics and "network_endpoint_count" not in metrics:
+        metrics["network_endpoint_count"] = len(dynamic_metrics["network_endpoints"])
+
+    if "filesystem_writes" in dynamic_metrics and "filesystem_write_count" not in metrics:
+        metrics["filesystem_write_count"] = len(dynamic_metrics["filesystem_writes"])
+
+    return metrics
+
 
 def write_report(
     out: Path,
@@ -87,9 +116,12 @@ def write_report(
     app_flags: Dict[str, bool],
     metadata: List[Dict[str, str]],
     metrics: Dict[str, float] | None = None,
+    dynamic_metrics: Dict[str, Any] | None = None,
 ) -> Path:
     """Write a JSON report containing analysis results."""
     report_path = out / "report.json"
+    all_metrics = {**(metrics or {}), **(dynamic_metrics or {})}
+
     report_path.write_text(
         json.dumps(
             {
@@ -101,7 +133,7 @@ def write_report(
                 "features": features,
                 "app_flags": app_flags,
                 "metadata": metadata,
-                "metrics": metrics or {},
+                "metrics": all_metrics,
             },
             indent=2,
         )
