@@ -7,6 +7,7 @@ import subprocess
 from typing import List, Dict
 
 from .adb_utils import _adb_path, _run_adb
+from app_utils.error_utils import log_exception
 
 
 def parse_ps(output: str) -> List[Dict[str, str]]:
@@ -17,7 +18,7 @@ def parse_ps(output: str) -> List[Dict[str, str]]:
         if not line:
             continue
         parts = line.split()
-        # skip header line starting with USER or PID
+        # Skip header line starting with USER or PID
         if parts[0].upper() in {"USER", "PID"}:
             continue
         if len(parts) < 2:
@@ -35,5 +36,12 @@ def list_processes(serial: str) -> List[Dict[str, str]]:
     try:
         proc = _run_adb([adb, "-s", serial, "shell", "ps"], timeout=10)
     except subprocess.CalledProcessError as exc:
-        raise RuntimeError(f"Failed to list processes on device {serial}: {exc}") from exc
+        # Improved error logging for clarity
+        log_exception(f"Failed to list processes on device {serial}", exc)
+        return []
+    except Exception as exc:
+        # Catch any other exceptions to prevent crash and log the error
+        log_exception(f"Unexpected error when listing processes on device {serial}", exc)
+        return []
+    
     return parse_ps(proc.stdout or "")

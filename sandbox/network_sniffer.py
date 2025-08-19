@@ -25,17 +25,10 @@ from typing import Iterable, Optional
 
 from device_analysis.adb_utils import _adb_path, _run_adb
 
+# Define HTTP methods to search in packets
 HTTP_METHODS = (
-    b"GET",
-    b"POST",
-    b"HEAD",
-    b"PUT",
-    b"DELETE",
-    b"OPTIONS",
-    b"TRACE",
-    b"PATCH",
+    b"GET", b"POST", b"HEAD", b"PUT", b"DELETE", b"OPTIONS", b"TRACE", b"PATCH",
 )
-
 
 class NetworkSniffer:
     """Context manager handling capture and analysis of network traffic."""
@@ -49,6 +42,7 @@ class NetworkSniffer:
         expected_domains: Optional[Iterable[str]] = None,
         tcpdump_filter: str = "",
     ) -> None:
+        """Initialize the network sniffer with required settings."""
         self.serial = serial
         self.tool = tool
         self.output_dir = Path(output_dir)
@@ -60,7 +54,7 @@ class NetworkSniffer:
         self.tcpdump_filter = tcpdump_filter
 
     # ------------------------------------------------------------------
-    # Capture control
+    # Capture control methods
     # ------------------------------------------------------------------
     def start(self) -> None:
         """Start the capture process before launching the target app."""
@@ -107,7 +101,7 @@ class NetworkSniffer:
         return self.pcap_path
 
     # ------------------------------------------------------------------
-    # Analysis / reporting
+    # Analysis / reporting methods
     # ------------------------------------------------------------------
     def summarize(self) -> dict:
         """Parse the captured pcap and return a summary dictionary."""
@@ -263,4 +257,3 @@ def main(argv: Optional[list[str]] = None) -> int:
 
 if __name__ == "__main__":  # pragma: no cover - CLI entry point
     raise SystemExit(main())
-

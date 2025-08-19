@@ -123,3 +123,16 @@ def format_evidence_log(entries: List[dict[str, str]]) -> str:
         else "Observation: No evidence entries were recorded."
     )
     return f"{heading}\n{sub}\n{intro}\n\n{table}\n\n{obs}"
+
+
+def format_risk_summary(risk: dict[str, Any]) -> str:
+    """Render a risk assessment section."""
+    heading = major_heading("Risk Assessment", 4)
+    sub = subsection_heading("Aggregated Risk Score", 4, "A")
+    score = risk.get("score", 0.0)
+    rationale = risk.get("rationale", "")
+    breakdown_items = risk.get("breakdown", {})
+    rows = [(k.replace("_", " "), f"{v:.2f}") for k, v in breakdown_items.items()]
+    table = ieee_table("Risk Breakdown", ["Metric", "Contribution"], rows, 4)
+    obs = f"Observation: Overall risk score is {score:.2f}."
+    return f"{heading}\n{sub}\n{rationale}\n\n{table}\n\n{obs}"
