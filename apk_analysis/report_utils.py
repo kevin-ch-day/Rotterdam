@@ -87,6 +87,7 @@ def write_report(
     app_flags: Dict[str, bool],
     metadata: List[Dict[str, str]],
     metrics: Dict[str, float] | None = None,
+    risk: Dict[str, Any] | None = None,
 ) -> Path:
     """Write a JSON report containing analysis results."""
     report_path = out / "report.json"
@@ -102,6 +103,7 @@ def write_report(
                 "app_flags": app_flags,
                 "metadata": metadata,
                 "metrics": metrics or {},
+                "risk": risk or {},
             },
             indent=2,
         )

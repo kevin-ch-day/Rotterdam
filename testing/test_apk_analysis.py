@@ -13,6 +13,7 @@ from apk_analysis import (
     write_report,
     calculate_derived_metrics,
 )
+from analysis_scoring import calculate_risk_score
 
 
 def test_extract_permissions():
@@ -141,6 +142,7 @@ def test_write_report(tmp_path: Path):
         [{"name": "android.hardware.camera", "required": False}],
         metadata,
     )
+    risk = calculate_risk_score(metrics, {})
     report = write_report(
         tmp_path,
         ["android.permission.INTERNET"],
@@ -152,6 +154,7 @@ def test_write_report(tmp_path: Path):
         {"debuggable": True},
         metadata,
         metrics,
+        risk,
     )
     data = report.read_text()
     assert "android.permission.INTERNET" in data
@@ -163,6 +166,8 @@ def test_write_report(tmp_path: Path):
     assert "com.example.API_KEY" in data
     assert "permission_density" in data
     assert "feature_count" in data
+    assert "risk" in data
+    assert "rationale" in data
 
 
 def test_calculate_derived_metrics():

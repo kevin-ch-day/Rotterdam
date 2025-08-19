@@ -19,6 +19,7 @@ from .manifest_utils import (
 from .permission_utils import categorize_permissions
 from .secret_utils import scan_for_secrets
 from .report_utils import calculate_derived_metrics, write_report
+from analysis_scoring import calculate_risk_score
 
 
 def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
@@ -83,6 +84,11 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     )
     (out / "derived_metrics.json").write_text(json.dumps(metrics, indent=2))
 
+    # Placeholder for dynamic metrics; future instrumentation can populate these
+    dynamic_metrics: Dict[str, float] = {}
+    risk = calculate_risk_score(metrics, dynamic_metrics)
+    (out / "risk_score.json").write_text(json.dumps(risk, indent=2))
+
     write_report(
         out,
         perms,
@@ -94,6 +100,7 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
         app_flags,
         metadata,
         metrics,
+        risk,
     )
 
     return out
