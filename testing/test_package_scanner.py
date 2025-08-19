@@ -40,3 +40,33 @@ def test_scan_for_dangerous_permissions(monkeypatch):
         }
     ]
 
+
+def test_inventory_packages_collects_details(monkeypatch):
+    class Dummy:
+        def __init__(self, stdout=""):
+            self.stdout = stdout
+
+    def fake_run(args, timeout=0):
+        cmd = args[3:]
+        if cmd == ["shell", "pm", "list", "packages", "-f", "-i"]:
+            return Dummy(
+                "package:/data/app/com.twitter/base.apk=com.twitter.android installer=com.android.vending\n"
+                "package:/data/app/com.other/base.apk=com.other\n"
+            )
+        if cmd == ["shell", "dumpsys", "package", "com.twitter.android"]:
+            return Dummy("versionName=1.0\nversionCode=42 targetSdk=33\n")
+        if cmd == ["shell", "dumpsys", "package", "com.other"]:
+            return Dummy("")
+        return Dummy("")
+
+    monkeypatch.setattr(package_scanner, "_run_adb", fake_run)
+    monkeypatch.setattr(package_scanner, "_adb_path", lambda: "adb")
+
+    info = package_scanner.inventory_packages("SER")
+    assert info[0]["package"] == "com.twitter.android"
+    assert info[0]["version_name"] == "1.0"
+    assert info[0]["installer"] == "com.android.vending"
+    assert info[0]["high_value"] is True
+    assert info[1]["package"] == "com.other"
+    assert info[1]["high_value"] is False
+

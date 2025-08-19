@@ -1,26 +1,26 @@
-from pathlib import Path
+import hashlib
 
-from device_analysis.apk_extractor import pull_apk
 from device_analysis import apk_extractor
 
 
-def test_pull_apk(monkeypatch, tmp_path):
-    calls = []
+def test_acquire_apk_hashes_and_logs(tmp_path, monkeypatch):
+    sample = tmp_path / "sample.apk"
+    sample.write_bytes(b"hello")
 
-    class Dummy:
-        def __init__(self, stdout=""):
-            self.stdout = stdout
+    monkeypatch.setattr(apk_extractor, "pull_apk", lambda *a, **k: sample)
 
-    def fake_run(args, timeout=0):
-        calls.append(args)
-        if "pm" in args:
-            return Dummy("package:/data/app/base.apk\n")
-        return Dummy("")
+    class FakeDT:
+        @staticmethod
+        def utcnow():
+            from datetime import datetime
 
-    monkeypatch.setattr(apk_extractor, "_run_adb", fake_run)
-    monkeypatch.setattr(apk_extractor, "_adb_path", lambda: "adb")
+            return datetime(2023, 1, 1, 0, 0, 0)
 
-    out = pull_apk("SER", "pkg.name", dest_dir=str(tmp_path))
-    assert out == Path(tmp_path) / "pkg.name.apk"
-    assert calls[0][3:] == ["shell", "pm", "path", "pkg.name"]
-    assert calls[1][3] == "pull"
+    monkeypatch.setattr(apk_extractor, "datetime", FakeDT)
+
+    entry = apk_extractor.acquire_apk("SER", "com.app", operator="tester")
+
+    assert entry["artifact"] == str(sample)
+    assert entry["sha256"] == hashlib.sha256(b"hello").hexdigest()
+    assert entry["timestamp"] == "2023-01-01T00:00:00Z"
+    assert entry["operator"] == "tester"

@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+import hashlib
+import getpass
+from datetime import datetime
+from typing import Dict
 
 from .device_discovery import _adb_path, _run_adb
 
@@ -30,3 +33,30 @@ def pull_apk(serial: str, package: str, dest_dir: str = "output/apks") -> Path:
     dest = dest_folder / f"{package}.apk"
     _run_adb([adb, "-s", serial, "pull", remote, str(dest)], timeout=60)
     return dest
+
+
+def acquire_apk(
+    serial: str,
+    package: str,
+    dest_dir: str = "output/apks",
+    operator: str | None = None,
+) -> Dict[str, str]:
+    """Pull an APK and record chain-of-custody metadata.
+
+    Returns a dictionary with artifact path, SHA-256 hash, timestamp, operator,
+    and source device/package identifiers.
+    """
+
+    path = pull_apk(serial, package, dest_dir=dest_dir)
+    sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
+    timestamp = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    if operator is None:
+        operator = getpass.getuser()
+    return {
+        "artifact": str(path),
+        "sha256": sha256,
+        "timestamp": timestamp,
+        "operator": operator,
+        "device": serial,
+        "package": package,
+    }
