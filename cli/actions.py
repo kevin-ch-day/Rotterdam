@@ -13,6 +13,7 @@ from typing import Any, Dict, Optional
 import argparse
 
 from core import display, menu, renderers, config
+from core.diagnostics import SystemDoctor, BinaryCheck, ModuleCheck
 from .prompts import prompt_existing_path
 from reports import ieee
 from devices import (
@@ -43,6 +44,41 @@ except Exception:  # pragma: no cover
     @contextmanager
     def log_context(**_: Any):  # type: ignore
         yield
+
+
+def run_doctor() -> None:
+    """Check availability of required binaries and Python modules."""
+
+    checks = [
+        *(BinaryCheck(b) for b in ["adb", "aapt2", "apktool", "jadx", "yara", "java"]),
+        *(ModuleCheck(m) for m in [
+            "androguard",
+            "fastapi",
+            "uvicorn",
+            "sqlalchemy",
+            "mysql.connector",
+        ]),
+    ]
+
+    doctor = SystemDoctor(checks)
+    results = doctor.run()
+
+    display.print_section("Binary Dependencies")
+    for res in (r for r in results if r.category == "binary"):
+        if res.ok:
+            display.good(f"{res.name} : {res.detail}")
+        else:
+            display.fail(f"{res.name} : {res.detail}")
+
+    display.print_section("Python Modules")
+    for res in (r for r in results if r.category == "module"):
+        if res.ok:
+            display.good(f"{res.name} : {res.detail}")
+        else:
+            display.fail(f"{res.name} : {res.detail}")
+
+    if doctor.has_issues:
+        display.warn("One or more diagnostics failed. Review the flags above.")
 
 
 def show_connected_devices() -> None:
