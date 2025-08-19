@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 
 from core import display, menu, renderers, config
+from .prompts import prompt_existing_path
 from reports import ieee
 from devices import (
     discovery,
@@ -97,10 +98,13 @@ def list_running_processes(serial: str) -> None:
 
 def analyze_apk_path() -> None:
     """Prompt for an APK path and run the static analyzer."""
-    apk_path = input("Enter path to APK: ").strip()
+    apk_path = prompt_existing_path(
+        "Enter path to APK (or press Enter to cancel): ",
+        "Status: APK analysis canceled.",
+    )
     if not apk_path:
-        print("Status: APK path is required.")
         return
+
     try:
         out = analyze_apk(apk_path)
     except Exception as e:  # pragma: no cover - broad catch for user feedback
@@ -154,9 +158,11 @@ def analyze_installed_app(serial: str) -> None:
 
 def sandbox_analyze_apk() -> None:
     """Prompt for an APK path and run sandbox analysis."""
-    apk_path = input("Enter path to APK: ").strip()
+    apk_path = prompt_existing_path(
+        "Enter path to APK (or press Enter to cancel): ",
+        "Status: Sandbox analysis canceled.",
+    )
     if not apk_path:
-        print("Status: APK path is required.")
         return
 
     outdir = config.OUTPUT_DIR / f"{Path(apk_path).stem}_sandbox"
