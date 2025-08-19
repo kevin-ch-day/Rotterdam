@@ -13,6 +13,7 @@ from apk_analysis import (
     write_report,
     calculate_derived_metrics,
 )
+from sandbox import compute_runtime_metrics
 
 
 def test_extract_permissions():
@@ -134,12 +135,18 @@ def test_write_report(tmp_path: Path):
         }
     ]
     metadata = [{"name": "com.example.API_KEY", "value": "123"}]
+    runtime_metrics = compute_runtime_metrics(
+        ["android.permission.INTERNET"],
+        ["https://example.com"],
+        ["/data/a.txt"],
+    )
     metrics = calculate_derived_metrics(
         perm_details,
         comps,
         {"minSdkVersion": 21, "targetSdkVersion": 30},
         [{"name": "android.hardware.camera", "required": False}],
         metadata,
+        runtime_metrics,
     )
     report = write_report(
         tmp_path,
@@ -152,6 +159,7 @@ def test_write_report(tmp_path: Path):
         {"debuggable": True},
         metadata,
         metrics,
+        runtime_metrics,
     )
     data = report.read_text()
     assert "android.permission.INTERNET" in data
@@ -163,6 +171,7 @@ def test_write_report(tmp_path: Path):
     assert "com.example.API_KEY" in data
     assert "permission_density" in data
     assert "feature_count" in data
+    assert "network_endpoint_count" in data
 
 
 def test_calculate_derived_metrics():
@@ -182,8 +191,13 @@ def test_calculate_derived_metrics():
     sdk_info = {"minSdkVersion": 21, "targetSdkVersion": 30}
     features = [{"name": "android.hardware.camera", "required": False}]
     metadata = [{"name": "com.example.API_KEY", "value": "123"}]
+    runtime_metrics = {
+        "permission_usage_counts": {"android.permission.INTERNET": 3},
+        "network_endpoints": ["https://example.com"],
+        "filesystem_writes": ["/data/a.txt"],
+    }
     metrics = calculate_derived_metrics(
-        perm_details, comps, sdk_info, features, metadata
+        perm_details, comps, sdk_info, features, metadata, runtime_metrics
     )
     assert metrics["permission_density"] == 0.5
     assert metrics["component_exposure"] == 0.5
@@ -195,4 +209,9 @@ def test_calculate_derived_metrics():
     assert metrics["metadata_count"] == 1
     assert metrics["min_sdk"] == 21
     assert metrics["target_sdk"] == 30
+    assert metrics["runtime_permission_count"] == 1
+    assert metrics["unused_permission_count"] == 1
+    assert metrics["runtime_permission_coverage"] == 0.5
+    assert metrics["network_endpoint_count"] == 1
+    assert metrics["filesystem_write_count"] == 1
     assert metrics["sdk_span"] == 9
