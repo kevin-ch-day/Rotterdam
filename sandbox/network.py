@@ -3,7 +3,7 @@
 
 This module provides a light abstraction around ``tcpdump`` or ``mitmproxy``
 invoked via ``adb`` to capture packets on an Android emulator before an app
-launches.  Captured packets are stored as ``pcap`` files which can then be
+launches. Captured packets are stored as ``pcap`` files which can then be
 parsed to look for:
 
 * Unencrypted HTTP requests
@@ -15,22 +15,16 @@ The resulting summary can be exported as JSON for later scoring.
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import subprocess
+import time
 from pathlib import Path
 from typing import Iterable, Optional
 
 from devices.adb import _adb_path, _run_adb
 
-
-def sniff_network(apk_path: str) -> list[dict[str, str]]:
-    """Return a stubbed network capture summary for *apk_path*.
-
-    The implementation is intentionally lightweight for tests and merely
-    returns a single destination entry.
-    """
-    return [{"destination": "example.com"}]
 
 # Define HTTP methods to search in packets
 HTTP_METHODS = (
@@ -43,6 +37,16 @@ HTTP_METHODS = (
     b"TRACE",
     b"PATCH",
 )
+
+
+def sniff_network(apk_path: str) -> list[dict[str, str]]:
+    """Return a mocked network flow list for *apk_path*.
+
+    The real project would invoke a sniffer and parse packets. For testing we
+    simply return a deterministic example record.
+    """
+    return [{"source": "127.0.0.1", "destination": "example.com"}]
+
 
 class NetworkSniffer:
     """Context manager handling capture and analysis of network traffic."""
@@ -106,7 +110,8 @@ class NetworkSniffer:
             try:
                 _run_adb([adb, "-s", self.serial, "shell", "pkill tcpdump"])
             except Exception:
-                pass  # best effort
+                # best effort: tcpdump may already be stopped
+                pass
             _run_adb([adb, "-s", self.serial, "pull", self._device_pcap, str(self.pcap_path)])
             try:
                 _run_adb([adb, "-s", self.serial, "shell", f"rm {self._device_pcap}"])
@@ -140,7 +145,6 @@ class NetworkSniffer:
 # ----------------------------------------------------------------------
 # PCAP parsing helpers
 # ----------------------------------------------------------------------
-
 def parse_pcap(pcap: str | Path, expected_domains: Optional[Iterable[str]] = None) -> dict:
     """Return summary information about ``pcap`` including IP flows.
 
@@ -203,7 +207,7 @@ def parse_pcap(pcap: str | Path, expected_domains: Optional[Iterable[str]] = Non
                     }
                 )
                 h_lower = host.lower()
-                if h_lower and h_lower not in expected and h_lower not in seen_unexpected:
+                if h_lower and h_lower not in expected:
                     seen_unexpected.add(h_lower)
 
     summary["unexpected_domains"] = sorted(seen_unexpected)
@@ -225,3 +229,49 @@ def export_summary(summary: dict, path: str | Path) -> Path:
     return out_path
 
 
+def _build_arg_parser() -> argparse.ArgumentParser:
+    """Return an ``argparse.ArgumentParser`` for the CLI."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--serial", required=True, help="ADB serial of target emulator")
+    parser.add_argument("--tool", choices=["tcpdump", "mitmproxy"], default="tcpdump")
+    parser.add_argument(
+        "--expected-domain",
+        action="append",
+        dest="expected_domains",
+        default=[],
+        help="Domain that is expected; may be repeated",
+    )
+    parser.add_argument("--output-dir", default="output/network")
+    parser.add_argument("--tcpdump-filter", default="", help="Optional tcpdump filter expression")
+    parser.add_argument(
+        "--duration", type=int, default=10, help="Seconds to capture before stopping"
+    )
+    parser.add_argument(
+        "--json", help="Path to export summary JSON; default prints to stdout"
+    )
+    return parser
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    """Simple CLI for ad-hoc captures."""
+    parser = _build_arg_parser()
+    args = parser.parse_args(argv)
+
+    with NetworkSniffer(
+        args.serial,
+        tool=args.tool,
+        output_dir=args.output_dir,
+        expected_domains=args.expected_domains,
+        tcpdump_filter=args.tcpdump_filter,
+    ) as sniffer:
+        time.sleep(max(args.duration, 0))
+        summary = sniffer.summarize()
+    if args.json:
+        export_summary(summary, args.json)
+    else:
+        print(json.dumps(summary, indent=2))
+    return 0
+
+
+if __name__ == "__main__":  # pragma: no cover - CLI entry point
+    raise SystemExit(main())
