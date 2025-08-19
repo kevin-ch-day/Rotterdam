@@ -271,7 +271,3 @@ def main(argv: Optional[list[str]] = None) -> int:
     else:
         print(json.dumps(summary, indent=2))
     return 0
-
-
-if __name__ == "__main__":  # pragma: no cover - CLI entry point
-    raise SystemExit(main())

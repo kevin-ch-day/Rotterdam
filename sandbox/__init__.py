@@ -5,7 +5,7 @@ from __future__ import annotations
 # Core utilities (stable modules)
 from .runtime import run_analysis
 from .metrics import compute_runtime_metrics
-from .analysis import analyze_apk
+from analysis import analyze_apk
 
 # Back-compat shims for renamed modules
 # Prefer new names; fall back to legacy ones if the refactor isn't complete.
