@@ -7,12 +7,15 @@ def test_calculate_risk_score_outputs_score_and_rationale():
         "permission_invocation_count": 20,
         "cleartext_endpoint_count": 1,
         "file_write_count": 5,
+        "malicious_endpoint_count": 2,
     }
     result = calculate_risk_score(static, dynamic)
     assert 0 <= result["score"] <= 100
     assert isinstance(result["rationale"], str)
     assert result["rationale"]
     assert "breakdown" in result and "permission_density" in result["breakdown"]
+    assert "malicious_endpoint_count" in result["breakdown"]
+    assert "malicious" in result["rationale"]
 
 
 def test_weights_can_be_overridden():
