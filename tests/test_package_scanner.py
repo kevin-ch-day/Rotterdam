@@ -68,12 +68,16 @@ def test_inventory_packages_collects_details(monkeypatch):
         if cmd == ["shell", "pm", "list", "packages", "-f", "-i"]:
             return Dummy(
                 "package:/data/app/com.twitter/base.apk=com.twitter.android installer=com.android.vending\n"
-                "package:/data/app/com.other/base.apk=com.other\n"
+                "package:/system/priv-app/Other/other.apk=com.other\n"
             )
         if cmd == ["shell", "dumpsys", "package", "com.twitter.android"]:
-            return Dummy("versionName=1.0\nversionCode=42 targetSdk=33\n")
+            return Dummy(
+                "versionName=1.0\nversionCode=42 targetSdk=33\nuserId=10101\n"
+            )
         if cmd == ["shell", "dumpsys", "package", "com.other"]:
-            return Dummy("")
+            return Dummy(
+                "versionName=2.0\nuserId=1000\npkgFlags=[ SYSTEM PRIVILEGED ]\n"
+            )
         return Dummy("")
 
     monkeypatch.setattr(packages, "_run_adb", fake_run)
@@ -84,8 +88,14 @@ def test_inventory_packages_collects_details(monkeypatch):
     assert info[0]["version_name"] == "1.0"
     assert info[0]["installer"] == "com.android.vending"
     assert info[0]["high_value"] is True
+    assert info[0]["uid"] == "10101"
+    assert info[0]["system"] is False
+    assert info[0]["priv"] is False
     assert info[1]["package"] == "com.other"
     assert info[1]["high_value"] is False
+    assert info[1]["system"] is True
+    assert info[1]["priv"] is True
+    assert info[1]["uid"] == "1000"
 
 
 def test_export_permission_scan_writes_files(tmp_path):
