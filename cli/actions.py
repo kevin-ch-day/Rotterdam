@@ -20,6 +20,7 @@ from devices import (
     packages,
     apk,
     processes,
+    selection,
 )
 from analysis import analyze_apk
 from sandbox import run_analysis as sandbox_analyze, compute_runtime_metrics
@@ -123,6 +124,35 @@ def scan_dangerous_permissions(serial: str) -> None:
             print("No apps requesting dangerous permissions found.")
             return
         renderers.print_permission_scan(risky)
+
+
+def scan_for_devices() -> None:
+    """Rescan ADB for devices and display the results."""
+    logger.info("scan_for_devices")
+    try:
+        detailed = selection.refresh_devices()
+    except RuntimeError as e:
+        logger.exception("device scan failed")
+        display.fail(str(e))
+        return
+
+    display.print_section("Scan Results")
+    if not detailed:
+        logger.info("no devices discovered")
+        print("No devices discovered.")
+        return
+
+    renderers.print_basic_device_table(detailed)
+
+
+def export_device_report(serial: str) -> None:
+    """Placeholder for exporting a device report."""
+    display.info("Export device report not implemented yet.")
+
+
+def quick_security_scan(serial: str) -> None:
+    """Placeholder for quick security scan."""
+    display.info("Quick security scan not implemented yet.")
 
 
 def list_running_processes(serial: str) -> None:
