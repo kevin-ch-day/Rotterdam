@@ -13,6 +13,8 @@ from . import actions
 
 def device_online(serial: str) -> bool:
     """Return True if the device is online according to ``adb get-state``."""
+    if not serial:
+        return False
     adb = _adb_path()
     try:
         proc = _run_adb([adb, "-s", serial, "get-state"])
@@ -40,9 +42,7 @@ def run_device_menu(serial: str, *, json_mode: bool = False) -> Optional[str | D
         return {
             "title": "Device Menu",
             "serial": serial,
-            "options": [
-                {"key": str(i + 1), "label": opt} for i, opt in enumerate(options)
-            ],
+            "options": [{"key": str(i + 1), "label": opt} for i, opt in enumerate(options)],
             "exit": "Back",
         }
 
@@ -50,7 +50,9 @@ def run_device_menu(serial: str, *, json_mode: bool = False) -> Optional[str | D
         display.warn(f"Device {serial} is no longer online.")
         return None
 
+    # Accept 0..len(options) and 'q' for quit
     valid = {str(i) for i in range(len(options) + 1)}
+    valid.add("q")
 
     while True:
         if not device_online(serial):
@@ -111,9 +113,7 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
     if json_mode:
         return {
             "title": "Main Menu",
-            "options": [
-                {"key": str(i + 1), "label": opt} for i, opt in enumerate(options)
-            ],
+            "options": [{"key": str(i + 1), "label": opt} for i, opt in enumerate(options)],
             "exit": "Exit",
         }
 
@@ -163,4 +163,3 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
 
 
 __all__ = ["run_main_menu", "run_device_menu"]
-
