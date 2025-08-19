@@ -28,6 +28,7 @@ from devices import (
 from analysis import analyze_apk
 from sandbox import run_analysis as sandbox_analyze, compute_runtime_metrics
 from sandbox import ui_driver
+from storage.repository import AnalysisRepository
 
 # Optional logging integration
 try:
@@ -285,14 +286,20 @@ def analyze_apk_path() -> None:
     app_name = Path(apk_path).stem
     with log_context(app=app_name):
         logger.info("analyze_apk_path", extra={"apk": apk_path})
+        outdir = config.OUTPUT_DIR / config.ts()
         try:
-            out = analyze_apk(apk_path)
+            out = analyze_apk(apk_path, outdir=outdir)
         except Exception as e:  # pragma: no cover - broad catch for user feedback
             logger.exception("analysis failed")
             display.fail(f"Analysis failed: {e}")
             return
+        report_path = out / "report.json"
+        try:
+            AnalysisRepository().upsert(app_name, str(report_path))
+        except Exception:
+            logger.exception("failed to record analysis")
         logger.info("analysis completed", extra={"output": str(out)})
-        print(f"Status: Static analysis completed. Results in {out}")
+        print(f"Status: Static analysis completed. Report at {report_path}")
         _display_manifest_insights(out)
 
 
@@ -328,23 +335,23 @@ def analyze_installed_app(serial: str) -> None:
         package = options[choice - 1][1]
 
         with log_context(app=package):
+            outdir = config.OUTPUT_DIR / config.ts()
             try:
-                evidence = apk.acquire_apk(
-                    serial, package, dest_dir=f"output/{package}"
-                )
-                logger.info("apk extracted", extra={"output": f"output/{package}"})
+                evidence = apk.acquire_apk(serial, package, dest_dir=str(outdir))
+                logger.info("apk extracted", extra={"output": str(outdir)})
                 print("Status: Application package extracted successfully.")
-                out = analyze_apk(
-                    str(evidence["artifact"]), outdir=f"output/{package}"
-                )
+                out = analyze_apk(str(evidence["artifact"]), outdir=outdir)
             except Exception as e:  # pragma: no cover
                 logger.exception("analysis failed")
                 display.fail(f"Analysis failed: {e}")
                 return
-            logger.info("analysis completed", extra={"report": str(out / 'report.json')})
-            print(
-                f"Status: Static analysis completed. Report at {out / 'report.json'}"
-            )
+            report_path = out / "report.json"
+            try:
+                AnalysisRepository().upsert(package, str(report_path))
+            except Exception:
+                logger.exception("failed to record analysis")
+            logger.info("analysis completed", extra={"report": str(report_path)})
+            print(f"Status: Static analysis completed. Report at {report_path}")
             _display_manifest_insights(out)
             log = ieee.format_evidence_log([evidence])
             print(log)
@@ -360,7 +367,7 @@ def sandbox_analyze_apk() -> None:
         return
 
     app_name = Path(apk_path).stem
-    outdir = config.OUTPUT_DIR / f"{app_name}_sandbox"
+    outdir = config.OUTPUT_DIR / config.ts()
     with log_context(app=app_name):
         logger.info("sandbox_analyze_apk", extra={"apk": apk_path})
         try:
@@ -370,6 +377,12 @@ def sandbox_analyze_apk() -> None:
             display.fail(f"Sandbox analysis failed: {e}")
             return
 
+        report_path = outdir / "metrics.json"
+        try:
+            target_path = report_path if report_path.exists() else outdir
+            AnalysisRepository().upsert(app_name, str(target_path))
+        except Exception:
+            logger.exception("failed to record analysis")
         logger.info("sandbox analysis completed", extra={"output": str(outdir)})
         print(f"Status: Sandbox analysis completed. Results in {outdir}")
 

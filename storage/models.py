@@ -53,3 +53,24 @@ class RiskReport(Base):
             "breakdown": self.breakdown,
             "created_at": self.created_at,
         }
+
+
+class Analysis(Base):
+    """Record of an analysis run and the location of its report."""
+
+    __tablename__ = "analyses"
+
+    id: int = Column(Integer, primary_key=True, autoincrement=True)
+    target: str = Column(String, nullable=False, unique=True, index=True)
+    report_path: str = Column(String, nullable=False)
+    created_at: _dt.datetime = Column(
+        DateTime, default=_dt.datetime.utcnow, nullable=False, index=True
+    )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "target": self.target,
+            "report_path": self.report_path,
+            "created_at": self.created_at,
+        }
