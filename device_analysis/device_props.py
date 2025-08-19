@@ -7,6 +7,7 @@ from functools import lru_cache
 from typing import Dict
 
 from .adb_utils import _adb_path, _run_adb
+from app_utils.error_utils import log_exception
 
 
 _PROP_KEYS = [
@@ -34,7 +35,8 @@ def _shell_getprops(serial: str, keys: list[str]) -> Dict[str, str]:
     try:
         proc = _run_adb([adb, "-s", serial, "shell", cmd], timeout=6)
         out = proc.stdout or ""
-    except Exception:
+    except Exception as exc:
+        log_exception("Failed to retrieve device properties", exc)
         return {k: "" for k in keys}
 
     result: Dict[str, str] = {k: "" for k in keys}
