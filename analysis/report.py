@@ -141,25 +141,24 @@ def write_report(
     metadata: List[Dict[str, str]],
     metrics: Dict[str, float] | None = None,
     dynamic_metrics: Dict[str, Any] | None = None,
+    diff: Dict[str, Any] | None = None,
 ) -> Path:
     """Write a JSON report containing analysis results."""
     report_path = out / "report.json"
     all_metrics = {**(metrics or {}), **(dynamic_metrics or {})}
 
-    report_path.write_text(
-        json.dumps(
-            {
-                "permissions": permissions,
-                "permission_details": permission_details,
-                "secrets": secrets,
-                "components": components,
-                "sdk_info": sdk_info,
-                "features": features,
-                "app_flags": app_flags,
-                "metadata": metadata,
-                "metrics": all_metrics,
-            },
-            indent=2,
-        )
-    )
+    data = {
+        "permissions": permissions,
+        "permission_details": permission_details,
+        "secrets": secrets,
+        "components": components,
+        "sdk_info": sdk_info,
+        "features": features,
+        "app_flags": app_flags,
+        "metadata": metadata,
+        "metrics": all_metrics,
+    }
+    if diff:
+        data["diff"] = diff
+    report_path.write_text(json.dumps(data, indent=2))
     return report_path

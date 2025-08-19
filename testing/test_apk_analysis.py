@@ -151,6 +151,12 @@ def test_write_report(tmp_path: Path):
         runtime_metrics,
     )
     risk = calculate_risk_score(metrics, {})
+    diff = {
+        "added_permissions": ["android.permission.CAMERA"],
+        "removed_permissions": [],
+        "added_components": {"activity": ["New"]},
+        "removed_components": {},
+    }
     report = write_report(
         tmp_path,
         ["android.permission.INTERNET"],
@@ -163,6 +169,7 @@ def test_write_report(tmp_path: Path):
         metadata,
         metrics,
         risk,
+        diff,
     )
     data = json.loads(report.read_text())
     assert "android.permission.INTERNET" in str(data)
@@ -177,6 +184,8 @@ def test_write_report(tmp_path: Path):
     assert "risk" in str(data)
     assert "rationale" in str(data)
     assert "permission_prefix_counts" in data["metrics"]
+    assert data["diff"]["added_permissions"] == ["android.permission.CAMERA"]
+    assert data["diff"]["added_components"]["activity"] == ["New"]
 
 
 def test_calculate_derived_metrics():
