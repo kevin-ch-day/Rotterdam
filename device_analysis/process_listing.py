@@ -7,6 +7,7 @@ import subprocess
 from typing import List, Dict
 
 from .adb_utils import _adb_path, _run_adb
+from app_utils.error_utils import log_exception
 
 
 def parse_ps(output: str) -> List[Dict[str, str]]:
@@ -34,6 +35,7 @@ def list_processes(serial: str) -> List[Dict[str, str]]:
     adb = _adb_path()
     try:
         proc = _run_adb([adb, "-s", serial, "shell", "ps"], timeout=10)
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as exc:
+        log_exception("Failed to list processes", exc)
         return []
     return parse_ps(proc.stdout or "")
