@@ -43,13 +43,24 @@ def print_package_inventory(packages: Iterable[Dict[str, Any]]) -> None:
             p.get("package", ""),
             p.get("version_name", ""),
             p.get("installer", ""),
+            p.get("uid", ""),
+            "yes" if p.get("system") else "no",
+            "yes" if p.get("priv") else "no",
             "yes" if p.get("high_value") else "no",
         ]
         for p in packages
     ]
     display.print_table(
         rows,
-        headers=["Package", "Version", "Installer", "High-Value"],
+        headers=[
+            "Package",
+            "Version",
+            "Installer",
+            "UID",
+            "System",
+            "Priv",
+            "High-Value",
+        ],
     )
 
 
