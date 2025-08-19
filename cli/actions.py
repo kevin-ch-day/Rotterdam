@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 from contextlib import contextmanager
 from typing import Any, Dict, Optional
+import argparse
 
 from core import display, menu, renderers, config
 from .prompts import prompt_existing_path
@@ -340,3 +341,30 @@ def _display_manifest_insights(outdir: Path) -> None:
         for kind, names in diff.get("removed_components", {}).items():
             if names:
                 print(f"Removed {kind.title()}s: {', '.join(names)}")
+
+
+def run_server(host: str = "127.0.0.1", port: int = 8000) -> None:
+    """Start the API server using uvicorn."""
+    import uvicorn
+
+    uvicorn.run("server:app", host=host, port=port)
+
+
+def main(argv: list[str] | None = None) -> None:
+    """Minimal CLI for auxiliary commands."""
+    parser = argparse.ArgumentParser(description="Rotterdam utilities")
+    sub = parser.add_subparsers(dest="cmd")
+
+    p_serve = sub.add_parser("serve", help="start API server")
+    p_serve.add_argument("--host", default="127.0.0.1")
+    p_serve.add_argument("--port", type=int, default=8000)
+
+    args = parser.parse_args(argv)
+    if args.cmd == "serve":
+        run_server(args.host, args.port)
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":  # pragma: no cover - manual invocation
+    main()
