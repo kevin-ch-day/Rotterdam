@@ -26,6 +26,21 @@ def run_main_menu() -> None:
 
     selected_serial = ""
 
+    options = [
+        "Check for connected devices",
+        "Connect to a device",
+        "List detailed devices",
+        "List installed packages on selected device",
+        "Scan installed apps for dangerous permissions",
+        "List running processes on selected device",
+        "Analyze a local APK for permissions and secrets",
+        "Pull and analyze an installed app",
+        "Sandbox analyze a local APK",
+    ]
+
+    class _RefreshMenu(Exception):
+        """Internal exception used to refresh the menu title."""
+
     def handle_choice(choice: int, label: str) -> None:
         nonlocal selected_serial
         if choice == 1:
@@ -52,22 +67,19 @@ def run_main_menu() -> None:
             actions.sandbox_analyze_apk()
         else:
             display.warn(f"Unhandled choice: {choice}")
+        raise _RefreshMenu
 
-    menu.run_menu_loop(
-        "Main Menu\n--------------------------------",
-        [
-            "Check for connected devices",
-            "Connect to a device",
-            "List detailed devices",
-            "List installed packages on selected device",
-            "Scan installed apps for dangerous permissions",
-            "List running processes on selected device",
-            "Analyze a local APK for permissions and secrets",
-            "Pull and analyze an installed app",
-            "Sandbox analyze a local APK",
-        ],
-        handler=handle_choice,
-        exit_label="Exit App",
-    )
+    while True:
+        current = selected_serial or "None"
+        try:
+            menu.run_menu_loop(
+                f"Main Menu — Device: {current}\n--------------------------------",
+                options,
+                handler=handle_choice,
+                exit_label="Exit App",
+            )
+            break
+        except _RefreshMenu:
+            continue
 
     display.good("Exiting App")
