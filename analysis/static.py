@@ -20,6 +20,7 @@ from .manifest import (
 from .permissions import categorize_permissions
 from .secrets import scan_for_secrets
 from .report import calculate_derived_metrics, write_report
+from .signature import verify_signature
 from risk_scoring import calculate_risk_score
 
 
@@ -84,6 +85,8 @@ def analyze_apk(apk_path: str, outdir: str = "analysis") -> Path:
     metrics = calculate_derived_metrics(
         perm_details, components, sdk_info, features, metadata
     )
+    sig_info = verify_signature(apk_path)
+    metrics["untrusted_signature"] = 0 if sig_info.get("trusted") else 1
     (out / "derived_metrics.json").write_text(json.dumps(metrics, indent=2))
 
     # Placeholder for dynamic metrics; future instrumentation can populate these

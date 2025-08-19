@@ -13,6 +13,7 @@ from .manifest import (
 )
 from .permissions import categorize_permissions
 from .secrets import scan_for_secrets
+from .signature import verify_signature
 
 __all__ = [
     "analyze_apk",
@@ -25,6 +26,7 @@ __all__ = [
     "extract_metadata",
     "categorize_permissions",
     "scan_for_secrets",
+    "verify_signature",
     "write_report",
     "calculate_derived_metrics",
 ]

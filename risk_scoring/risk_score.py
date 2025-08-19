@@ -20,6 +20,11 @@ DEFAULT_WEIGHTS: Dict[str, float] = {
     "permission_invocation_count": 0.2,
     "cleartext_endpoint_count": 0.2,
     "file_write_count": 0.1,
+    # Presence of an untrusted or missing signature is a strong indicator that
+    # the APK may have been tampered with.  This is represented as a binary
+    # metric in the range ``[0, 1]`` where ``1`` denotes an untrusted
+    # signature.
+    "untrusted_signature": 0.1,
 }
 
 # Normalisation caps for count based metrics.  The selected caps are heuristic
@@ -95,6 +100,7 @@ def calculate_risk_score(
     perm_inv = float(dynamic_metrics.get("permission_invocation_count", 0.0))
     cleartext = float(dynamic_metrics.get("cleartext_endpoint_count", 0.0))
     file_writes = float(dynamic_metrics.get("file_write_count", 0.0))
+    untrusted_sig = float(static_metrics.get("untrusted_signature", 0.0))
 
     rationale_parts: list[str] = []
     if pd > 0.5:
@@ -107,6 +113,8 @@ def calculate_risk_score(
         rationale_parts.append("cleartext network endpoints detected")
     if file_writes > 0:
         rationale_parts.append("file system writes observed")
+    if untrusted_sig > 0:
+        rationale_parts.append("signature could not be trusted")
 
     rationale = (
         "; ".join(rationale_parts)
