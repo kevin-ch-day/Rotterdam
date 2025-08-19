@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 import shutil
+import time
 import uuid
 from pathlib import Path
+import hashlib
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
@@ -49,7 +51,28 @@ def _process_apk(apk_path: str) -> dict[str, str]:
     )
     html_path.write_text(html_content)
 
-    return {"package_name": package_name, "analysis_dir": str(out_dir)}
+    # Derive findings from the risk breakdown for demonstration purposes
+    findings = [
+        {
+            "id": key,
+            "severity": "Low",
+            "title": key.replace("_", " ").title(),
+            "tags": [],
+            "evidence": str(value),
+        }
+        for key, value in result.get("breakdown", {}).items()
+    ]
+    (out_dir / "findings.json").write_text(json.dumps(findings, indent=2))
+
+    sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
+
+    return {
+        "package_name": package_name,
+        "analysis_dir": str(out_dir),
+        "sha256": sha256,
+        "score": result.get("score"),
+        "created_at": time.time(),
+    }
 
 
 @router.post("/scans")
@@ -58,12 +81,13 @@ async def create_scan(file: UploadFile = File(...)) -> dict[str, str]:
     uploads_dir = _ANALYSIS_ROOT / "uploads"
     uploads_dir.mkdir(parents=True, exist_ok=True)
 
-    dest = uploads_dir / file.filename
+    safe_name = Path(file.filename).name
+    dest = uploads_dir / f"{uuid.uuid4().hex}_{safe_name}"
     with dest.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
     job_id = scheduler.submit_job(_process_apk, str(dest))
-    return {"id": job_id}
+    return {"scan_id": job_id}
 
 
 @router.get("/scans/{scan_id}")
@@ -79,7 +103,17 @@ async def get_scan(scan_id: str) -> dict[str, object]:
             latest = _repo.get_latest(package)
             report = latest.to_dict() if latest else None
 
-    return {"id": scan_id, "status": status, "report": report}
+    info: dict[str, object] = {"scan_id": scan_id, "status": status, "report": report}
+    if job and job.result:
+        info.update(
+            {
+                "pkg": job.result.get("package_name"),
+                "sha256": job.result.get("sha256"),
+                "score": job.result.get("score"),
+                "started": job.created_at,
+            }
+        )
+    return info
 
 
 @router.get("/scans/{scan_id}/report")
@@ -93,9 +127,63 @@ async def stream_report(scan_id: str, format: str = "json"):
     if not analysis_dir:
         raise HTTPException(status_code=404, detail="report not available")
 
+    if format not in {"json", "html"}:
+        raise HTTPException(status_code=400, detail="invalid format")
+
     path = Path(analysis_dir) / f"report.{format}"
     if not path.exists():
         raise HTTPException(status_code=404, detail="report not found")
 
     media_type = "application/json" if format == "json" else "text/html"
     return FileResponse(path, media_type=media_type, filename=path.name)
+
+
+@router.get("/scans")
+async def list_scans(limit: int = 50) -> list[dict[str, object]]:
+    """Return recent scans and their status."""
+    jobs = scheduler.list_jobs()
+    items: list[dict[str, object]] = []
+    for scan_id, status in jobs.items():
+        job = scheduler.get_job(scan_id)
+        info: dict[str, object] = {"scan_id": scan_id, "status": status}
+        if job and job.result:
+            info.update(
+                {
+                    "pkg": job.result.get("package_name"),
+                    "sha256": job.result.get("sha256"),
+                    "score": job.result.get("score"),
+                    "started": job.created_at,
+                }
+            )
+        items.append(info)
+    return items[:limit]
+
+
+@router.get("/scans/{scan_id}/findings")
+async def get_findings(scan_id: str) -> list[dict[str, object]]:
+    """Return findings for a completed scan."""
+    job = scheduler.get_job(scan_id)
+    if not job or job.status != "completed" or not job.result:
+        raise HTTPException(status_code=404, detail="findings not available")
+    analysis_dir = job.result.get("analysis_dir")
+    path = Path(analysis_dir) / "findings.json"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="findings not found")
+    return json.loads(path.read_text())
+
+
+@router.get("/scans/{scan_id}/artifacts")
+async def list_artifacts(scan_id: str) -> list[dict[str, str]]:
+    """List downloadable artifacts for a completed scan."""
+    job = scheduler.get_job(scan_id)
+    if not job or job.status != "completed" or not job.result:
+        raise HTTPException(status_code=404, detail="artifacts not available")
+    analysis_dir = job.result.get("analysis_dir")
+    artifacts = []
+    for fmt in ("json", "html"):
+        path = Path(analysis_dir) / f"report.{fmt}"
+        if path.exists():
+            artifacts.append(
+                {"name": path.name, "url": f"/scans/{scan_id}/report?format={fmt}"}
+            )
+    return artifacts
