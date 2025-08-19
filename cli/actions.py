@@ -19,7 +19,8 @@ from devices import (
     processes,
 )
 from analysis import analyze_apk
-from sandbox import run_analysis as sandbox_analyze
+from sandbox import run_analysis as sandbox_analyze, compute_runtime_metrics
+from sandbox import ui_driver
 
 
 def show_connected_devices() -> None:
@@ -185,6 +186,39 @@ def sandbox_analyze_apk() -> None:
         display.print_section("Network Activity")
         for n in nets:
             print(f"{n.get('protocol', '')} -> {n.get('destination', '')}")
+
+
+def explore_installed_app(serial: str) -> None:
+    """Select an installed package and run automated UI exploration."""
+    try:
+        pkgs = packages.list_installed_packages(serial)
+    except RuntimeError as e:
+        display.fail(str(e))
+        return
+    if not pkgs:
+        print("Status: No packages found.")
+        return
+
+    choice = menu.show_menu(
+        "Installed Packages",
+        pkgs,
+        exit_label="Cancel",
+        prompt="Select package",
+    )
+    if choice == 0:
+        print("Status: No package selected.")
+        return
+    package = pkgs[choice - 1]
+    activities = ui_driver.run_monkey(serial, package)
+    metrics = compute_runtime_metrics([], [], [], activities)
+
+    display.print_section("Visited Activities")
+    if metrics["activities"]:
+        for act in metrics["activities"]:
+            print(act)
+        print(f"Total: {metrics['activity_count']}")
+    else:
+        print("No activity coverage recorded.")
 
 
 def _display_manifest_insights(outdir: Path) -> None:
