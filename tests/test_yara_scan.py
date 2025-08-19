@@ -1,11 +1,16 @@
-import pytest
-import pytest
 from pathlib import Path
+
+import pytest
 
 from analysis.yara_scan import compile_rules, scan_directory
 
 
-yara = pytest.importorskip("yara")
+try:  # pragma: no cover - depends on optional system library
+    import yara  # type: ignore
+except Exception:  # noqa: F401 - the variable is used in pytestmark below
+    yara = None
+
+pytestmark = pytest.mark.skipif(yara is None, reason="yara library not available")
 
 
 def test_scan_directory(tmp_path: Path):

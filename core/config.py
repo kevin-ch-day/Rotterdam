@@ -138,7 +138,7 @@ def get_database_url() -> str:
         host = os.getenv("DB_HOST", "localhost")
         port = os.getenv("DB_PORT", "3306")
         auth = f":{password}" if password else ""
-        return f"mysql+pymysql://{user}{auth}@{host}:{port}/{name}"
+        return f"mysql+mysqlconnector://{user}{auth}@{host}:{port}/{name}"
 
     return "sqlite:///:memory:"
 
