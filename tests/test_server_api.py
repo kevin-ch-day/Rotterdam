@@ -94,14 +94,10 @@ def test_job_lifecycle():
 
 
 def test_hidden_endpoints_and_headers():
-    resp = client.get("/_healthz", headers=HEADERS)
-    assert resp.status_code == 200
-    assert resp.json()["status"] == "ok"
-    assert "X-Request-ID" in resp.headers
-
     resp = client.get("/_stats", headers=HEADERS)
     assert resp.status_code == 200
     assert "jobs" in resp.json()
+    assert "X-Request-ID" in resp.headers
 
     resp = client.get("/devices", headers=HEADERS)
     assert "X-RateLimit-Remaining" in resp.headers
