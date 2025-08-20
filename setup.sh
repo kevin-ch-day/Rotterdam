@@ -8,13 +8,13 @@ usage() {
     cat <<'EOF'
 Usage: ./setup.sh [OPTIONS]
 
-Prepare the Rotterdam environment on Fedora systems. Installs required
-system packages, creates a Python virtual environment and pulls Python
-dependencies from requirements.txt.
+Prepare the Rotterdam environment on Fedora or Debian/Ubuntu systems.
+Installs required system packages, creates a Python virtual environment
+and pulls Python dependencies from requirements.txt.
 
 Options:
   --force-venv   Recreate the virtual environment even if it exists
-  --skip-system  Do not install system packages with dnf
+  --skip-system  Do not install system packages
   -h, --help     Show this help message
 EOF
 }
@@ -32,8 +32,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if ! command -v dnf >/dev/null 2>&1; then
-    echo "This setup script is intended for Fedora-based systems with dnf." >&2
+PKG_MANAGER=""
+if command -v dnf >/dev/null 2>&1; then
+    PKG_MANAGER="dnf"
+elif command -v apt-get >/dev/null 2>&1; then
+    PKG_MANAGER="apt"
+else
+    echo "This setup script requires either dnf (Fedora) or apt-get (Debian/Ubuntu)." >&2
     exit 1
 fi
 
@@ -48,55 +53,80 @@ else
     SUDO=""
 fi
 
+if [[ $PKG_MANAGER == "dnf" ]]; then
+    PKG_INSTALL_CMD="$SUDO dnf install -y"
+else
+    PKG_INSTALL_CMD="$SUDO apt-get install -y"
+fi
+
 if [[ $SKIP_SYSTEM -eq 0 ]]; then
-    echo "Installing system dependencies with dnf..."
+    echo "Installing system dependencies with $PKG_MANAGER..."
 
-    # Allow override via JAVA_PACKAGE (e.g., JAVA_PACKAGE=java-21-openjdk)
-    JAVA_PACKAGE="${JAVA_PACKAGE:-java-17-openjdk}"
-
-    # Resolve Java package: use requested if available, otherwise latest java-*openjdk.
+    : > system_install.log
+    packages=()
     JAVA_PKG=""
-    if dnf list "$JAVA_PACKAGE" >/dev/null 2>&1; then
-        JAVA_PKG="$JAVA_PACKAGE"
+
+    if [[ $PKG_MANAGER == "dnf" ]]; then
+        # Allow override via JAVA_PACKAGE (e.g., JAVA_PACKAGE=java-21-openjdk)
+        JAVA_PACKAGE="${JAVA_PACKAGE:-java-17-openjdk}"
+
+        # Resolve Java package: use requested if available, otherwise latest java-*openjdk.
+        if dnf list "$JAVA_PACKAGE" >/dev/null 2>&1; then
+            JAVA_PKG="$JAVA_PACKAGE"
+        else
+            # Find the latest available java-*openjdk
+            JAVA_PKG="$(dnf list --available 'java-*openjdk' 2>/dev/null \
+                | awk '/^java-[0-9]+-openjdk(\.x86_64)?\s/ {print $1}' \
+                | cut -d'.' -f1 \
+                | sort -t'-' -k2,2n \
+                | tail -1 || true)"
+            if [[ -z "$JAVA_PKG" ]]; then
+                echo "Warning: no java-*openjdk package available; skipping Java installation." >&2
+            fi
+        fi
+
+        # Core packages (Fedora names). Note: aapt2/apktool may need extra repos on some versions.
+        packages=(
+            python3
+            python3-virtualenv
+            adb
+            aapt2
+            apktool
+            yara
+        )
+        if [[ -n "$JAVA_PKG" ]]; then
+            packages+=("$JAVA_PKG")
+        fi
     else
-        # Find the latest available java-*openjdk
-        JAVA_PKG="$(dnf list --available 'java-*openjdk' 2>/dev/null \
-            | awk '/^java-[0-9]+-openjdk(\.x86_64)?\s/ {print $1}' \
-            | cut -d'.' -f1 \
-            | sort -t'-' -k2,2n \
-            | tail -1 || true)"
-        if [[ -z "$JAVA_PKG" ]]; then
-            echo "Warning: no java-*openjdk package available; skipping Java installation." >&2
+        # Debian/Ubuntu package names
+        JAVA_PKG="${JAVA_PACKAGE:-default-jdk}"
+        packages=(
+            python3
+            python3-venv
+            adb
+            aapt
+            apktool
+            yara
+            "$JAVA_PKG"
+        )
+        echo "Updating package list..."
+        if ! $SUDO apt-get update 2>&1 | tee -a system_install.log; then
+            echo "Failed to update package list" | tee -a system_install.log >&2
+            exit 1
         fi
     fi
 
-    # Core packages (Fedora names). Note: aapt2/apktool may need extra repos on some versions.
-    packages=(
-        python3
-        python3-virtualenv
-        adb
-        aapt2
-        apktool
-        yara
-    )
-    # Append Java if resolved
-    if [[ -n "$JAVA_PKG" ]]; then
-        packages+=("$JAVA_PKG")
-    fi
-
-    # Install packages one-by-one; log output and track failures
-    : > dnf_install.log
     for pkg in "${packages[@]}"; do
         echo "Installing $pkg..."
-        if ! $SUDO dnf install -y "$pkg" >> dnf_install.log 2>&1; then
-            echo "Failed to install $pkg" | tee -a dnf_install.log >&2
+        if ! $PKG_INSTALL_CMD "$pkg" 2>&1 | tee -a system_install.log; then
+            echo "Failed to install $pkg" | tee -a system_install.log >&2
             FAILED_PACKAGES+=("$pkg")
         fi
     done
 fi
 
 # Verify required commands are available before creating the Python environment
-REQUIRED_CMDS=(adb aapt2 apktool java yara)
+REQUIRED_CMDS=(adb apktool java yara)
 missing_tools=()
 for cmd in "${REQUIRED_CMDS[@]}"; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -105,11 +135,17 @@ for cmd in "${REQUIRED_CMDS[@]}"; do
     fi
 done
 
+# Check for either aapt2 or aapt
+if ! command -v aapt2 >/dev/null 2>&1 && ! command -v aapt >/dev/null 2>&1; then
+    echo "Required tool 'aapt2' or 'aapt' is not installed or not found in PATH." >&2
+    missing_tools+=("aapt2/aapt")
+fi
+
 if (( ${#missing_tools[@]} )); then
     echo "Please install the missing tools and run the setup script again." >&2
     if (( ${#FAILED_PACKAGES[@]} )); then
         echo "Packages that failed to install: ${FAILED_PACKAGES[*]}" >&2
-        echo "See dnf_install.log for details." >&2
+        echo "See system_install.log for details." >&2
     fi
     exit 1
 fi
@@ -139,7 +175,7 @@ fi
 
 if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
     echo "The following packages failed to install: ${FAILED_PACKAGES[*]}" >&2
-    echo "You may need to install them manually. See dnf_install.log for details." >&2
+    echo "You may need to install them manually. See system_install.log for details." >&2
     exit 1
 fi
 
