@@ -48,12 +48,6 @@ app.add_middleware(AuthRateLimitMiddleware)
 _STATIC_PREFIXES = (
     "/ui/",
     "/static/",
-    "/css/",
-    "/js/",
-    "/images/",
-    "/img/",
-    "/fonts/",
-    "/partials/",   # added to cover HTML fragments
 )
 
 @app.middleware("http")
@@ -80,19 +74,6 @@ app.include_router(system_router)  # owns /_healthz (and /_ready if present)
 # Use check_dir=False so startup won't crash if UI_DIR is missing (we log warnings).
 app.mount("/ui", StaticFiles(directory=str(UI_DIR), check_dir=False), name="ui")
 app.mount("/static", StaticFiles(directory=str(UI_DIR), check_dir=False), name="static")
-
-# Conditionally mount common asset roots if those folders exist (prevents startup errors)
-for mount, subdir in (
-    ("/css", "css"),
-    ("/js", "js"),
-    ("/images", "images"),
-    ("/img", "img"),
-    ("/fonts", "fonts"),
-    ("/partials", "partials"),  # NEW: HTML fragments like header/footer/sidebar
-):
-    d = UI_DIR / subdir
-    if d.exists():
-        app.mount(mount, StaticFiles(directory=str(d)), name=subdir)
 
 # ---------- Startup diagnostics ----------
 @app.on_event("startup")
