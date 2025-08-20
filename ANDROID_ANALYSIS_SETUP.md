@@ -5,6 +5,23 @@ analyzing Android applications using both static and dynamic techniques.
 
 ## 1. System Preparation
 - Install Android SDK and platform tools (`adb`, `fastboot`).
+- Install `aapt2` and `apktool`. On Fedora these tools may require extra
+  repositories:
+  ```bash
+  sudo dnf copr enable jwf/aapt2
+  sudo dnf copr enable jwf/apktool
+  sudo dnf install aapt2 apktool
+  ```
+  If packages are unavailable, download the latest releases manually:
+  ```bash
+  # aapt2
+  curl -LO https://dl.google.com/android/repository/build-tools_r34-linux.zip
+  unzip build-tools_r34-linux.zip '*/aapt2' && sudo mv */aapt2 /usr/local/bin/
+
+  # apktool
+  curl -LO https://github.com/iBotPeaches/Apktool/releases/latest/download/apktool.jar
+  sudo install -m 0755 apktool.jar /usr/local/bin/apktool
+  ```
 - Configure `udev` rules to allow ADB access without root. Example rule:
   `SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", MODE="0666", GROUP="plugdev"`.
 - Ensure your user is part of the `plugdev` (or `adbusers`) group.
