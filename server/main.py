@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, PlainTextResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .middleware import AuthRateLimitMiddleware, RequestIDMiddleware
+from .middleware import AuthRateLimitMiddleware, RequestIDMiddleware, DEFAULT_API_KEY
 from .routers import (
     analytics_router,
     devices_router,
@@ -73,6 +73,11 @@ async def _startup_checks() -> None:
         log.warning("UI directory missing — static mounts will 404: %s", UI_DIR)
     if not INDEX_HTML.exists():
         log.warning("Index file missing — GET / will 500: %s", INDEX_HTML)
+    api_key = os.getenv("ROTTERDAM_API_KEY", DEFAULT_API_KEY)
+    if api_key == DEFAULT_API_KEY:
+        log.critical(
+            "ROTTERDAM_API_KEY is using the default value; set a custom key for production"
+        )
 
 # ---------- Health / diagnostics ----------
 @app.get("/_healthz", include_in_schema=False)
