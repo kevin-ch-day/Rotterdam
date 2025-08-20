@@ -21,6 +21,8 @@ from .routers import (
 # ---------- Paths (robust to CWD) ----------
 THIS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = THIS_DIR.parent
+# NOTE: All static files must live under ``/ui/...`` relative to the repository
+# root so that the mounts below can serve them correctly.
 UI_DIR = (REPO_ROOT / "ui").resolve()
 INDEX_HTML = UI_DIR / "pages" / "index.html"
 FAVICON_ICO = UI_DIR / "favicon.ico"

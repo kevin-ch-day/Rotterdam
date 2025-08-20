@@ -1,5 +1,8 @@
 """API routes for submitting APK scans and retrieving results."""
 
+# NOTE: Static files must reside under ``/ui/...`` so the server can mount them
+# consistently. See ``server/main.py`` for the associated mount points.
+
 from __future__ import annotations
 
 import json
