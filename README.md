@@ -56,6 +56,18 @@ Dependencies are listed in `requirements.txt`, including the MySQL driver
 The YARA wrapper requires the system `libyara` library; on Debian-based
 systems it can be installed with `apt-get install libyara-dev`.
 
+### Git configuration
+
+Enable Git's rerere functionality so it can remember how you resolve merge
+conflicts:
+
+```bash
+git config --global rerere.enabled true
+```
+
+This allows Git to automatically reuse recorded conflict resolutions, making
+future merges require less manual effort.
+
 ### Database configuration
 
 The repository uses SQLAlchemy for persistence. By default an in-memory
@@ -128,20 +140,21 @@ development.
 ## API Server
 
 A lightweight REST API can be launched to submit APKs for analysis and
-retrieve risk reports. Set a custom API key via `ROTTERDAM_API_KEY` and start
-the server via the CLI:
+retrieve risk reports. The web server's host, port, log level and browser
+behaviour all come from `server/serv_config.py`, which also honours
+environment overrides (`APP_HOST`, `APP_PORT`, `UVICORN_LOG_LEVEL`,
+`OPEN_BROWSER`). The `run.sh` helper sources these values so the CLI and server
+share a single source of truth. Set a custom API key via `ROTTERDAM_API_KEY`
+and start the server via the CLI:
 
 ```bash
 export ROTTERDAM_API_KEY="my-strong-key"  # default "secret" will trigger a warning
 python -m cli.actions serve
 ```
 
-
-This will start a FastAPI application on `localhost:8765` exposing endpoints:
-Using the default key is only suitable for local testing and will log a
-critical warning on startup. This will start a FastAPI application on
-`localhost:8000` exposing endpoints:
-
+Using the default API key `secret` is only suitable for local testing and will
+log a warning on startup. The server starts on `localhost:8765` by default and
+exposes endpoints:
 
 * `POST /scans` – upload an APK and queue analysis
 * `GET /scans/{id}` – check job status and view the latest risk report

@@ -57,20 +57,13 @@ PUBLIC_PATHS: set[str] = {
     "/_ready",
     "/ui",
     "/static",
-    "/css",
-    "/js",
-    "/images",
-    "/img",
-    "/fonts",
 }
+# Static asset paths are rooted under ``/ui/...``; these prefixes mirror
+# subdirectories within that directory so the middleware can quickly identify
+# requests for static files.
 PUBLIC_PREFIXES: tuple[str, ...] = (
     "/ui/",
     "/static/",
-    "/css/",
-    "/js/",
-    "/images/",
-    "/img/",
-    "/fonts/",
 )
 
 # -----------------------------------------------------------------------------

@@ -10,7 +10,14 @@ venv/
 .env
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
 output/
 .coverage
+coverage.xml
+htmlcov/
 logs/
 reports/logs/*.log
+*.log
+.idea/
+.vscode/
+.DS_Store

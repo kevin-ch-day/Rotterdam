@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, PlainTextResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from .constants import APP_NAME, APP_VERSION
 from .middleware import AuthRateLimitMiddleware, RequestIDMiddleware, DEFAULT_API_KEY
 from .routers import (
     analytics_router,
@@ -21,9 +22,12 @@ from .routers import (
 # ---------- Paths (robust to CWD) ----------
 THIS_DIR = Path(__file__).resolve().parent
 REPO_ROOT = THIS_DIR.parent
+# NOTE: All static files must live under ``/ui/...`` relative to the repository
+# root so that the mounts below can serve them correctly.
 UI_DIR = (REPO_ROOT / "ui").resolve()
 INDEX_HTML = UI_DIR / "pages" / "index.html"
 FAVICON_ICO = UI_DIR / "favicon.ico"
+
 
 def _mask_path(p: Path) -> str:
     """Return repo-relative path to avoid leaking full filesystem layout."""
@@ -32,10 +36,11 @@ def _mask_path(p: Path) -> str:
     except ValueError:
         return f".../{p.name}"
 
+
 # Optional base path if served behind a proxy (e.g., /rotterdam)
 ROOT_PATH = os.getenv("ROOT_PATH", "")
 
-app = FastAPI(title="Rotterdam API", root_path=ROOT_PATH)
+app = FastAPI(title=APP_NAME, version=APP_VERSION, root_path=ROOT_PATH)
 
 # ---------- Logging ----------
 log = logging.getLogger("uvicorn.error")
@@ -53,8 +58,9 @@ _STATIC_PREFIXES = (
     "/images/",
     "/img/",
     "/fonts/",
-    "/partials/",   # added to cover HTML fragments
+    "/partials/",
 )
+
 
 @app.middleware("http")
 async def add_headers(request: Request, call_next):
@@ -67,6 +73,7 @@ async def add_headers(request: Request, call_next):
     if request.url.path.startswith(_STATIC_PREFIXES):
         resp.headers.setdefault("Cache-Control", "public, max-age=3600, immutable")
     return resp
+
 
 # ---------- Routers ----------
 app.include_router(devices_router)
@@ -88,7 +95,7 @@ for mount, subdir in (
     ("/images", "images"),
     ("/img", "img"),
     ("/fonts", "fonts"),
-    ("/partials", "partials"),  # NEW: HTML fragments like header/footer/sidebar
+    ("/partials", "partials"),
 ):
     d = UI_DIR / subdir
     if d.exists():
@@ -107,7 +114,9 @@ async def _startup_checks() -> None:
         log.warning("Index file missing — GET / will 500: %s", INDEX_HTML)
     api_key = os.getenv("ROTTERDAM_API_KEY", DEFAULT_API_KEY)
     if api_key == DEFAULT_API_KEY:
-        log.critical("ROTTERDAM_API_KEY is using the default value; set a custom key for production")
+        log.critical(
+            "ROTTERDAM_API_KEY is using the default value; set a custom key for production"
+        )
 
 # ---------- Diagnostics (protected by middleware unless you allowlist it there) ----------
 @app.get("/_diag", include_in_schema=False)
@@ -116,8 +125,14 @@ async def diag() -> JSONResponse:
         {
             "root_path": ROOT_PATH,
             "ui_dir": _mask_path(UI_DIR),
-            "index_html": {"path": _mask_path(INDEX_HTML), "exists": INDEX_HTML.exists()},
-            "favicon_ico": {"path": _mask_path(FAVICON_ICO), "exists": FAVICON_ICO.exists()},
+            "index_html": {
+                "path": _mask_path(INDEX_HTML),
+                "exists": INDEX_HTML.exists(),
+            },
+            "favicon_ico": {
+                "path": _mask_path(FAVICON_ICO),
+                "exists": FAVICON_ICO.exists(),
+            },
         }
     )
 
@@ -129,6 +144,7 @@ async def root() -> FileResponse:
     # Mask path to avoid leaking full FS layout
     masked = _mask_path(INDEX_HTML)
     raise HTTPException(status_code=500, detail=f"index not found at {masked}")
+
 
 # Favicon (no union return annotation)
 @app.get("/favicon.ico", include_in_schema=False)

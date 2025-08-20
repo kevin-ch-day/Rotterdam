@@ -1,9 +1,9 @@
-const BASE_PATH = window.location.pathname.includes('/pages/') ? '..' : '.';
+const BASE_PATH = '/ui';
 
 $(function () {
-  $('#header').load(`${BASE_PATH}/partials/header.html`);
-  $('#footer').load(`${BASE_PATH}/partials/footer.html`);
-  $('#sidebar').load(`${BASE_PATH}/partials/sidebar.html`, function () {
+  $('#header').load(`${BASE_PATH}/ui/partials/header.html`);
+  $('#footer').load(`${BASE_PATH}/ui/partials/footer.html`);
+  $('#sidebar').load(`${BASE_PATH}/ui/partials/sidebar.html`, function () {
     const page = window.location.pathname.split('/').pop();
     $(`#sidebar a[href='${page}']`).addClass('active');
   });
