@@ -14,3 +14,5 @@ app.include_router(router)
 
 # Background worker to process scheduled jobs
 start_worker()
+
+__all__ = ["app"]
