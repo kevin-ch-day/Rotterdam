@@ -16,8 +16,23 @@ from fastapi.responses import JSONResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # -----------------------------------------------------------------------------
-# Config
+# Config (robust env parsing)
 # -----------------------------------------------------------------------------
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+def _env_int(name: str, default: int) -> int:
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
 
 # Comma-separated list of valid API keys. Default "secret" (development only).
 DEFAULT_API_KEY = "secret"
@@ -25,13 +40,13 @@ _API_KEYS_ENV = os.getenv("ROTTERDAM_API_KEY", DEFAULT_API_KEY)
 API_KEYS: set[str] = {k.strip() for k in _API_KEYS_ENV.split(",") if k.strip()}
 
 # Allow up to N requests per minute per client (IP or token).
-RATE_LIMIT = int(os.getenv("ROTTERDAM_RATE_LIMIT", "60"))
-RATE_WINDOW_SECS = int(os.getenv("ROTTERDAM_RATE_WINDOW_SECS", "60"))
+RATE_LIMIT = max(1, _env_int("ROTTERDAM_RATE_LIMIT", 60))
+RATE_WINDOW_SECS = max(1, _env_int("ROTTERDAM_RATE_WINDOW_SECS", 60))
 
 # Dev/ops flags
-DISABLE_AUTH = os.getenv("DISABLE_AUTH", "").lower() in {"1", "true", "yes", "on"}
-TRUST_LOCALHOST = os.getenv("TRUST_LOCALHOST", "").lower() in {"1", "true", "yes", "on"}
-TRUST_PROXY = os.getenv("TRUST_PROXY", "").lower() in {"1", "true", "yes", "on"}
+DISABLE_AUTH = _env_bool("DISABLE_AUTH", False)
+TRUST_LOCALHOST = _env_bool("TRUST_LOCALHOST", False)
+TRUST_PROXY = _env_bool("TRUST_PROXY", False)
 
 # Public routes (no auth). We intentionally EXCLUDE "/_diag" (requires auth or dev flag).
 # Include the mount roots themselves so "/ui" (no trailing slash) works, too.
@@ -87,6 +102,12 @@ _request_id_ctx: contextvars.ContextVar[str | None] = contextvars.ContextVar(
 security_logger = logging.getLogger("rotterdam.security")
 request_logger = logging.getLogger("rotterdam.request")
 
+# Warn loudly if someone forgot to change the default key and didn’t disable auth
+if DEFAULT_API_KEY in API_KEYS and not DISABLE_AUTH:
+    logging.getLogger("uvicorn.error").critical(
+        "ROTTERDAM_API_KEY is using the default value; set a custom key for production"
+    )
+
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
@@ -103,7 +124,7 @@ def _is_public(path: str) -> bool:
 def _extract_client_ip(request: Request) -> str:
     """Honor X-Forwarded-For when behind a trusted proxy (opt-in)."""
     if TRUST_PROXY:
-        xff = request.headers.get("x-forwarded-for")
+        xff = request.headers.get("x-forwarded-for")  # case-insensitive
         if xff:
             return xff.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
@@ -158,6 +179,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         try:
             response: Response = await call_next(request)
         except Exception:
+            # Ensure we always return a response with the request ID on errors
             response = JSONResponse({"detail": "Internal Server Error"}, status_code=500)
             response.headers["X-Request-ID"] = req_id
             request_logger.exception("%s %s - id=%s", request.method, request.url.path, req_id)
@@ -205,6 +227,8 @@ class AuthRateLimitMiddleware(BaseHTTPMiddleware):
             reset_in = max(0, int(RATE_WINDOW_SECS - (now - window[0])))
             security_logger.warning("Rate limit exceeded for %s path=%s", bucket, path)
             headers = _rate_limit_headers(RATE_LIMIT, 0, reset_in)
+            # Optional: include Retry-After for clients that honor it
+            headers.setdefault("Retry-After", str(reset_in))
             return JSONResponse({"detail": "Too Many Requests"}, status_code=429, headers=headers)
 
         window.append(now)

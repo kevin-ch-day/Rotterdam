@@ -25,7 +25,6 @@ UI_DIR = (REPO_ROOT / "ui").resolve()
 INDEX_HTML = UI_DIR / "pages" / "index.html"
 FAVICON_ICO = UI_DIR / "favicon.ico"
 
-
 def _mask_path(p: Path) -> str:
     """Return repo-relative path to avoid leaking full filesystem layout."""
     try:
@@ -38,7 +37,7 @@ ROOT_PATH = os.getenv("ROOT_PATH", "")
 
 app = FastAPI(title="Rotterdam API", root_path=ROOT_PATH)
 
-# ---------- Logging (shows in uvicorn output) ----------
+# ---------- Logging ----------
 log = logging.getLogger("uvicorn.error")
 
 # ---------- Middleware ----------
@@ -46,6 +45,17 @@ app.add_middleware(RequestIDMiddleware)
 app.add_middleware(AuthRateLimitMiddleware)
 
 # Light security & cache headers
+_STATIC_PREFIXES = (
+    "/ui/",
+    "/static/",
+    "/css/",
+    "/js/",
+    "/images/",
+    "/img/",
+    "/fonts/",
+    "/partials/",   # added to cover HTML fragments
+)
+
 @app.middleware("http")
 async def add_headers(request: Request, call_next):
     resp: Response = await call_next(request)
@@ -53,8 +63,8 @@ async def add_headers(request: Request, call_next):
     resp.headers.setdefault("X-Content-Type-Options", "nosniff")
     resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     resp.headers.setdefault("X-XSS-Protection", "0")
-    # Cache some static assets
-    if request.url.path.startswith(("/ui/", "/static/")):
+    # Cache static assets
+    if request.url.path.startswith(_STATIC_PREFIXES):
         resp.headers.setdefault("Cache-Control", "public, max-age=3600, immutable")
     return resp
 
@@ -63,12 +73,26 @@ app.include_router(devices_router)
 app.include_router(jobs_router)
 app.include_router(reports_router)
 app.include_router(analytics_router)
-app.include_router(system_router)
+app.include_router(system_router)  # owns /_healthz (and /_ready if present)
 
 # ---------- Static mounts ----------
-# Serve entire ui/ under both /ui and /static for compatibility
-app.mount("/ui", StaticFiles(directory=str(UI_DIR)), name="ui")
-app.mount("/static", StaticFiles(directory=str(UI_DIR)), name="static")
+# Serve entire ui/ under both /ui and /static for compatibility.
+# Use check_dir=False so startup won't crash if UI_DIR is missing (we log warnings).
+app.mount("/ui", StaticFiles(directory=str(UI_DIR), check_dir=False), name="ui")
+app.mount("/static", StaticFiles(directory=str(UI_DIR), check_dir=False), name="static")
+
+# Conditionally mount common asset roots if those folders exist (prevents startup errors)
+for mount, subdir in (
+    ("/css", "css"),
+    ("/js", "js"),
+    ("/images", "images"),
+    ("/img", "img"),
+    ("/fonts", "fonts"),
+    ("/partials", "partials"),  # NEW: HTML fragments like header/footer/sidebar
+):
+    d = UI_DIR / subdir
+    if d.exists():
+        app.mount(mount, StaticFiles(directory=str(d)), name=subdir)
 
 # ---------- Startup diagnostics ----------
 @app.on_event("startup")
@@ -83,20 +107,9 @@ async def _startup_checks() -> None:
         log.warning("Index file missing — GET / will 500: %s", INDEX_HTML)
     api_key = os.getenv("ROTTERDAM_API_KEY", DEFAULT_API_KEY)
     if api_key == DEFAULT_API_KEY:
-        log.critical(
-            "ROTTERDAM_API_KEY is using the default value; set a custom key for production"
-        )
+        log.critical("ROTTERDAM_API_KEY is using the default value; set a custom key for production")
 
-# ---------- Health / diagnostics ----------
-@app.get("/_healthz", include_in_schema=False)
-async def healthz() -> dict:
-    return {"status": "ok"}
-
-@app.get("/_ready", include_in_schema=False)
-async def ready() -> dict:
-    # Add lightweight dependency checks here if needed (DB ping, etc.)
-    return {"ready": True}
-
+# ---------- Diagnostics (protected by middleware unless you allowlist it there) ----------
 @app.get("/_diag", include_in_schema=False)
 async def diag() -> JSONResponse:
     return JSONResponse(
@@ -113,9 +126,11 @@ async def diag() -> JSONResponse:
 async def root() -> FileResponse:
     if INDEX_HTML.exists():
         return FileResponse(str(INDEX_HTML))
-    raise HTTPException(status_code=500, detail=f"index not found at {INDEX_HTML}")
+    # Mask path to avoid leaking full FS layout
+    masked = _mask_path(INDEX_HTML)
+    raise HTTPException(status_code=500, detail=f"index not found at {masked}")
 
-# Favicon (no union return annotation; FastAPI/Pydantic can't model that)
+# Favicon (no union return annotation)
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     if FAVICON_ICO.exists():

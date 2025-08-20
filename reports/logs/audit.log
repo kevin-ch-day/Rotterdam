@@ -55,3 +55,16 @@
 {"time": "2025-08-20 17:19:52,134", "level": "WARNING", "module": "rotterdam.security", "message": "Unauthorized request from 127.0.0.1 path=/css/styles.css"}
 {"time": "2025-08-20 17:19:52,143", "level": "WARNING", "module": "rotterdam.security", "message": "Unauthorized request from 127.0.0.1 path=/js/helpers.js"}
 {"time": "2025-08-20 17:19:52,148", "level": "WARNING", "module": "rotterdam.security", "message": "Unauthorized request from 127.0.0.1 path=/js/main.js"}
+{"time": "2025-08-20 17:41:59,320", "level": "INFO", "module": "rotterdam.request", "message": "GET / - id=259e69ee-03cf-40c4-9203-fb697f49bbd4"}
+{"time": "2025-08-20 17:41:59,369", "level": "INFO", "module": "rotterdam.request", "message": "GET /css/styles.css - id=9753007e-1c2b-43eb-921e-566abc8facf1"}
+{"time": "2025-08-20 17:41:59,397", "level": "INFO", "module": "rotterdam.request", "message": "GET /js/helpers.js - id=21d03360-a2ad-4ba5-bda8-09ef4b763bcd"}
+{"time": "2025-08-20 17:41:59,398", "level": "INFO", "module": "rotterdam.request", "message": "GET /js/main.js - id=520df316-7069-4cb9-9012-5538cb3858a0"}
+{"time": "2025-08-20 17:56:22,084", "level": "INFO", "module": "rotterdam.request", "message": "GET /css/styles.css - id=f7846090-4243-4a13-9197-8f3fdb1aadc7"}
+{"time": "2025-08-20 17:56:22,094", "level": "INFO", "module": "rotterdam.request", "message": "GET /js/helpers.js - id=c0f96775-ae97-42b8-b103-32b03cef55c0"}
+{"time": "2025-08-20 17:56:22,099", "level": "INFO", "module": "rotterdam.request", "message": "GET /js/main.js - id=7d652a09-2936-44a2-a082-c4a1d42d3a41"}
+{"time": "2025-08-20 17:56:22,619", "level": "WARNING", "module": "rotterdam.security", "message": "Unauthorized request from 127.0.0.1 path=/partials/header.html"}
+{"time": "2025-08-20 17:56:22,619", "level": "WARNING", "module": "rotterdam.security", "message": "Unauthorized request from 127.0.0.1 path=/partials/footer.html"}
+{"time": "2025-08-20 17:56:22,621", "level": "WARNING", "module": "rotterdam.security", "message": "Unauthorized request from 127.0.0.1 path=/partials/sidebar.html"}
+{"time": "2025-08-20 17:58:46,557", "level": "WARNING", "module": "rotterdam.security", "message": "Unauthorized request from 127.0.0.1 path=/partials/header.html"}
+{"time": "2025-08-20 17:58:46,564", "level": "WARNING", "module": "rotterdam.security", "message": "Unauthorized request from 127.0.0.1 path=/partials/footer.html"}
+{"time": "2025-08-20 17:58:46,572", "level": "WARNING", "module": "rotterdam.security", "message": "Unauthorized request from 127.0.0.1 path=/partials/sidebar.html"}

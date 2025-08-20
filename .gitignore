@@ -13,3 +13,4 @@ venv/
 output/
 .coverage
 logs/
+reports/logs/*.log
