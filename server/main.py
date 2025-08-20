@@ -1,11 +1,12 @@
-"""FastAPI application exposing Rotterdam's job and analytics API."""
-
+# server/main.py
 from __future__ import annotations
 
 from pathlib import Path
+import logging
+import os
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import FileResponse, PlainTextResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .middleware import AuthRateLimitMiddleware, RequestIDMiddleware
@@ -17,35 +18,93 @@ from .routers import (
     system_router,
 )
 
-app = FastAPI(title="Rotterdam API")
+# ---------- Paths (robust to CWD) ----------
+THIS_DIR = Path(__file__).resolve().parent
+REPO_ROOT = THIS_DIR.parent
+UI_DIR = (REPO_ROOT / "ui").resolve()
+INDEX_HTML = UI_DIR / "pages" / "index.html"
+FAVICON_ICO = UI_DIR / "favicon.ico"
 
-# Middleware
+# Optional base path if served behind a proxy (e.g., /rotterdam)
+ROOT_PATH = os.getenv("ROOT_PATH", "")
+
+app = FastAPI(title="Rotterdam API", root_path=ROOT_PATH)
+
+# ---------- Logging (shows in uvicorn output) ----------
+log = logging.getLogger("uvicorn.error")
+
+# ---------- Middleware ----------
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(AuthRateLimitMiddleware)
 
-# Routers
+# Light security & cache headers
+@app.middleware("http")
+async def add_headers(request: Request, call_next):
+    resp: Response = await call_next(request)
+    # Security
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    resp.headers.setdefault("X-XSS-Protection", "0")
+    # Cache some static assets
+    if request.url.path.startswith(("/ui/", "/static/")):
+        resp.headers.setdefault("Cache-Control", "public, max-age=3600, immutable")
+    return resp
+
+# ---------- Routers ----------
 app.include_router(devices_router)
 app.include_router(jobs_router)
 app.include_router(reports_router)
 app.include_router(analytics_router)
 app.include_router(system_router)
 
-# UI / static
-app.mount("/ui", StaticFiles(directory="ui"), name="ui")
-# Optional: keep a /static path for compatibility if your templates reference it
-app.mount("/static", StaticFiles(directory="ui"), name="static")
+# ---------- Static mounts ----------
+# Serve entire ui/ under both /ui and /static for compatibility
+app.mount("/ui", StaticFiles(directory=str(UI_DIR)), name="ui")
+app.mount("/static", StaticFiles(directory=str(UI_DIR)), name="static")
 
+# ---------- Startup diagnostics ----------
+@app.on_event("startup")
+async def _startup_checks() -> None:
+    log.info("ROOT_PATH=%s", ROOT_PATH or "(none)")
+    log.info("UI_DIR=%s exists=%s", UI_DIR, UI_DIR.exists())
+    log.info("INDEX_HTML=%s exists=%s", INDEX_HTML, INDEX_HTML.exists())
+    log.info("FAVICON_ICO=%s exists=%s", FAVICON_ICO, FAVICON_ICO.exists())
+    if not UI_DIR.exists():
+        log.warning("UI directory missing — static mounts will 404: %s", UI_DIR)
+    if not INDEX_HTML.exists():
+        log.warning("Index file missing — GET / will 500: %s", INDEX_HTML)
 
+# ---------- Health / diagnostics ----------
+@app.get("/_healthz", include_in_schema=False)
+async def healthz() -> dict:
+    return {"status": "ok"}
+
+@app.get("/_ready", include_in_schema=False)
+async def ready() -> dict:
+    # Add lightweight dependency checks here if needed (DB ping, etc.)
+    return {"ready": True}
+
+@app.get("/_diag", include_in_schema=False)
+async def diag() -> JSONResponse:
+    return JSONResponse(
+        {
+            "root_path": ROOT_PATH,
+            "ui_dir": str(UI_DIR),
+            "index_html": {"path": str(INDEX_HTML), "exists": INDEX_HTML.exists()},
+            "favicon_ico": {"path": str(FAVICON_ICO), "exists": FAVICON_ICO.exists()},
+        }
+    )
+
+# ---------- Web UI entry ----------
 @app.get("/", include_in_schema=False)
 async def root() -> FileResponse:
-    """Serve the web UI's main dashboard page."""
-    return FileResponse(Path("ui/pages/index.html"))
+    if INDEX_HTML.exists():
+        return FileResponse(str(INDEX_HTML))
+    raise HTTPException(status_code=500, detail=f"index not found at {INDEX_HTML}")
 
-
+# Favicon (no union return annotation; FastAPI/Pydantic can't model that)
 @app.get("/favicon.ico", include_in_schema=False)
-async def favicon() -> FileResponse:
-    """Serve the favicon if present, else 404."""
-    path = Path("ui/favicon.ico")
-    if path.exists():
-        return FileResponse(path)
-    raise HTTPException(status_code=404, detail="favicon not found")
+async def favicon():
+    if FAVICON_ICO.exists():
+        return FileResponse(str(FAVICON_ICO))
+    return PlainTextResponse("favicon not found", status_code=404)

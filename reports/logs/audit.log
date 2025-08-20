@@ -47,3 +47,6 @@
 {"time": "2025-08-20 16:38:39,160", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "parsed 1 devices", "session_id": "7c1b3823-4bc4-4ed2-bed1-2a68ed2b32dc", "action": "show_detailed_devices"}
 {"time": "2025-08-20 16:38:39,476", "level": "INFO", "module": "cli.actions.utils", "message": "found 1 devices", "session_id": "7c1b3823-4bc4-4ed2-bed1-2a68ed2b32dc", "action": "show_detailed_devices"}
 {"time": "2025-08-20 16:43:15,010", "level": "INFO", "module": "cli.actions.utils", "message": "launch_web_app", "session_id": "c6475e87-f4ad-4ede-aab7-0831b1d92457"}
+{"time": "2025-08-20 16:53:52,282", "level": "INFO", "module": "__main__", "message": "Launching CLI"}
+{"time": "2025-08-20 16:54:09,135", "level": "INFO", "module": "cli.actions.utils", "message": "launch_web_app"}
+{"time": "2025-08-20 16:57:14,437", "level": "INFO", "module": "__main__", "message": "Launching CLI"}
