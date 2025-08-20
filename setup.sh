@@ -66,6 +66,21 @@ if [[ $SKIP_SYSTEM -eq 0 ]]; then
     $SUDO dnf install -y python3 python3-virtualenv adb aapt2 apktool java-11-openjdk yara
 fi
 
+# Verify required commands are available before creating the Python environment
+REQUIRED_CMDS=(adb aapt apktool java yara)
+missing_tools=()
+for cmd in "${REQUIRED_CMDS[@]}"; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "Required tool '$cmd' is not installed or not found in PATH." >&2
+        missing_tools+=("$cmd")
+    fi
+done
+
+if (( ${#missing_tools[@]} )); then
+    echo "Please install the missing tools and run the setup script again." >&2
+    exit 1
+fi
+
 if [[ $FORCE_VENV -eq 1 && -d .venv ]]; then
     echo "Removing existing virtual environment..."
     rm -rf .venv
