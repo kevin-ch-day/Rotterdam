@@ -23,11 +23,16 @@ other platforms.
 
 ### Fedora
 
-Installed automatically by `setup.sh`:
+Installed automatically by `setup.sh` (defaults to `java-17-openjdk`; override with `JAVA_PACKAGE`):
 
 ```
-python3 python3-virtualenv adb aapt2 apktool java-11-openjdk yara
+python3 python3-virtualenv adb aapt2 apktool java-17-openjdk yara
 ```
+
+By default the script tries to install `java-17-openjdk`. If that package is
+unavailable it falls back to the latest `java-*openjdk` package detected via
+`dnf`. Set the `JAVA_PACKAGE` environment variable to specify a different Java
+package explicitly.
 
 ### Debian/Ubuntu
 
