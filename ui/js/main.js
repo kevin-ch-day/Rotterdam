@@ -1,14 +1,38 @@
 import React from "https://unpkg.com/react@18/umd/react.development.js";
 import ReactDOM from "https://unpkg.com/react-dom@18/umd/react-dom.development.js";
 
-const API_HEADERS = { "X-API-Key": "secret" };
+
+function DashboardPage() {
+  const [stats, setStats] = React.useState({ devices: 0, jobs: 0, reports: 0 });
+  React.useEffect(() => {
+    Promise.all([
+      api.get("/devices"),
+      api.get("/jobs"),
+      api.get("/reports"),
+    ])
+      .then(([d, j, r]) =>
+        setStats({ devices: d.length, jobs: j.length, reports: r.length })
+      )
+      .catch(console.error);
+  }, []);
+  return React.createElement(
+    "div",
+    null,
+    React.createElement("h3", null, "Dashboard"),
+    React.createElement(
+      "ul",
+      null,
+      React.createElement("li", null, `Devices: ${stats.devices}`),
+      React.createElement("li", null, `Jobs: ${stats.jobs}`),
+      React.createElement("li", null, `Reports: ${stats.reports}`)
+    )
+  );
+}
 
 function DevicesPage() {
   const [devices, setDevices] = React.useState([]);
   React.useEffect(() => {
-    fetch("/devices", { headers: API_HEADERS })
-      .then((r) => r.json())
-      .then(setDevices)
+    api.get("/devices").then(setDevices)
       .catch(console.error);
   }, []);
   return React.createElement(
@@ -56,9 +80,7 @@ function AnalyzePage() {
   const [status, setStatus] = React.useState("");
 
   React.useEffect(() => {
-    fetch("/devices", { headers: API_HEADERS })
-      .then((r) => r.json())
-      .then((list) => {
+    api.get("/devices").then((list) => {
         setDevices(list);
         if (list.length > 0) setSelected(list[0].serial);
       })
@@ -71,12 +93,7 @@ function AnalyzePage() {
       static_metrics: { permission_density: Math.random() },
       dynamic_metrics: { permission_invocation_count: Math.floor(Math.random() * 20) },
     };
-    const res = await fetch("/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...API_HEADERS },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
+    const data = await api.post("/jobs", payload);
     setJobId(data.job_id);
     setReport(null);
     setStatus("pending");
@@ -85,10 +102,9 @@ function AnalyzePage() {
   React.useEffect(() => {
     if (!jobId) return;
     const id = setInterval(async () => {
-      const res = await fetch(`/reports/${jobId}`, { headers: API_HEADERS });
-      if (res.status === 200) {
-        const data = await res.json();
-        setReport(data.report);
+      const res = await api.get(`/reports/${jobId}`).catch(() => null);
+      if (res) {
+        setReport(res.report);
         setStatus("completed");
         clearInterval(id);
       }
@@ -149,14 +165,12 @@ function AnalyzePage() {
 function JobsPage() {
   const [jobs, setJobs] = React.useState([]);
   const load = () => {
-    fetch("/jobs", { headers: API_HEADERS })
-      .then((r) => r.json())
-      .then(setJobs)
+    api.get("/jobs").then(setJobs)
       .catch(console.error);
   };
   React.useEffect(load, []);
   const remove = async (id) => {
-    await fetch(`/jobs/${id}`, { method: "DELETE", headers: API_HEADERS });
+    await api.delete(`/jobs/${id}`);
     load();
   };
   return React.createElement(
@@ -202,12 +216,10 @@ function JobsPage() {
   );
 }
 
-function ReportsPage({ onSelect }) {
+function ReportsPage() {
   const [reports, setReports] = React.useState([]);
   React.useEffect(() => {
-    fetch("/reports", { headers: API_HEADERS })
-      .then((r) => r.json())
-      .then(setReports)
+    api.get("/reports").then(setReports)
       .catch(console.error);
   }, []);
   return React.createElement(
@@ -233,12 +245,16 @@ function ReportsPage({ onSelect }) {
         reports.map((r) =>
           React.createElement(
             "tr",
-            {
-              key: r.job_id,
-              onClick: () => onSelect && onSelect(r.job_id),
-              style: { cursor: "pointer" },
-            },
-            React.createElement("td", null, r.job_id),
+            { key: r.job_id },
+            React.createElement(
+              "td",
+              null,
+              React.createElement(
+                "a",
+                { href: `report-detail.html?job_id=${r.job_id}` },
+                r.job_id
+              )
+            ),
             React.createElement("td", null, r.risk.score)
           )
         )
@@ -250,9 +266,7 @@ function ReportsPage({ onSelect }) {
 function AnalyticsPage() {
   const [analytics, setAnalytics] = React.useState(null);
   React.useEffect(() => {
-    fetch("/analytics", { headers: API_HEADERS })
-      .then((r) => r.json())
-      .then(setAnalytics)
+    api.get("/analytics").then(setAnalytics)
       .catch(console.error);
   }, []);
   return React.createElement(
@@ -286,9 +300,7 @@ function AnalyticsPage() {
 function DeviceStatsPage() {
   const [stats, setStats] = React.useState([]);
   React.useEffect(() => {
-    fetch("/analytics/devices", { headers: API_HEADERS })
-      .then((r) => r.json())
-      .then(setStats)
+    api.get("/analytics/devices").then(setStats)
       .catch(console.error);
   }, []);
   return React.createElement(
@@ -330,22 +342,65 @@ function DeviceStatsPage() {
   );
 }
 
-function ReportDetailPage({ jobId, onBack }) {
+function CurrentDevicePage() {
+  const [device, setDevice] = React.useState(null);
+  React.useEffect(() => {
+    api.get("/devices").then((list) => setDevice(list[0] || null))
+      .catch(console.error);
+  }, []);
+  if (!device) {
+    return React.createElement("div", null, "No device connected");
+  }
+  return React.createElement(
+    "div",
+    null,
+    React.createElement("h3", null, "Current Device"),
+    React.createElement(
+      "table",
+      null,
+      React.createElement(
+        "tbody",
+        null,
+        React.createElement(
+          "tr",
+          null,
+          React.createElement("td", null, "Serial"),
+          React.createElement("td", null, device.serial)
+        ),
+        React.createElement(
+          "tr",
+          null,
+          React.createElement("td", null, "Model"),
+          React.createElement("td", null, device.model || "-")
+        ),
+        React.createElement(
+          "tr",
+          null,
+          React.createElement("td", null, "Release"),
+          React.createElement("td", null, device.android_release || "-")
+        ),
+        React.createElement(
+          "tr",
+          null,
+          React.createElement("td", null, "Rooted"),
+          React.createElement("td", null, device.is_rooted ? "yes" : "no")
+        )
+      )
+    )
+  );
+}
+
+function ReportDetailPage({ jobId }) {
   const [id, setId] = React.useState(jobId || "");
   const [detail, setDetail] = React.useState(null);
   const load = async (jid) => {
     if (!jid) return;
     try {
-      const reportRes = await fetch(`/reports/${jid}`, { headers: API_HEADERS });
-      if (reportRes.status !== 200) {
-        setDetail(null);
-        return;
-      }
-      const reportData = await reportRes.json();
-      const jobRes = await fetch(`/jobs/${jid}`, { headers: API_HEADERS });
-      const jobData = jobRes.status === 200 ? await jobRes.json() : null;
+      const reportData = await api.get(`/reports/${jid}`);
+      const jobData = await api.get(`/jobs/${jid}`).catch(() => null);
       setDetail({ report: reportData.report, job: jobData });
     } catch (e) {
+      setDetail(null);
       console.error(e);
     }
   };
@@ -369,12 +424,11 @@ function ReportDetailPage({ jobId, onBack }) {
         { onClick: () => load(id), disabled: !id },
         "Load"
       ),
-      onBack &&
-        React.createElement(
-          "button",
-          { onClick: onBack, style: { marginLeft: "0.5rem" } },
-          "Back"
-        )
+      React.createElement(
+        "a",
+        { href: "reports.html", style: { marginLeft: "0.5rem" } },
+        "Back"
+      )
     ),
     detail &&
       detail.report &&
@@ -414,67 +468,41 @@ function ReportDetailPage({ jobId, onBack }) {
   );
 }
 
-function App() {
-  const [page, setPage] = React.useState("home");
-  const [detailId, setDetailId] = React.useState("");
-  return React.createElement(
-    "div",
-    null,
-    React.createElement("h1", null, "Rotterdam UI"),
-    React.createElement(
-      "nav",
-      null,
-      React.createElement(
-        "button",
-        { onClick: () => setPage("home") },
-        "Analyze"
-      ),
-      React.createElement(
-        "button",
-        { onClick: () => setPage("devices") },
-        "Devices"
-      ),
-      React.createElement(
-        "button",
-        { onClick: () => setPage("jobs") },
-        "Jobs"
-      ),
-      React.createElement(
-        "button",
-        { onClick: () => setPage("reports") },
-        "Reports"
-      ),
-      React.createElement(
-        "button",
-        { onClick: () => setPage("analytics") },
-        "Analytics"
-      ),
-      React.createElement(
-        "button",
-        { onClick: () => setPage("deviceStats") },
-        "Device Stats"
-      )
-    ),
-    page === "home" && React.createElement(AnalyzePage),
-    page === "devices" && React.createElement(DevicesPage),
-    page === "jobs" && React.createElement(JobsPage),
-    page === "reports" &&
-      React.createElement(ReportsPage, {
-        onSelect: (jid) => {
-          setDetailId(jid);
-          setPage("reportDetail");
-        },
-      }),
-    page === "analytics" && React.createElement(AnalyticsPage),
-    page === "deviceStats" && React.createElement(DeviceStatsPage),
-    page === "reportDetail" &&
-      React.createElement(ReportDetailPage, {
-        jobId: detailId,
-        onBack: () => setPage("reports"),
-      })
-  );
+const PAGE = window.INITIAL_PAGE || "dashboard";
+const DETAIL_ID = window.DETAIL_ID || "";
+
+let appElement;
+switch (PAGE) {
+  case "dashboard":
+    appElement = React.createElement(DashboardPage);
+    break;
+  case "home":
+  case "analyze":
+    appElement = React.createElement(AnalyzePage);
+    break;
+  case "devices":
+    appElement = React.createElement(DevicesPage);
+    break;
+  case "currentDevice":
+    appElement = React.createElement(CurrentDevicePage);
+    break;
+  case "jobs":
+    appElement = React.createElement(JobsPage);
+    break;
+  case "reports":
+    appElement = React.createElement(ReportsPage);
+    break;
+  case "analytics":
+    appElement = React.createElement(AnalyticsPage);
+    break;
+  case "deviceStats":
+    appElement = React.createElement(DeviceStatsPage);
+    break;
+  case "reportDetail":
+    appElement = React.createElement(ReportDetailPage, { jobId: DETAIL_ID });
+    break;
+  default:
+    appElement = React.createElement("div", null, "Unknown page");
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  React.createElement(App)
-);
+ReactDOM.createRoot(document.getElementById("root")).render(appElement);
