@@ -1,4 +1,4 @@
-const BASE_PATH = window.location.pathname.includes('/pages/') ? '..' : '.';
+const BASE_PATH = '/ui';
 
 $(function () {
   $('#header').load(`${BASE_PATH}/partials/header.html`);
