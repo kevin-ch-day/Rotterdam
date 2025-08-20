@@ -63,6 +63,8 @@ fi
 
 if [[ $SKIP_SYSTEM -eq 0 ]]; then
     echo "Installing system dependencies with dnf..."
+    # aapt2 and apktool may require extra repositories or manual downloads.
+    # See ANDROID_ANALYSIS_SETUP.md for details.
     $SUDO dnf install -y python3 python3-virtualenv adb aapt2 apktool java-11-openjdk yara
 fi
 
