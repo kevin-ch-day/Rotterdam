@@ -4,6 +4,18 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
+if [[ -n "${SUDO_USER:-}" ]]; then
+    cat <<'EOF' >&2
+Warning: Detected execution via sudo.
+It is recommended to run this script as the invoking user and allow it to
+elevate only when installing dependencies (e.g. pass --install-deps).
+Running the whole setup as root can create files owned by root and lead to
+permission issues. To avoid these quirks, rerun without sudo and use the
+--install-deps option so only dependency installation requires elevation.
+Continuing execution, but future permission problems may occur.
+EOF
+fi
+
 usage() {
     cat <<'EOF'
 Usage: ./setup.sh [OPTIONS]
