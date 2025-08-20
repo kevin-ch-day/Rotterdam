@@ -132,9 +132,15 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         _request_id_ctx.set(req_id)
         try:
             response: Response = await call_next(request)
-        finally:
-            # ensure header is set even when exceptions occur below other middleware
-            pass
+        except Exception:
+            response = JSONResponse(
+                {"detail": "Internal Server Error"}, status_code=500
+            )
+            response.headers["X-Request-ID"] = req_id
+            request_logger.exception(
+                "%s %s - id=%s", request.method, request.url.path, req_id
+            )
+            return response
         response.headers["X-Request-ID"] = req_id
         request_logger.info("%s %s - id=%s", request.method, request.url.path, req_id)
         return response
