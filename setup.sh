@@ -63,7 +63,20 @@ fi
 
 if [[ $SKIP_SYSTEM -eq 0 ]]; then
     echo "Installing system dependencies with dnf..."
-    $SUDO dnf install -y python3 python3-virtualenv adb aapt2 apktool java-11-openjdk yara
+    packages=(
+        python3
+        python3-virtualenv
+        adb
+        aapt2
+        apktool
+        java-11-openjdk
+        yara
+    )
+    for pkg in "${packages[@]}"; do
+        if ! $SUDO dnf install -y "$pkg" >/dev/null 2>&1; then
+            echo "Warning: package '$pkg' could not be installed. Please install it manually." >&2
+        fi
+    done
 fi
 
 if [[ $FORCE_VENV -eq 1 && -d .venv ]]; then
