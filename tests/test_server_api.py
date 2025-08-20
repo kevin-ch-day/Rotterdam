@@ -11,6 +11,14 @@ client = TestClient(app)
 HEADERS = {"X-API-Key": "secret"}
 
 
+def test_ui_index_served():
+    resp = client.get("/", headers=HEADERS)
+    assert resp.status_code == 200
+    assert "Rotterdam Dashboard" in resp.text
+
+    resp = client.get("/ui/js/helpers.js", headers=HEADERS)
+    assert resp.status_code == 200
+
 def test_job_lifecycle():
     # Devices endpoint should always return a list
     resp = client.get("/devices", headers=HEADERS)
