@@ -21,6 +21,7 @@ EOF
 
 FORCE_VENV=0
 SKIP_SYSTEM=0
+FAILED_PACKAGES=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -47,14 +48,6 @@ else
     SUDO=""
 fi
 
-install_pkg() {
-    local pkg="$1"
-    if ! $SUDO dnf install -y "$pkg" >/dev/null 2>&1; then
-        echo "Warning: package '$pkg' could not be installed. Please install it manually." >&2
-        return 1
-    fi
-}
-
 if [[ $SKIP_SYSTEM -eq 0 ]]; then
     echo "Installing system dependencies with dnf..."
 
@@ -77,8 +70,7 @@ if [[ $SKIP_SYSTEM -eq 0 ]]; then
         fi
     fi
 
-    # Core packages (names are Fedora-specific).
-    # Note: aapt2 and apktool may require enabling additional repos on some Fedora versions.
+    # Core packages (Fedora names). Note: aapt2/apktool may need extra repos on some versions.
     packages=(
         python3
         python3-virtualenv
@@ -92,16 +84,19 @@ if [[ $SKIP_SYSTEM -eq 0 ]]; then
         packages+=("$JAVA_PKG")
     fi
 
-    # Install packages one-by-one (don’t fail the whole script if one is missing)
-    set +e
+    # Install packages one-by-one; log output and track failures
+    : > dnf_install.log
     for pkg in "${packages[@]}"; do
-        install_pkg "$pkg"
+        echo "Installing $pkg..."
+        if ! $SUDO dnf install -y "$pkg" >> dnf_install.log 2>&1; then
+            echo "Failed to install $pkg" | tee -a dnf_install.log >&2
+            FAILED_PACKAGES+=("$pkg")
+        fi
     done
-    set -e
 fi
 
 # Verify required commands are available before creating the Python environment
-REQUIRED_CMDS=(adb aapt apktool java yara)
+REQUIRED_CMDS=(adb aapt2 apktool java yara)
 missing_tools=()
 for cmd in "${REQUIRED_CMDS[@]}"; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -112,6 +107,10 @@ done
 
 if (( ${#missing_tools[@]} )); then
     echo "Please install the missing tools and run the setup script again." >&2
+    if (( ${#FAILED_PACKAGES[@]} )); then
+        echo "Packages that failed to install: ${FAILED_PACKAGES[*]}" >&2
+        echo "See dnf_install.log for details." >&2
+    fi
     exit 1
 fi
 
@@ -131,5 +130,11 @@ source .venv/bin/activate
 echo "Installing Python requirements..."
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+
+if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
+    echo "The following packages failed to install: ${FAILED_PACKAGES[*]}" >&2
+    echo "You may need to install them manually. See dnf_install.log for details." >&2
+    exit 1
+fi
 
 echo "Setup complete. Run ./run.sh to start the application."
