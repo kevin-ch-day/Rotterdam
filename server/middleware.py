@@ -19,8 +19,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 # Config
 # -----------------------------------------------------------------------------
 
-# Comma-separated list of valid API keys. Default "secret".
-_API_KEYS_ENV = os.getenv("ROTTERDAM_API_KEY", "secret")
+# Comma-separated list of valid API keys. Default "secret" (development only).
+DEFAULT_API_KEY = "secret"
+_API_KEYS_ENV = os.getenv("ROTTERDAM_API_KEY", DEFAULT_API_KEY)
 API_KEYS: set[str] = {k.strip() for k in _API_KEYS_ENV.split(",") if k.strip()}
 
 # Allow up to N requests per minute per client (IP or token).
