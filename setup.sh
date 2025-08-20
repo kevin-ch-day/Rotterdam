@@ -22,6 +22,7 @@ EOF
 
 FORCE_VENV=0
 SKIP_SYSTEM=0
+FAILED_PACKAGES=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -63,7 +64,14 @@ fi
 
 if [[ $SKIP_SYSTEM -eq 0 ]]; then
     echo "Installing system dependencies with dnf..."
-    $SUDO dnf install -y python3 python3-virtualenv adb aapt2 apktool java-11-openjdk yara
+    PACKAGES=(python3 python3-virtualenv adb aapt2 apktool java-11-openjdk yara)
+    for pkg in "${PACKAGES[@]}"; do
+        echo "Installing $pkg..."
+        if ! $SUDO dnf install -y "$pkg" >>dnf_install.log 2>&1; then
+            echo "Failed to install $pkg" | tee -a dnf_install.log >&2
+            FAILED_PACKAGES+=("$pkg")
+        fi
+    done
 fi
 
 if [[ $FORCE_VENV -eq 1 && -d .venv ]]; then
@@ -81,5 +89,10 @@ source .venv/bin/activate
 echo "Installing Python requirements..."
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+
+if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
+    echo "The following packages failed to install: ${FAILED_PACKAGES[*]}" >&2
+    exit 1
+fi
 
 echo "Setup complete. Run ./run.sh to start the application."
