@@ -41,6 +41,7 @@ DEFAULT_WEIGHTS: Dict[str, float] = {
     "malicious_endpoint_count": 0.09,
     "vulnerable_dependency_count": 0.10,
     "untrusted_signature": 0.05,
+    "ml_pred_malicious": 0.05,
     # Network security flags
     "cleartext_traffic_permitted": 0.04,
     "missing_certificate_pinning": 0.03,

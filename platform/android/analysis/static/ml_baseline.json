@@ -1,0 +1,22 @@
+[
+  {
+    "label": "benign",
+    "metrics": {"permission_density": 0.1, "component_exposure": 0.1, "cleartext_traffic_permitted": 0}
+  },
+  {
+    "label": "benign",
+    "metrics": {"permission_density": 0.2, "component_exposure": 0.2, "cleartext_traffic_permitted": 0}
+  },
+  {
+    "label": "benign",
+    "metrics": {"permission_density": 0.05, "component_exposure": 0.05, "cleartext_traffic_permitted": 0}
+  },
+  {
+    "label": "malicious",
+    "metrics": {"permission_density": 0.9, "component_exposure": 0.8, "cleartext_traffic_permitted": 1}
+  },
+  {
+    "label": "malicious",
+    "metrics": {"permission_density": 0.85, "component_exposure": 0.95, "cleartext_traffic_permitted": 1}
+  }
+]

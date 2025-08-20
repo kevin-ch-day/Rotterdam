@@ -23,6 +23,7 @@ from .diff import diff_snapshots
 from .extractors.network import extract_network_security
 from .rules.engine import load_rules, evaluate_rules
 from .adapters import apktool, jadx
+from .ml_model import predict_malicious
 
 # Optional imports (degrade gracefully if unavailable)
 try:
@@ -211,10 +212,25 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
 
     (out / "derived_metrics.json").write_text(json.dumps(metrics, indent=2))
 
+    # Machine learning classification on a subset of normalized metrics
+    ml_result: Dict[str, Any] = {"label": "unknown", "confidence": 0.0, "neighbors": []}
+    try:
+        ml_features = {
+            k: metrics[k]
+            for k in ("permission_density", "component_exposure", "cleartext_traffic_permitted")
+            if k in metrics
+        }
+        ml_result = predict_malicious(ml_features)
+        metrics["ml_pred_malicious"] = 1 if ml_result["label"] == "malicious" else 0
+    except Exception as e:  # pragma: no cover - defensive
+        metrics["ml_pred_malicious"] = 0
+        display.warn(f"ML prediction failed: {e}")
+    (out / "ml_prediction.json").write_text(json.dumps(ml_result, indent=2))
+
     # Placeholder for dynamic metrics; future instrumentation can populate these.
     dynamic_metrics: Dict[str, float] = {}
 
-    # Risk scoring (merges static+dynamic inside the model)
+    # Risk scoring (merges static+dynamic and ML-derived metrics)
     risk = calculate_risk_score(metrics, dynamic_metrics)
     (out / "risk_score.json").write_text(json.dumps(risk, indent=2))
 

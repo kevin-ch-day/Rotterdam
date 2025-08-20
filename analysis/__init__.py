@@ -80,3 +80,11 @@ except Exception:  # pragma: no cover - missing dependencies
     analyze_certificates = None  # type: ignore[assignment]
 else:
     __all__.append("analyze_certificates")
+
+# Optional: simple machine learning classifier
+try:
+    from .ml_model import predict_malicious  # type: ignore[import-not-found]
+except Exception:
+    predict_malicious = None  # type: ignore[assignment]
+else:
+    __all__.append("predict_malicious")
