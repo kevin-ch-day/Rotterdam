@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -20,13 +19,15 @@ Options:
   -h, --help            Show this help message
 
 Examples:
-  ./run.sh --setup --skip-system   # run setup skipping system packages
-  ./run.sh --setup-only --skip-system  # run setup and exit
+  ./run.sh --setup --skip-system
+  ./run.sh --setup-only --force-venv
+  ./run.sh -- --json
+  ./run.sh --setup --skip-system -- --json
 EOF
 }
 
 RUN_SETUP=0
-RUN_SETUP_ONLY=0
+SETUP_ONLY=0
 SETUP_ARGS=()
 CLI_ARGS=()
 
@@ -38,7 +39,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --setup-only)
             RUN_SETUP=1
-            RUN_SETUP_ONLY=1
+            SETUP_ONLY=1
             shift
             ;;
         -h|--help)
@@ -61,13 +62,28 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Run setup if requested, or if there's no virtualenv yet
 if [[ $RUN_SETUP -eq 1 || ! -d .venv ]]; then
     echo "Running setup..." >&2
-    ./setup.sh "${SETUP_ARGS[@]}"
-    if [[ $RUN_SETUP_ONLY -eq 1 ]]; then
+    if [[ ! -x ./setup.sh ]]; then
+        echo "setup.sh is missing or not executable. Ensure you're in the project root." >&2
+        exit 1
+    fi
+    ./setup.sh "${SETUP_ARGS[@]}" || {
+        status=$?
+        echo "setup.sh failed. You can retry with './setup.sh --skip-system' or manually install the required packages." >&2
+        exit "$status"
+    }
+    if [[ $SETUP_ONLY -eq 1 ]]; then
         exit 0
     fi
 fi
 
+if [[ ! -f .venv/bin/activate ]]; then
+    echo "Virtual environment not found. Run './setup.sh' first." >&2
+    exit 1
+fi
+
+# shellcheck disable=SC1091
 source .venv/bin/activate
 exec python -m cli "${CLI_ARGS[@]}"
