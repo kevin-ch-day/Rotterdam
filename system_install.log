@@ -1,0 +1,39 @@
+Updating and loading repositories:
+Repositories loaded.
+Package "python3-3.13.7-1.fc42.x86_64" is already installed.
+
+Nothing to do.
+Updating and loading repositories:
+Repositories loaded.
+Package "python3-virtualenv-20.29.1-1.fc42.noarch" is already installed.
+
+Nothing to do.
+Updating and loading repositories:
+Repositories loaded.
+Package "android-tools-1:35.0.2-5.fc42.x86_64" is already installed.
+
+Nothing to do.
+Updating and loading repositories:
+Repositories loaded.
+Failed to resolve the transaction:
+No match for argument: aapt2
+You can try to add to command line:
+  --skip-unavailable to skip unavailable packages
+Failed to install aapt2
+Updating and loading repositories:
+Repositories loaded.
+Failed to resolve the transaction:
+No match for argument: apktool
+You can try to add to command line:
+  --skip-unavailable to skip unavailable packages
+Failed to install apktool
+Updating and loading repositories:
+Repositories loaded.
+Package "yara-4.5.2-6.fc42.x86_64" is already installed.
+
+Nothing to do.
+Updating and loading repositories:
+Repositories loaded.
+Package "java-25-openjdk-1:25.0.0.0.32-0.1.ea.fc42.x86_64" is already installed.
+
+Nothing to do.
