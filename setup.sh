@@ -145,6 +145,12 @@ if (( ${#missing_tools[@]} )); then
     echo "Please install the missing tools and run the setup script again." >&2
     if (( ${#FAILED_PACKAGES[@]} )); then
         echo "Packages that failed to install: ${FAILED_PACKAGES[*]}" >&2
+        if [[ " ${FAILED_PACKAGES[*]} " == *" aapt2 "* ]]; then
+            echo "aapt2 failed to install. Consider using the SDK-based installer (install-aapt2.sh) or install it manually." >&2
+        fi
+        if [[ " ${FAILED_PACKAGES[*]} " == *" apktool "* ]]; then
+            echo "apktool failed to install. You may need to install it manually or via a custom script." >&2
+        fi
         echo "See system_install.log for details." >&2
     fi
     exit 1
@@ -175,6 +181,12 @@ fi
 
 if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
     echo "The following packages failed to install: ${FAILED_PACKAGES[*]}" >&2
+    if [[ " ${FAILED_PACKAGES[*]} " == *" aapt2 "* ]]; then
+        echo "aapt2 failed to install. Consider using the SDK-based installer (install-aapt2.sh) or install it manually." >&2
+    fi
+    if [[ " ${FAILED_PACKAGES[*]} " == *" apktool "* ]]; then
+        echo "apktool failed to install. You may need to install it manually or via a custom script." >&2
+    fi
     echo "You may need to install them manually. See system_install.log for details." >&2
     exit 1
 fi
