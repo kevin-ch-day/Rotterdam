@@ -57,20 +57,10 @@ PUBLIC_PATHS: set[str] = {
     "/_ready",
     "/ui",
     "/static",
-    "/css",
-    "/js",
-    "/images",
-    "/img",
-    "/fonts",
 }
 PUBLIC_PREFIXES: tuple[str, ...] = (
     "/ui/",
     "/static/",
-    "/css/",
-    "/js/",
-    "/images/",
-    "/img/",
-    "/fonts/",
 )
 
 # -----------------------------------------------------------------------------

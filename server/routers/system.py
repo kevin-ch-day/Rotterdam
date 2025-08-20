@@ -11,6 +11,11 @@ router = APIRouter()
 
 _start_time = time.time()
 
+@router.get("/_healthz", include_in_schema=False)
+async def health() -> dict[str, str]:
+    """Liveness probe."""
+    return {"status": "ok"}
+
 @router.get("/_stats", include_in_schema=False)
 async def stats() -> dict[str, float | int]:
     """Internal statistics about the server."""
