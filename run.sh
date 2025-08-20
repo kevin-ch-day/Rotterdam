@@ -44,17 +44,15 @@ ROOT_DIR="$(dirname "$SCRIPT_PATH")"
 cd "$ROOT_DIR"
 
 # ------------------------------ Default settings ---------------------------
-# Source defaults from server/serv_config.py to avoid divergence.
-APP_HOST_DEFAULT="$(python - <<'PY'
-from server.serv_config import DEFAULT_HOST
-print(DEFAULT_HOST)
+# Source defaults (honoring env overrides) from server/serv_config.py.
+# This keeps run.sh in sync with the server and respects APP_HOST/APP_PORT if
+# already set in the environment before invoking the script.
+read -r APP_HOST_DEFAULT APP_PORT_DEFAULT < <(
+python - <<'PY'
+from server.serv_config import HOST, PORT
+print(f"{HOST} {PORT}")
 PY
-)"
-APP_PORT_DEFAULT="$(python - <<'PY'
-from server.serv_config import DEFAULT_PORT
-print(DEFAULT_PORT)
-PY
-)"
+)
 
 # ------------------------------- CLI options --------------------------------
 RUN_SETUP=0
