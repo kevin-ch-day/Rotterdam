@@ -15,6 +15,7 @@ from storage.repository import (
     ping_db,
 )
 
+from server.serv_config import DEFAULT_HOST, DEFAULT_PORT
 from .utils import action_context as _action_context, logger
 
 
@@ -72,7 +73,7 @@ def show_database_status() -> None:
         print("No analysis records found.")
 
 
-def launch_web_app(host: str = "127.0.0.1", port: int = 8000) -> None:
+def launch_web_app(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> None:
     """Launch the web interface, starting the server if needed."""
     import uvicorn
 
@@ -99,7 +100,7 @@ def launch_web_app(host: str = "127.0.0.1", port: int = 8000) -> None:
     webbrowser.open(f"http://{host}:{port}")
 
 
-def run_server(host: str = "127.0.0.1", port: int = 8000) -> None:
+def run_server(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> None:
     """Start the API server using uvicorn."""
     import uvicorn
 
