@@ -63,7 +63,26 @@ fi
 
 if [[ $SKIP_SYSTEM -eq 0 ]]; then
     echo "Installing system dependencies with dnf..."
-    $SUDO dnf install -y python3 python3-virtualenv adb aapt2 apktool java-11-openjdk yara
+
+    # Default to java-17-openjdk but allow override via JAVA_PACKAGE.
+    # If the requested package is unavailable, fall back to the latest
+    # java-*openjdk package offered by the repository.
+    JAVA_PACKAGE="${JAVA_PACKAGE:-java-17-openjdk}"
+    JAVA_PKG=""
+    if dnf list "$JAVA_PACKAGE" >/dev/null 2>&1; then
+        JAVA_PKG="$JAVA_PACKAGE"
+    else
+        JAVA_PKG="$(dnf list --available 'java-*openjdk' 2>/dev/null | awk '/^java-[0-9]+-openjdk/ {print $1}' | cut -d'.' -f1 | sort -t'-' -k2,2n | tail -1)"
+    fi
+
+    DNF_PACKAGES=(python3 python3-virtualenv adb aapt2 apktool yara)
+    if [[ -n "$JAVA_PKG" ]]; then
+        DNF_PACKAGES+=("$JAVA_PKG")
+    else
+        echo "Warning: no java-*openjdk package available; skipping Java installation." >&2
+    fi
+
+    $SUDO dnf install -y "${DNF_PACKAGES[@]}"
 fi
 
 if [[ $FORCE_VENV -eq 1 && -d .venv ]]; then
