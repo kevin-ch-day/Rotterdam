@@ -25,12 +25,14 @@ UI_DIR = (REPO_ROOT / "ui").resolve()
 INDEX_HTML = UI_DIR / "pages" / "index.html"
 FAVICON_ICO = UI_DIR / "favicon.ico"
 
+
 def _mask_path(p: Path) -> str:
     """Return repo-relative path to avoid leaking full filesystem layout."""
     try:
         return str(p.resolve().relative_to(REPO_ROOT))
     except ValueError:
         return f".../{p.name}"
+
 
 # Optional base path if served behind a proxy (e.g., /rotterdam)
 ROOT_PATH = os.getenv("ROOT_PATH", "")
@@ -48,7 +50,14 @@ app.add_middleware(AuthRateLimitMiddleware)
 _STATIC_PREFIXES = (
     "/ui/",
     "/static/",
+    "/css/",
+    "/js/",
+    "/images/",
+    "/img/",
+    "/fonts/",
+    "/partials/",
 )
+
 
 @app.middleware("http")
 async def add_headers(request: Request, call_next):
@@ -61,6 +70,7 @@ async def add_headers(request: Request, call_next):
     if request.url.path.startswith(_STATIC_PREFIXES):
         resp.headers.setdefault("Cache-Control", "public, max-age=3600, immutable")
     return resp
+
 
 # ---------- Routers ----------
 app.include_router(devices_router)
@@ -75,6 +85,19 @@ app.include_router(system_router)  # owns /_healthz (and /_ready if present)
 app.mount("/ui", StaticFiles(directory=str(UI_DIR), check_dir=False), name="ui")
 app.mount("/static", StaticFiles(directory=str(UI_DIR), check_dir=False), name="static")
 
+# Conditionally mount common asset roots if those folders exist (prevents startup errors)
+for mount, subdir in (
+    ("/css", "css"),
+    ("/js", "js"),
+    ("/images", "images"),
+    ("/img", "img"),
+    ("/fonts", "fonts"),
+    ("/partials", "partials"),
+):
+    d = UI_DIR / subdir
+    if d.exists():
+        app.mount(mount, StaticFiles(directory=str(d)), name=subdir)
+
 # ---------- Startup diagnostics ----------
 @app.on_event("startup")
 async def _startup_checks() -> None:
@@ -88,7 +111,9 @@ async def _startup_checks() -> None:
         log.warning("Index file missing — GET / will 500: %s", INDEX_HTML)
     api_key = os.getenv("ROTTERDAM_API_KEY", DEFAULT_API_KEY)
     if api_key == DEFAULT_API_KEY:
-        log.critical("ROTTERDAM_API_KEY is using the default value; set a custom key for production")
+        log.critical(
+            "ROTTERDAM_API_KEY is using the default value; set a custom key for production"
+        )
 
 # ---------- Diagnostics (protected by middleware unless you allowlist it there) ----------
 @app.get("/_diag", include_in_schema=False)
@@ -97,8 +122,14 @@ async def diag() -> JSONResponse:
         {
             "root_path": ROOT_PATH,
             "ui_dir": _mask_path(UI_DIR),
-            "index_html": {"path": _mask_path(INDEX_HTML), "exists": INDEX_HTML.exists()},
-            "favicon_ico": {"path": _mask_path(FAVICON_ICO), "exists": FAVICON_ICO.exists()},
+            "index_html": {
+                "path": _mask_path(INDEX_HTML),
+                "exists": INDEX_HTML.exists(),
+            },
+            "favicon_ico": {
+                "path": _mask_path(FAVICON_ICO),
+                "exists": FAVICON_ICO.exists(),
+            },
         }
     )
 
@@ -110,6 +141,7 @@ async def root() -> FileResponse:
     # Mask path to avoid leaking full FS layout
     masked = _mask_path(INDEX_HTML)
     raise HTTPException(status_code=500, detail=f"index not found at {masked}")
+
 
 # Favicon (no union return annotation)
 @app.get("/favicon.ico", include_in_schema=False)

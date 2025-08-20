@@ -102,3 +102,13 @@ def test_hidden_endpoints_and_headers():
     resp = client.get("/devices", headers=HEADERS)
     assert "X-RateLimit-Remaining" in resp.headers
 
+
+def test_partials_public_and_healthz_no_auth():
+    resp = client.get("/ui/partials/header.html")
+    assert resp.status_code == 200
+    assert "Rotterdam" in resp.text
+
+    resp = client.get("/_healthz")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "ok"
+

@@ -25,6 +25,11 @@ async def ready() -> dict[str, bool]:
     return {"ready": True}
 
 
+@router.get("/_healthz", include_in_schema=False)
+async def healthz() -> dict[str, str]:
+    """Liveness probe for uptime checks."""
+    return {"status": "ok"}
+
 @router.get("/_stats", include_in_schema=False)
 async def stats() -> dict[str, float | int]:
     """Internal statistics about the server."""
