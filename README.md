@@ -16,6 +16,33 @@ On Fedora systems the helper scripts make it easy to set up and launch the CLI:
 ./run.sh --setup          # run setup before launching
 ```
 
+## Setup
+
+The helper script targets Fedora but the same dependencies are available on
+other platforms.
+
+### Fedora
+
+Installed automatically by `setup.sh`:
+
+```
+python3 python3-virtualenv adb aapt2 apktool java-11-openjdk yara
+```
+
+### Debian/Ubuntu
+
+```
+sudo apt-get install python3 python3-venv adb aapt apktool openjdk-11-jdk libyara-dev
+```
+
+### macOS (Homebrew)
+
+```
+brew install python3 adb aapt apktool openjdk@11 yara
+```
+
+Optional tools such as Frida or MySQL can be installed separately if needed.
+
 ## Development
 
 Set up a Python environment and install the project's dependencies.
@@ -61,6 +88,31 @@ python main.py
 
 Analysis results are written to the `output/` directory.
 
+### CLI Examples
+
+#### Static APK analysis
+
+```
+python main.py
+# Analysis → Analyze APK → select /path/to/app.apk
+# Report written to output/<timestamp>/report.json
+```
+
+#### Device scan
+
+```
+python -m cli.actions list-packages <device-serial>
+# Outputs list of installed packages and can export to CSV/JSON
+```
+
+#### Sandbox analysis
+
+```
+python main.py
+# Analysis → Sandbox APK → select /path/to/app.apk
+# See docs/dynamic-analysis.md for hook details
+```
+
 ### Database status
 
 The interactive menu provides a **Database** option that performs a
@@ -82,3 +134,30 @@ This will start a FastAPI application on `localhost:8000` exposing endpoints:
 * `POST /scans` – upload an APK and queue analysis
 * `GET /scans/{id}` – check job status and view the latest risk report
 * `GET /scans/{id}/report?format=json|html` – download the generated report
+
+Example requests:
+
+```
+# submit an APK for analysis
+curl -F "file=@app.apk" http://localhost:8000/scans
+# => {"id":1,"status":"queued"}
+
+# poll job status
+curl http://localhost:8000/scans/1
+# => {"id":1,"status":"complete"}
+
+# download the JSON report
+curl http://localhost:8000/scans/1/report?format=json
+```
+
+Endpoints apply simple request‑ID, authentication, and rate‑limiting middleware.
+
+## Architecture
+
+High-level module interactions are documented in
+[docs/architecture.md](docs/architecture.md).
+
+Additional reference material:
+
+- [Dynamic analysis](docs/dynamic-analysis.md)
+- [Risk scoring](docs/risk-scoring.md)
