@@ -2,6 +2,20 @@
 
 Rotterdam is a toolkit for analyzing Android applications and devices. It provides utilities for extracting and scanning APKs, evaluating device behavior, and reporting findings.
 
+## Quick start
+
+On Fedora systems the helper scripts make it easy to set up and launch the CLI:
+
+```bash
+./setup.sh              # install dependencies and create virtual environment
+./run.sh                # start the interactive CLI
+
+# optional helpers
+./setup.sh --force-venv   # recreate the virtual environment
+./setup.sh --skip-system  # skip dnf package installation
+./run.sh --setup          # run setup before launching
+```
+
 ## Development
 
 Set up a Python environment and install the project's dependencies.
