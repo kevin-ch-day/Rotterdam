@@ -77,7 +77,8 @@ if [[ $SKIP_SYSTEM -eq 0 ]]; then
         fi
     fi
 
-    # Core packages (names are Fedora-specific)
+    # Core packages (names are Fedora-specific).
+    # Note: aapt2 and apktool may require enabling additional repos on some Fedora versions.
     packages=(
         python3
         python3-virtualenv
@@ -91,7 +92,7 @@ if [[ $SKIP_SYSTEM -eq 0 ]]; then
         packages+=("$JAVA_PKG")
     fi
 
-    # Install packages one-by-one (don’t fail whole script on a single missing pkg)
+    # Install packages one-by-one (don’t fail the whole script if one is missing)
     set +e
     for pkg in "${packages[@]}"; do
         install_pkg "$pkg"
