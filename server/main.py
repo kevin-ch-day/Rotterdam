@@ -53,7 +53,6 @@ _STATIC_PREFIXES = (
     "/images/",
     "/img/",
     "/fonts/",
-    "/partials/",   # added to cover HTML fragments
 )
 
 @app.middleware("http")
@@ -88,7 +87,6 @@ for mount, subdir in (
     ("/images", "images"),
     ("/img", "img"),
     ("/fonts", "fonts"),
-    ("/partials", "partials"),  # NEW: HTML fragments like header/footer/sidebar
 ):
     d = UI_DIR / subdir
     if d.exists():
