@@ -9,7 +9,8 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, PlainTextResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .middleware import AuthRateLimitMiddleware, RequestIDMiddleware, DEFAULT_API_KEY
+from server.middleware import AuthRateLimitMiddleware, RequestIDMiddleware
+from server.middleware.config import DEFAULT_API_KEY
 from .routers import (
     analytics_router,
     devices_router,
