@@ -20,7 +20,7 @@ The scoring model in `platform/android/analysis/static/scoring/risk_score.py` co
 
 ## API Server
 
-A FastAPI application under `server/` exposes REST endpoints for submitting jobs, retrieving reports, querying analytics, and system status. Middleware adds request IDs and basic authentication/rate limiting.
+A FastAPI application under `server/` exposes REST endpoints for submitting jobs, retrieving reports, querying analytics, and system status. Middleware adds request IDs and basic authentication/rate limiting. Static files for the web UI must reside under the repository's `ui/` directory so they can be mounted at `/ui` and `/static`.
 
 ## Data Flow
 
