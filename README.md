@@ -14,6 +14,7 @@ On Fedora systems the helper scripts make it easy to set up and launch the CLI:
 ./setup.sh --force-venv   # recreate the virtual environment
 ./setup.sh --skip-system  # skip dnf package installation
 ./run.sh --setup          # run setup before launching
+./run.sh --setup --skip-system  # run setup skipping system packages
 ```
 
 ## Setup
