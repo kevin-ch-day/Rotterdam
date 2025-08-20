@@ -24,3 +24,14 @@
 {"time": "2025-08-19 13:02:39,460", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "adb devices output received"}
 {"time": "2025-08-19 13:02:39,460", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "parsed 1 devices"}
 {"time": "2025-08-19 13:02:50,469", "level": "INFO", "module": "cli.actions", "message": "list_installed_packages", "device": "ZY22JK89DR"}
+{"time": "2025-08-20 16:07:30,933", "level": "INFO", "module": "cli.actions.utils", "message": "show_connected_devices", "session_id": "6d5144b8-23aa-477d-9b83-798fdb5737b3", "action": "show_connected_devices"}
+{"time": "2025-08-20 16:07:30,974", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "checking connected devices", "session_id": "6d5144b8-23aa-477d-9b83-798fdb5737b3", "action": "show_connected_devices"}
+{"time": "2025-08-20 16:07:31,997", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "adb devices output received", "session_id": "6d5144b8-23aa-477d-9b83-798fdb5737b3", "action": "show_connected_devices"}
+{"time": "2025-08-20 16:07:31,997", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "parsed 0 devices", "session_id": "6d5144b8-23aa-477d-9b83-798fdb5737b3", "action": "show_connected_devices"}
+{"time": "2025-08-20 16:07:31,998", "level": "INFO", "module": "cli.actions.utils", "message": "no devices attached", "session_id": "6d5144b8-23aa-477d-9b83-798fdb5737b3", "action": "show_connected_devices"}
+{"time": "2025-08-20 16:07:35,477", "level": "INFO", "module": "cli.actions.utils", "message": "show_detailed_devices", "session_id": "6d5144b8-23aa-477d-9b83-798fdb5737b3", "action": "show_detailed_devices"}
+{"time": "2025-08-20 16:07:35,478", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "list_detailed_devices", "session_id": "6d5144b8-23aa-477d-9b83-798fdb5737b3", "action": "show_detailed_devices"}
+{"time": "2025-08-20 16:07:35,488", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "checking connected devices", "session_id": "6d5144b8-23aa-477d-9b83-798fdb5737b3", "action": "show_detailed_devices"}
+{"time": "2025-08-20 16:07:35,498", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "adb devices output received", "session_id": "6d5144b8-23aa-477d-9b83-798fdb5737b3", "action": "show_detailed_devices"}
+{"time": "2025-08-20 16:07:35,499", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "parsed 0 devices", "session_id": "6d5144b8-23aa-477d-9b83-798fdb5737b3", "action": "show_detailed_devices"}
+{"time": "2025-08-20 16:07:35,499", "level": "INFO", "module": "cli.actions.utils", "message": "no devices attached", "session_id": "6d5144b8-23aa-477d-9b83-798fdb5737b3", "action": "show_detailed_devices"}
