@@ -156,7 +156,7 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
                     display.good("Exiting App")
                     return None
         elif num == 5:
-            display.info("Web app launch not implemented yet.")
+            actions.launch_web_app()
         elif num == 6:
             display.info("Application status check not implemented yet.")
         elif num == 7:
