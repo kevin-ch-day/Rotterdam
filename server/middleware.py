@@ -43,6 +43,23 @@ PUBLIC_PREFIXES: tuple[str, ...] = ("/ui/", "/static/")
 # Sliding window per client key — use deque for efficient pops from left.
 # Keyed by client identifier (API key if present, else client IP).
 _request_log: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=4 * RATE_LIMIT))
+_last_cleanup: float = time.time()
+
+
+def _cleanup_request_log(now: float) -> None:
+    """Remove empty or stale request log entries."""
+    global _last_cleanup
+    if now - _last_cleanup < RATE_WINDOW_SECS:
+        return
+    _last_cleanup = now
+    stale: list[str] = []
+    for bucket, window in list(_request_log.items()):
+        if not window:
+            stale.append(bucket)
+        elif now - window[-1] >= RATE_WINDOW_SECS:
+            stale.append(bucket)
+    for bucket in stale:
+        _request_log.pop(bucket, None)
 
 _request_id_ctx: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "request_id", default=None
@@ -169,6 +186,7 @@ class AuthRateLimitMiddleware(BaseHTTPMiddleware):
         # 5) Rate-limit (sliding window)
         bucket = _rate_limit_id(presented, request)
         now = time.time()
+        _cleanup_request_log(now)
         window = _request_log[bucket]
 
         # prune entries outside window
