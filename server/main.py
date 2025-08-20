@@ -25,6 +25,14 @@ UI_DIR = (REPO_ROOT / "ui").resolve()
 INDEX_HTML = UI_DIR / "pages" / "index.html"
 FAVICON_ICO = UI_DIR / "favicon.ico"
 
+
+def _mask_path(p: Path) -> str:
+    """Return repo-relative path to avoid leaking full filesystem layout."""
+    try:
+        return str(p.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return f".../{p.name}"
+
 # Optional base path if served behind a proxy (e.g., /rotterdam)
 ROOT_PATH = os.getenv("ROOT_PATH", "")
 
@@ -94,9 +102,9 @@ async def diag() -> JSONResponse:
     return JSONResponse(
         {
             "root_path": ROOT_PATH,
-            "ui_dir": str(UI_DIR),
-            "index_html": {"path": str(INDEX_HTML), "exists": INDEX_HTML.exists()},
-            "favicon_ico": {"path": str(FAVICON_ICO), "exists": FAVICON_ICO.exists()},
+            "ui_dir": _mask_path(UI_DIR),
+            "index_html": {"path": _mask_path(INDEX_HTML), "exists": INDEX_HTML.exists()},
+            "favicon_ico": {"path": _mask_path(FAVICON_ICO), "exists": FAVICON_ICO.exists()},
         }
     )
 

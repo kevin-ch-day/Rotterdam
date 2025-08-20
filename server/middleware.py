@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextvars
 import hmac
 import logging
 import os
@@ -10,7 +11,6 @@ import uuid
 from collections import defaultdict, deque
 from typing import Callable, Iterable
 
-import contextvars
 from fastapi import Request
 from fastapi.responses import JSONResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -33,18 +33,30 @@ DISABLE_AUTH = os.getenv("DISABLE_AUTH", "").lower() in {"1", "true", "yes", "on
 TRUST_LOCALHOST = os.getenv("TRUST_LOCALHOST", "").lower() in {"1", "true", "yes", "on"}
 TRUST_PROXY = os.getenv("TRUST_PROXY", "").lower() in {"1", "true", "yes", "on"}
 
-# Public routes (no auth). Prefixes cover static mounts and we
-# explicitly include the mount roots themselves.
+# Public routes (no auth). We intentionally EXCLUDE "/_diag" (requires auth or dev flag).
+# Include the mount roots themselves so "/ui" (no trailing slash) works, too.
 PUBLIC_PATHS: set[str] = {
     "/",
     "/favicon.ico",
     "/_healthz",
     "/_ready",
-    "/_diag",
     "/ui",
     "/static",
+    "/css",
+    "/js",
+    "/images",
+    "/img",
+    "/fonts",
 }
-PUBLIC_PREFIXES: tuple[str, ...] = ("/ui/", "/static/")
+PUBLIC_PREFIXES: tuple[str, ...] = (
+    "/ui/",
+    "/static/",
+    "/css/",
+    "/js/",
+    "/images/",
+    "/img/",
+    "/fonts/",
+)
 
 # -----------------------------------------------------------------------------
 # State
@@ -55,7 +67,6 @@ PUBLIC_PREFIXES: tuple[str, ...] = ("/ui/", "/static/")
 _request_log: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=4 * RATE_LIMIT))
 _last_cleanup: float = time.time()
 
-
 def _cleanup_request_log(now: float) -> None:
     """Remove empty or stale request log entries."""
     global _last_cleanup
@@ -64,9 +75,7 @@ def _cleanup_request_log(now: float) -> None:
     _last_cleanup = now
     stale: list[str] = []
     for bucket, window in list(_request_log.items()):
-        if not window:
-            stale.append(bucket)
-        elif now - window[-1] >= RATE_WINDOW_SECS:
+        if not window or (now - window[-1] >= RATE_WINDOW_SECS):
             stale.append(bucket)
     for bucket in stale:
         _request_log.pop(bucket, None)
@@ -78,7 +87,6 @@ _request_id_ctx: contextvars.ContextVar[str | None] = contextvars.ContextVar(
 security_logger = logging.getLogger("rotterdam.security")
 request_logger = logging.getLogger("rotterdam.request")
 
-
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
@@ -87,22 +95,18 @@ def get_request_id() -> str | None:
     """Return the request ID for the current context."""
     return _request_id_ctx.get()
 
-
 def _is_public(path: str) -> bool:
     if path in PUBLIC_PATHS:
         return True
     return any(path.startswith(pfx) for pfx in PUBLIC_PREFIXES)
-
 
 def _extract_client_ip(request: Request) -> str:
     """Honor X-Forwarded-For when behind a trusted proxy (opt-in)."""
     if TRUST_PROXY:
         xff = request.headers.get("x-forwarded-for")
         if xff:
-            # First IP in the list is the original client
             return xff.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
-
 
 def _dev_bypass(request: Request) -> bool:
     if DISABLE_AUTH:
@@ -112,7 +116,6 @@ def _dev_bypass(request: Request) -> bool:
         if ip in {"127.0.0.1", "::1"}:
             return True
     return False
-
 
 def _get_presented_key(request: Request) -> str | None:
     """Read API key from X-API-Key or Authorization: Bearer <key>."""
@@ -124,20 +127,16 @@ def _get_presented_key(request: Request) -> str | None:
         return auth.split(" ", 1)[1].strip() or None
     return None
 
-
 def _constant_time_member(presented: str, valid_keys: Iterable[str]) -> bool:
-    """Constant-time membership check over a small set of keys."""
-    # Avoid short-circuit; compare against all keys then OR the result.
+    """Constant-time membership check over a small set of keys (no short-circuit)."""
     result = False
     for k in valid_keys:
         result = result or hmac.compare_digest(presented, k)
     return result
 
-
 def _rate_limit_id(presented_key: str | None, request: Request) -> str:
     """Rate limit bucket identifier (prefer key, else IP)."""
     return presented_key or _extract_client_ip(request)
-
 
 def _rate_limit_headers(limit: int, remaining: int, reset_in: int) -> dict[str, str]:
     return {
@@ -145,7 +144,6 @@ def _rate_limit_headers(limit: int, remaining: int, reset_in: int) -> dict[str, 
         "X-RateLimit-Remaining": str(max(remaining, 0)),
         "X-RateLimit-Reset": str(reset_in),
     }
-
 
 # -----------------------------------------------------------------------------
 # Middlewares
@@ -160,18 +158,13 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         try:
             response: Response = await call_next(request)
         except Exception:
-            response = JSONResponse(
-                {"detail": "Internal Server Error"}, status_code=500
-            )
+            response = JSONResponse({"detail": "Internal Server Error"}, status_code=500)
             response.headers["X-Request-ID"] = req_id
-            request_logger.exception(
-                "%s %s - id=%s", request.method, request.url.path, req_id
-            )
+            request_logger.exception("%s %s - id=%s", request.method, request.url.path, req_id)
             return response
         response.headers["X-Request-ID"] = req_id
         request_logger.info("%s %s - id=%s", request.method, request.url.path, req_id)
         return response
-
 
 class AuthRateLimitMiddleware(BaseHTTPMiddleware):
     """Validate an API key and apply naive per-minute rate limiting."""
@@ -196,7 +189,6 @@ class AuthRateLimitMiddleware(BaseHTTPMiddleware):
         if not presented or not _constant_time_member(presented, API_KEYS):
             client = _extract_client_ip(request)
             security_logger.warning("Unauthorized request from %s path=%s", client, path)
-            # Return JSON (not raising) to avoid 500 cascades through nested middlewares
             return JSONResponse({"detail": "Unauthorized"}, status_code=401)
 
         # 5) Rate-limit (sliding window)
@@ -222,7 +214,6 @@ class AuthRateLimitMiddleware(BaseHTTPMiddleware):
 
         # 7) Attach rate-limit headers
         remaining = RATE_LIMIT - len(window)
-        # Estimate reset (seconds until oldest hit falls out of window)
         reset_in = max(0, int(RATE_WINDOW_SECS - (now - window[0])) if window else RATE_WINDOW_SECS)
         for k, v in _rate_limit_headers(RATE_LIMIT, remaining, reset_in).items():
             response.headers[k] = v
