@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, PlainTextResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .middleware import AuthRateLimitMiddleware, RequestIDMiddleware
+from .middleware import AuthRateLimitMiddleware, RequestIDMiddleware, DEFAULT_API_KEY
 from .routers import (
     analytics_router,
     devices_router,
@@ -24,6 +24,14 @@ REPO_ROOT = THIS_DIR.parent
 UI_DIR = (REPO_ROOT / "ui").resolve()
 INDEX_HTML = UI_DIR / "pages" / "index.html"
 FAVICON_ICO = UI_DIR / "favicon.ico"
+
+
+def _mask_path(p: Path) -> str:
+    """Return repo-relative path to avoid leaking full filesystem layout."""
+    try:
+        return str(p.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return f".../{p.name}"
 
 # Optional base path if served behind a proxy (e.g., /rotterdam)
 ROOT_PATH = os.getenv("ROOT_PATH", "")
@@ -73,6 +81,11 @@ async def _startup_checks() -> None:
         log.warning("UI directory missing — static mounts will 404: %s", UI_DIR)
     if not INDEX_HTML.exists():
         log.warning("Index file missing — GET / will 500: %s", INDEX_HTML)
+    api_key = os.getenv("ROTTERDAM_API_KEY", DEFAULT_API_KEY)
+    if api_key == DEFAULT_API_KEY:
+        log.critical(
+            "ROTTERDAM_API_KEY is using the default value; set a custom key for production"
+        )
 
 # ---------- Health / diagnostics ----------
 @app.get("/_healthz", include_in_schema=False)
@@ -89,9 +102,9 @@ async def diag() -> JSONResponse:
     return JSONResponse(
         {
             "root_path": ROOT_PATH,
-            "ui_dir": str(UI_DIR),
-            "index_html": {"path": str(INDEX_HTML), "exists": INDEX_HTML.exists()},
-            "favicon_ico": {"path": str(FAVICON_ICO), "exists": FAVICON_ICO.exists()},
+            "ui_dir": _mask_path(UI_DIR),
+            "index_html": {"path": _mask_path(INDEX_HTML), "exists": INDEX_HTML.exists()},
+            "favicon_ico": {"path": _mask_path(FAVICON_ICO), "exists": FAVICON_ICO.exists()},
         }
     )
 
