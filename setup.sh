@@ -131,6 +131,12 @@ echo "Installing Python requirements..."
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 
+echo "Verifying installed packages..."
+if ! python -m pip check 2>&1 | tee pip_check.log; then
+    echo "Dependency conflicts detected. Some issues may stem from system packages and must be resolved manually. See pip_check.log for details." >&2
+    exit 1
+fi
+
 if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
     echo "The following packages failed to install: ${FAILED_PACKAGES[*]}" >&2
     echo "You may need to install them manually. See dnf_install.log for details." >&2
