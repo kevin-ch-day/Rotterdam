@@ -56,6 +56,18 @@ Dependencies are listed in `requirements.txt`, including the MySQL driver
 The YARA wrapper requires the system `libyara` library; on Debian-based
 systems it can be installed with `apt-get install libyara-dev`.
 
+### Git configuration
+
+Enable Git's rerere functionality so it can remember how you resolve merge
+conflicts:
+
+```bash
+git config --global rerere.enabled true
+```
+
+This allows Git to automatically reuse recorded conflict resolutions, making
+future merges require less manual effort.
+
 ### Database configuration
 
 The repository uses SQLAlchemy for persistence. By default an in-memory
