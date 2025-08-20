@@ -33,8 +33,17 @@ DISABLE_AUTH = os.getenv("DISABLE_AUTH", "").lower() in {"1", "true", "yes", "on
 TRUST_LOCALHOST = os.getenv("TRUST_LOCALHOST", "").lower() in {"1", "true", "yes", "on"}
 TRUST_PROXY = os.getenv("TRUST_PROXY", "").lower() in {"1", "true", "yes", "on"}
 
-# Public routes (no auth). Prefixes cover static mounts.
-PUBLIC_PATHS: set[str] = {"/", "/favicon.ico", "/_healthz", "/_ready", "/_diag"}
+# Public routes (no auth). Prefixes cover static mounts and we
+# explicitly include the mount roots themselves.
+PUBLIC_PATHS: set[str] = {
+    "/",
+    "/favicon.ico",
+    "/_healthz",
+    "/_ready",
+    "/_diag",
+    "/ui",
+    "/static",
+}
 PUBLIC_PREFIXES: tuple[str, ...] = ("/ui/", "/static/")
 
 # -----------------------------------------------------------------------------
