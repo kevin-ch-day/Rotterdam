@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 import time
 import uuid
 from pathlib import Path
@@ -84,16 +83,25 @@ def _process_apk(apk_path: str) -> dict[str, str]:
     }
 
 
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
 @router.post("/scans")
 async def create_scan(file: UploadFile = File(...)) -> dict[str, str]:
-    """Accept an APK upload and queue it for analysis."""
+    """Accept an APK upload and queue it for analysis.
+
+    Files larger than ``MAX_UPLOAD_SIZE`` bytes are rejected to avoid resource
+    exhaustion attacks."""
     uploads_dir = _ANALYSIS_ROOT / "uploads"
     uploads_dir.mkdir(parents=True, exist_ok=True)
 
     safe_name = Path(file.filename).name
     dest = uploads_dir / f"{uuid.uuid4().hex}_{safe_name}"
-    with dest.open("wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+
+    data = await file.read()
+    if len(data) > MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail="file too large")
+    dest.write_bytes(data)
 
     job_id = scheduler.submit_job(_process_apk, str(dest))
     return {"scan_id": job_id}
