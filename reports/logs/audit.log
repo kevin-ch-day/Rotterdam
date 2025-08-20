@@ -1,0 +1,26 @@
+{"time": "2025-08-19 13:01:44,414", "level": "INFO", "module": "__main__", "message": "Launching CLI"}
+{"time": "2025-08-19 13:01:58,720", "level": "INFO", "module": "cli.actions", "message": "show_connected_devices"}
+{"time": "2025-08-19 13:01:58,758", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-19 13:01:58,761", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-19 13:01:58,761", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "parsed 0 devices"}
+{"time": "2025-08-19 13:01:58,762", "level": "INFO", "module": "cli.actions", "message": "no devices attached"}
+{"time": "2025-08-19 13:02:10,092", "level": "INFO", "module": "cli.actions", "message": "show_connected_devices"}
+{"time": "2025-08-19 13:02:10,101", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-19 13:02:10,111", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-19 13:02:10,111", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "parsed 0 devices"}
+{"time": "2025-08-19 13:02:10,112", "level": "INFO", "module": "cli.actions", "message": "no devices attached"}
+{"time": "2025-08-19 13:02:11,583", "level": "INFO", "module": "cli.actions", "message": "show_connected_devices"}
+{"time": "2025-08-19 13:02:11,592", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-19 13:02:11,601", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-19 13:02:11,602", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "parsed 0 devices"}
+{"time": "2025-08-19 13:02:11,602", "level": "INFO", "module": "cli.actions", "message": "no devices attached"}
+{"time": "2025-08-19 13:02:35,656", "level": "INFO", "module": "__main__", "message": "Launching CLI"}
+{"time": "2025-08-19 13:02:37,014", "level": "INFO", "module": "cli.actions", "message": "show_connected_devices"}
+{"time": "2025-08-19 13:02:37,023", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-19 13:02:37,026", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-19 13:02:37,027", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-19 13:02:39,448", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-19 13:02:39,457", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-19 13:02:39,460", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-19 13:02:39,460", "level": "INFO", "module": "rotterdam.android.devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-19 13:02:50,469", "level": "INFO", "module": "cli.actions", "message": "list_installed_packages", "device": "ZY22JK89DR"}
