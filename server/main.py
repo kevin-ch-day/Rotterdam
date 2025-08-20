@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, PlainTextResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from .constants import APP_NAME, APP_VERSION
 from .middleware import AuthRateLimitMiddleware, RequestIDMiddleware, DEFAULT_API_KEY
 from .routers import (
     analytics_router,
@@ -35,7 +36,7 @@ def _mask_path(p: Path) -> str:
 # Optional base path if served behind a proxy (e.g., /rotterdam)
 ROOT_PATH = os.getenv("ROOT_PATH", "")
 
-app = FastAPI(title="Rotterdam API", root_path=ROOT_PATH)
+app = FastAPI(title=APP_NAME, version=APP_VERSION, root_path=ROOT_PATH)
 
 # ---------- Logging ----------
 log = logging.getLogger("uvicorn.error")
