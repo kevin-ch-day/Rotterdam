@@ -1,21 +1,19 @@
 from __future__ import annotations
-
 import socket
 import threading
-import time
 import webbrowser
 
 from sqlalchemy import text
 
 from core import display
 from storage.repository import (
-    AnalysisRepository,
     session_scope,
     DATABASE_URL,
     ping_db,
 )
 
-from server.serv_config import DEFAULT_HOST, DEFAULT_PORT
+from server import serv_config as cfg
+from server.serve import serve
 from .utils import action_context as _action_context, logger
 
 
@@ -73,10 +71,8 @@ def show_database_status() -> None:
         print("No analysis records found.")
 
 
-def launch_web_app(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> None:
+def launch_web_app(host: str = cfg.HOST, port: int = cfg.PORT) -> None:
     """Launch the web interface, starting the server if needed."""
-    import uvicorn
-
     logger.info("launch_web_app", extra={"host": host, "port": port})
 
     def _port_open() -> bool:
@@ -88,22 +84,17 @@ def launch_web_app(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> None:
                 return False
 
     if not _port_open():
-        thread = threading.Thread(
-            target=uvicorn.run,
-            args=("server:app",),
-            kwargs={"host": host, "port": port},
+        threading.Thread(
+            target=serve,
+            kwargs={"host": host, "port": port, "open_browser": True},
             daemon=True,
-        )
-        thread.start()
-        time.sleep(0.5)
-
-    webbrowser.open(f"http://{host}:{port}")
+        ).start()
+    else:
+        webbrowser.open(f"http://{host}:{port}")
 
 
-def run_server(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> None:
-    """Start the API server using uvicorn."""
-    import uvicorn
-
+def run_server(host: str = cfg.HOST, port: int = cfg.PORT) -> None:
+    """Start the API server using centralized config."""
     with _action_context("run_server"):
-        uvicorn.run("server:app", host=host, port=port)
+        serve(host=host, port=port, open_browser=False)
 
