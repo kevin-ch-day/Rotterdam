@@ -136,9 +136,12 @@ export ROTTERDAM_API_KEY="my-strong-key"  # default "secret" will trigger a warn
 python -m cli.actions serve
 ```
 
+
+This will start a FastAPI application on `localhost:8765` exposing endpoints:
 Using the default key is only suitable for local testing and will log a
 critical warning on startup. This will start a FastAPI application on
 `localhost:8000` exposing endpoints:
+
 
 * `POST /scans` – upload an APK and queue analysis
 * `GET /scans/{id}` – check job status and view the latest risk report
@@ -148,15 +151,15 @@ Example requests:
 
 ```
 # submit an APK for analysis
-curl -F "file=@app.apk" http://localhost:8000/scans
+curl -F "file=@app.apk" http://localhost:8765/scans
 # => {"id":1,"status":"queued"}
 
 # poll job status
-curl http://localhost:8000/scans/1
+curl http://localhost:8765/scans/1
 # => {"id":1,"status":"complete"}
 
 # download the JSON report
-curl http://localhost:8000/scans/1/report?format=json
+curl http://localhost:8765/scans/1/report?format=json
 ```
 
 Endpoints apply simple request‑ID, authentication, and rate‑limiting middleware.

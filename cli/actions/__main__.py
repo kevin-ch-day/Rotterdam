@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 
+from server.serv_config import DEFAULT_HOST, DEFAULT_PORT
 from . import list_installed_packages, run_server
 
 
@@ -13,8 +14,8 @@ def main(argv: list[str] | None = None) -> None:
     sub = parser.add_subparsers(dest="cmd")
 
     p_serve = sub.add_parser("serve", help="start API server")
-    p_serve.add_argument("--host", default="127.0.0.1")
-    p_serve.add_argument("--port", type=int, default=8000)
+    p_serve.add_argument("--host", default=DEFAULT_HOST)
+    p_serve.add_argument("--port", type=int, default=DEFAULT_PORT)
 
     p_list = sub.add_parser("list-packages", help="list installed packages")
     p_list.add_argument("serial", help="device serial")

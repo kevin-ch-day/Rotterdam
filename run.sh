@@ -9,7 +9,7 @@
 # Why this script:
 # - Always run from repo root (no CWD surprises)
 # - Auto-run setup.sh if .venv is missing (or use --setup / --setup-only)
-# - Hard-code default WEB PORT (8000) once, and pass it to the app via env
+# - Source default WEB HOST/PORT from server/serv_config.py for consistency
 # - Add diagnostics (--check) to catch common issues early
 # - Keep behavior simple: this script launches the CLI menu (python main.py)
 #
@@ -43,10 +43,18 @@ SCRIPT_PATH="$(resolve_path "$0")"
 ROOT_DIR="$(dirname "$SCRIPT_PATH")"
 cd "$ROOT_DIR"
 
-# ------------------------------ Hard-coded defaults -------------------------
-# Single source of truth for local web bind settings (used by CLI-launched server).
-APP_HOST_DEFAULT="127.0.0.1"
-APP_PORT_DEFAULT=8000     # <— hard-coded default port per project convention
+# ------------------------------ Default settings ---------------------------
+# Source defaults from server/serv_config.py to avoid divergence.
+APP_HOST_DEFAULT="$(python - <<'PY'
+from server.serv_config import DEFAULT_HOST
+print(DEFAULT_HOST)
+PY
+)"
+APP_PORT_DEFAULT="$(python - <<'PY'
+from server.serv_config import DEFAULT_PORT
+print(DEFAULT_PORT)
+PY
+)"
 
 # ------------------------------- CLI options --------------------------------
 RUN_SETUP=0
