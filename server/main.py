@@ -109,7 +109,7 @@ async def _startup_checks() -> None:
     if api_key == DEFAULT_API_KEY:
         log.critical("ROTTERDAM_API_KEY is using the default value; set a custom key for production")
 
-# ---------- Diagnostics (protected by middleware unless you allowlist it there) ----------
+# ---------- Diagnostics (protected by middleware; set ALLOW_DIAG=1 to bypass auth) ----------
 @app.get("/_diag", include_in_schema=False)
 async def diag() -> JSONResponse:
     return JSONResponse(

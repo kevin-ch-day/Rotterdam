@@ -47,9 +47,12 @@ RATE_WINDOW_SECS = max(1, _env_int("ROTTERDAM_RATE_WINDOW_SECS", 60))
 DISABLE_AUTH = _env_bool("DISABLE_AUTH", False)
 TRUST_LOCALHOST = _env_bool("TRUST_LOCALHOST", False)
 TRUST_PROXY = _env_bool("TRUST_PROXY", False)
+# Allow unauthenticated access to /_diag when set
+ALLOW_DIAG = _env_bool("ALLOW_DIAG", False)
 
-# Public routes (no auth). We intentionally EXCLUDE "/_diag" (requires auth or dev flag).
-# Include the mount roots themselves so "/ui" (no trailing slash) works, too.
+# Public routes (no auth). Diagnostics endpoint "/_diag" is intentionally
+# excluded unless ALLOW_DIAG is set. Include the mount roots themselves so
+# "/ui" (no trailing slash) works, too.
 PUBLIC_PATHS: set[str] = {
     "/",
     "/favicon.ico",
@@ -118,6 +121,8 @@ def get_request_id() -> str | None:
 
 def _is_public(path: str) -> bool:
     if path in PUBLIC_PATHS:
+        return True
+    if ALLOW_DIAG and path == "/_diag":
         return True
     return any(path.startswith(pfx) for pfx in PUBLIC_PREFIXES)
 
