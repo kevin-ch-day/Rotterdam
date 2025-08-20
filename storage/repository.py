@@ -20,6 +20,8 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from .models import Analysis, Base
+
 
 def _load_database_url() -> str:
     """Load ``DATABASE_URL`` from environment or ``.env`` file.
@@ -110,3 +112,56 @@ def ping_db() -> tuple[bool, str, float]:
     except Exception as e:
         ms = (time.perf_counter() - t0) * 1000.0
         return False, f"{e.__class__.__name__}: {e}", ms
+
+
+class AnalysisRepository:
+    """Simple repository for storing analysis records."""
+
+    def __init__(self, *, db_url: str | None = None) -> None:
+        if db_url:
+            self.engine = create_engine(db_url, future=True)
+            Base.metadata.create_all(self.engine)
+        else:
+            self.engine = get_engine()
+        self._Session = sessionmaker(
+            bind=self.engine,
+            autoflush=False,
+            autocommit=False,
+            expire_on_commit=False,
+            future=True,
+        )
+
+    @contextlib.contextmanager
+    def session_scope(self) -> Iterator[Session]:
+        session = self._Session()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def upsert(self, package_name: str, report_path: str) -> Analysis:
+        """Insert or update an analysis record for ``package_name``."""
+        with self.session_scope() as s:
+            obj = (
+                s.query(Analysis)
+                .filter(Analysis.package_name == package_name)
+                .order_by(Analysis.id.desc())
+                .first()
+            )
+            if obj:
+                obj.report_path = report_path
+            else:
+                obj = Analysis(
+                    kind="static",
+                    package_name=package_name,
+                    report_path=report_path,
+                    status="complete",
+                )
+                s.add(obj)
+            s.flush()
+            s.refresh(obj)
+            return obj
