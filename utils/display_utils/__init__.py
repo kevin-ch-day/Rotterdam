@@ -16,7 +16,7 @@ from .display import (
     term_width,
     wrap_text,
 )
-from .status import fail, good, info, warn
+from .status import error, fail, good, info, note, warn, warning
 
 __all__ = [
     "banner",
@@ -34,7 +34,10 @@ __all__ = [
     "wrap_text",
     "print_table",
     "info",
+    "note",
     "good",
     "warn",
+    "warning",
     "fail",
+    "error",
 ]

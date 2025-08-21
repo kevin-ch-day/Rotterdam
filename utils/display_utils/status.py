@@ -7,12 +7,14 @@ from typing import TextIO
 
 OK = "[OK]"
 INF = "[*]"
+NOTE = "[.]"
 WARN = "[!]"
 ERR = "[X]"
 
 COLOR_PREFIX = {
     OK: "\033[32m",
     INF: "\033[36m",
+    NOTE: "\033[36m",
     WARN: "\033[33m",
     ERR: "\033[31m",
 }
@@ -34,6 +36,11 @@ def info(msg: str, *, ts: bool = False) -> None:
     _emit(INF, msg, ts=ts, stream=sys.stdout)
 
 
+def note(msg: str, *, ts: bool = False) -> None:
+    """Print a secondary informational status line."""
+    _emit(NOTE, msg, ts=ts, stream=sys.stdout)
+
+
 def good(msg: str, *, ts: bool = False) -> None:
     """Print a success status line."""
     _emit(OK, msg, ts=ts, stream=sys.stdout)
@@ -47,3 +54,13 @@ def warn(msg: str, *, ts: bool = False) -> None:
 def fail(msg: str, *, ts: bool = False) -> None:
     """Print an error status line."""
     _emit(ERR, msg, ts=ts, stream=sys.stderr)
+
+
+def warning(msg: str, *, ts: bool = False) -> None:
+    """Alias for :func:`warn` for clearer call sites."""
+    warn(msg, ts=ts)
+
+
+def error(msg: str, *, ts: bool = False) -> None:
+    """Alias for :func:`fail` for clearer call sites."""
+    fail(msg, ts=ts)
