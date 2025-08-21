@@ -1,37 +1,22 @@
 # database/db_engine.py
 """
-Database engine module.
+Simplified database engine module.
 
 Responsibilities:
 - Create cursors from DatabaseCore connections
 - Execute SQL statements and queries
 - Provide transaction and retry helpers
-- Keep all SQL concerns out of db_core
 
-This layer does not know about domain models. Higher-level code can
-import DbEngine and build repository-like modules on top of it.
+This layer does not know about domain models.
 """
 
 from __future__ import annotations
 
 import time
 from contextlib import contextmanager
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Tuple, TypeVar, Union
 
 from mysql.connector import Error, errorcode
-from mysql.connector.connection import MySQLConnection
-from mysql.connector.cursor import MySQLCursor
 
 from database.db_core import DatabaseCore
 
@@ -47,21 +32,12 @@ class DbEngine:
         default_dict_rows: bool = False,
         autocommit_writes: bool = False,
     ) -> None:
-        """
-        Args:
-            core: A DatabaseCore instance from db_core.
-            default_dict_rows: Default cursor row format (dict vs tuple).
-            autocommit_writes: If True, execute/ executemany will commit
-                               automatically when not inside an explicit
-                               transaction block. If False, callers should
-                               either use transaction() or pass commit=True.
-        """
         self._core = core
         self._default_dict_rows = default_dict_rows
         self._autocommit_writes = autocommit_writes
 
     # -------------------------
-    # Lifecycle passthroughs
+    # Lifecycle
     # -------------------------
 
     def init(self) -> None:
@@ -71,35 +47,25 @@ class DbEngine:
         self._core.disconnect()
 
     def is_ready(self) -> bool:
-        return self._core.is_ready()
-
-    def ping(self, reconnect: bool = True) -> bool:
-        return self._core.ping(reconnect=reconnect)
-
-    # Context manager sugar
+        return self._core.ping()
 
     def __enter__(self) -> "DbEngine":
-        """Initialise the core on entry for ``with DbEngine(...)`` usage."""
         self.init()
         return self
 
-    def __exit__(self, exc_type, exc, tb) -> bool:  # pragma: no cover - thin wrapper
+    def __exit__(self, exc_type, exc, tb) -> bool:
         self.shutdown()
         return False
 
     # -------------------------
-    # Cursor and transaction contexts
+    # Cursor + transactions
     # -------------------------
 
     @contextmanager
-    def cursor(self, *, dict_rows: Optional[bool] = None) -> Iterator[MySQLCursor]:
-        """
-        Context manager yielding a raw cursor.
-        Use this for simple one-off statements when you want full control.
-        """
+    def cursor(self, *, dict_rows: Optional[bool] = None) -> Iterator[Any]:
         dict_flag = self._default_dict_rows if dict_rows is None else dict_rows
         with self._core.connection() as conn:
-            cur = conn.cursor(dictionary=dict_flag)
+            cur = conn.cursor(dictionary=dict_flag)  # type: ignore[arg-type]
             try:
                 yield cur
             finally:
@@ -109,15 +75,10 @@ class DbEngine:
                     pass
 
     @contextmanager
-    def transaction(self, *, dict_rows: Optional[bool] = None) -> Iterator[MySQLCursor]:
-        """
-        Transaction context manager.
-        Commits on success, rolls back on exception.
-        """
+    def transaction(self, *, dict_rows: Optional[bool] = None) -> Iterator[Any]:
+        dict_flag = self._default_dict_rows if dict_rows is None else dict_rows
         with self._core.connection() as conn:
-            cur = conn.cursor(
-                dictionary=(self._default_dict_rows if dict_rows is None else dict_rows)
-            )
+            cur = conn.cursor(dictionary=dict_flag)  # type: ignore[arg-type]
             try:
                 yield cur
                 conn.commit()
@@ -134,7 +95,7 @@ class DbEngine:
                     pass
 
     # -------------------------
-    # Execution helpers (no domain logic)
+    # Execution helpers
     # -------------------------
 
     def execute(
@@ -145,24 +106,13 @@ class DbEngine:
         commit: bool = False,
         dict_rows: Optional[bool] = None,
     ) -> int:
-        """
-        Execute a single SQL statement. Returns rowcount.
-        If commit is True, commits after execution.
-        If autocommit_writes is True and commit is False, performs a commit
-        only for data-changing statements when outside a transaction context.
-        """
         with self._core.connection() as conn:
-            cur = conn.cursor(
-                dictionary=(self._default_dict_rows if dict_rows is None else dict_rows)
-            )
+            cur = conn.cursor(dictionary=(self._default_dict_rows if dict_rows is None else dict_rows))  # type: ignore[arg-type]
             try:
                 cur.execute(sql, params)
                 affected = cur.rowcount
                 if commit or (self._autocommit_writes and _is_write_statement(sql)):
-                    try:
-                        conn.commit()
-                    except Exception:
-                        pass
+                    conn.commit()
                 return affected
             finally:
                 try:
@@ -178,21 +128,13 @@ class DbEngine:
         commit: bool = False,
         dict_rows: Optional[bool] = None,
     ) -> int:
-        """
-        Execute a statement for multiple parameter sets. Returns rowcount.
-        """
         with self._core.connection() as conn:
-            cur = conn.cursor(
-                dictionary=(self._default_dict_rows if dict_rows is None else dict_rows)
-            )
+            cur = conn.cursor(dictionary=(self._default_dict_rows if dict_rows is None else dict_rows))  # type: ignore[arg-type]
             try:
                 cur.executemany(sql, list(seq_of_params))
                 affected = cur.rowcount
                 if commit or (self._autocommit_writes and _is_write_statement(sql)):
-                    try:
-                        conn.commit()
-                    except Exception:
-                        pass
+                    conn.commit()
                 return affected
             finally:
                 try:
@@ -207,9 +149,6 @@ class DbEngine:
         *,
         dict_rows: Optional[bool] = None,
     ) -> Optional[Union[Tuple[Any, ...], Dict[str, Any]]]:
-        """
-        Execute a SELECT and fetch a single row. Returns None if no rows.
-        """
         with self.cursor(dict_rows=dict_rows) as cur:
             cur.execute(sql, params)
             return cur.fetchone()
@@ -221,26 +160,14 @@ class DbEngine:
         *,
         dict_rows: Optional[bool] = None,
     ) -> List[Union[Tuple[Any, ...], Dict[str, Any]]]:
-        """
-        Execute a SELECT and fetch all rows.
-        """
         with self.cursor(dict_rows=dict_rows) as cur:
             cur.execute(sql, params)
             return cur.fetchall()
 
-    def fetch_val(
-        self,
-        sql: str,
-        params: Optional[Params] = None,
-    ) -> Optional[Any]:
-        """
-        Execute a SELECT that returns a single scalar value.
-        Returns None if there is no row.
-        """
+    def fetch_val(self, sql: str, params: Optional[Params] = None) -> Optional[Any]:
         row = self.fetch_one(sql, params, dict_rows=False)
         if row is None:
             return None
-        # row is a tuple in dict_rows=False mode
         return row[0] if isinstance(row, (tuple, list)) else None
 
     # -------------------------
@@ -248,10 +175,6 @@ class DbEngine:
     # -------------------------
 
     def table_exists(self, table_name: str) -> bool:
-        """
-        Lightweight helper that checks if a table exists in the current schema.
-        Uses SHOW TABLES LIKE to avoid touching information_schema unnecessarily.
-        """
         row = self.fetch_one("SHOW TABLES LIKE %s", (table_name,), dict_rows=False)
         return row is not None
 
@@ -263,22 +186,6 @@ class DbEngine:
         backoff_sec: float = 0.25,
         transient_only: bool = True,
     ) -> T:
-        """
-        Run a callable with simple retry for transient MySQL errors.
-
-        Args:
-            fn: Zero-argument callable to execute.
-            max_attempts: Maximum number of attempts before failing.
-            backoff_sec: Initial backoff time between attempts.
-            transient_only: If True only retry known transient MySQL errors.
-
-        Returns:
-            The value returned by ``fn`` on success.
-
-        Raises:
-            Exception: The last captured exception after exhausting retries.
-        """
-
         attempt = 0
         last_exc: Optional[Exception] = None
         transient_codes = {
@@ -304,7 +211,6 @@ class DbEngine:
 
         if last_exc is not None:
             raise last_exc
-
         raise RuntimeError("with_retry: function did not return a value")
 
 
