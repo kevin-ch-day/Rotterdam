@@ -7,16 +7,14 @@ from __future__ import annotations
 import subprocess
 from typing import List, Dict, Optional
 
-from .adb import _adb_path, _run_adb
+from .adb import _run_adb
 from core.errors import log_exception
 
 
-def _try_ps(adb: str, serial: str, args: List[str], timeout: int = 10) -> Optional[str]:
-    """
-    Try running `adb -s <serial> shell ps ...`. Return stdout on success, None on failure.
-    """
+def _try_ps(serial: str, args: List[str], timeout: int = 10) -> Optional[str]:
+    """Run ``adb shell ps`` with ``args``. Return stdout on success, ``None`` on failure."""
     try:
-        proc = _run_adb([adb, "-s", serial, "shell", *args], timeout=timeout)
+        proc = _run_adb(["-s", serial, "shell", *args], timeout=timeout)
         return (proc.stdout or "").strip()
     except subprocess.CalledProcessError:
         return None
@@ -111,8 +109,6 @@ def list_processes(serial: str, timeout: int = 10) -> List[Dict[str, str]]:
     Return running processes on the device identified by `serial`.
     Tries structured ps invocations first, falls back to plain ps.
     """
-    adb = _adb_path()
-
     # Try modern/toybox-friendly forms first
     attempts = [
         ["ps", "-A", "-o", "USER,PID,NAME"],        # Android 8+/toybox
@@ -123,7 +119,7 @@ def list_processes(serial: str, timeout: int = 10) -> List[Dict[str, str]]:
     last_err: Optional[Exception] = None
     for args in attempts:
         try:
-            out = _try_ps(adb, serial, args, timeout=timeout)
+            out = _try_ps(serial, args, timeout=timeout)
             if out is not None and out.strip():
                 return parse_ps(out)
         except Exception as exc:  # catch unexpected tool/env errors and try next form
@@ -136,7 +132,7 @@ def list_processes(serial: str, timeout: int = 10) -> List[Dict[str, str]]:
     # As a final attempt, raise a clear error instead of silently hiding issues.
     try:
         # Let this one raise if it fails so the caller sees a hard error.
-        proc = _run_adb([adb, "-s", serial, "shell", "ps"], timeout=timeout)
+        proc = _run_adb(["-s", serial, "shell", "ps"], timeout=timeout)
         return parse_ps(proc.stdout or "")
     except subprocess.CalledProcessError as exc:
         log_exception(f"Failed to list processes on device {serial}", exc)

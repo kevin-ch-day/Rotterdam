@@ -25,8 +25,7 @@ logger = StructuredLogger.get_logger(__name__)
 
 def _run_shell(cmd: list[str]) -> str:
     """Run ``adb shell`` with *cmd* and return stdout as text."""
-    adb_path = adb._adb_path()
-    proc = adb._run_adb([adb_path, "shell", *cmd])
+    proc = adb._run_adb(["shell", *cmd])
     return proc.stdout
 
 

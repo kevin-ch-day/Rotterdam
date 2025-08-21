@@ -7,7 +7,7 @@ from __future__ import annotations
 import subprocess
 from typing import List, Dict, Any
 
-from .adb import _adb_path, _run_adb
+from .adb import _run_adb
 
 # A small, non-exhaustive set of permissions considered risky for demos.
 DANGEROUS_PERMISSIONS = {
@@ -37,9 +37,8 @@ HIGH_VALUE_PACKAGES = {
 
 def list_installed_packages(serial: str) -> List[str]:
     """Return package names installed on the given device."""
-    adb = _adb_path()
     try:
-        proc = _run_adb([adb, "-s", serial, "shell", "pm", "list", "packages"], timeout=10)
+        proc = _run_adb(["-s", serial, "shell", "pm", "list", "packages"], timeout=10)
     except subprocess.CalledProcessError as exc:
         raise RuntimeError(f"Failed to list packages on device {serial}: {exc}") from exc
 
@@ -53,9 +52,8 @@ def list_installed_packages(serial: str) -> List[str]:
 
 def _get_permissions(serial: str, package: str) -> List[str]:
     """Return permissions declared by the package."""
-    adb = _adb_path()
     try:
-        proc = _run_adb([adb, "-s", serial, "shell", "dumpsys", "package", package], timeout=10)
+        proc = _run_adb(["-s", serial, "shell", "dumpsys", "package", package], timeout=10)
     except subprocess.CalledProcessError:
         return []
 
@@ -92,10 +90,9 @@ def inventory_packages(serial: str) -> List[Dict[str, Any]]:
         high_value: whether package is in HIGH_VALUE_PACKAGES
     """
 
-    adb = _adb_path()
     try:
         proc = _run_adb(
-            [adb, "-s", serial, "shell", "pm", "list", "packages", "-f", "-i"],
+            ["-s", serial, "shell", "pm", "list", "packages", "-f", "-i"],
             timeout=15,
         )
     except subprocess.CalledProcessError:
