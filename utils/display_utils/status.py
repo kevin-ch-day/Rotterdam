@@ -47,3 +47,8 @@ def warn(msg: str, *, ts: bool = False) -> None:
 def fail(msg: str, *, ts: bool = False) -> None:
     """Print an error status line."""
     _emit(ERR, msg, ts=ts, stream=sys.stderr)
+
+
+def note(msg: str, *, ts: bool = False) -> None:
+    """Alias for :func:`info` for backward compatibility."""
+    info(msg, ts=ts)

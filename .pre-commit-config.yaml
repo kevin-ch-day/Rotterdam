@@ -3,11 +3,14 @@ repos:
     rev: 24.3.0
     hooks:
       - id: black
+        language_version: python3.12
+        args: ["--target-version=py312"]
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
     hooks:
       - id: isort
-        args: ['--profile=black']
+        args: ['--profile=black', '--python-version', '312']
+        language_version: python3.12
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:

@@ -3,7 +3,6 @@ from __future__ import annotations
 import csv
 import json
 import re
-from dataclasses import asdict
 from typing import Optional
 
 from devices import packages, processes, selection, service
@@ -19,7 +18,7 @@ def show_connected_devices() -> None:
     with _action_context("show_connected_devices"):
         logger.info("show_connected_devices")
         try:
-            devs = [asdict(d) for d in service.discover()]
+            devs = service.discover()
         except RuntimeError as e:
             logger.exception("failed to check connected devices")
             display.fail(str(e))
@@ -33,12 +32,12 @@ def show_connected_devices() -> None:
 
         rows = [
             [
-                d.get("serial", ""),
-                d.get("state", ""),
-                d.get("product", "-"),
-                d.get("model", "-"),
-                d.get("device", "-"),
-                d.get("transport_id", d.get("transport", "-")),
+                d.serial,
+                d.state,
+                d.product or "-",
+                d.model or "-",
+                d.device or "-",
+                d.transport_id or "-",
             ]
             for d in devs
         ]
@@ -60,15 +59,15 @@ def show_detailed_devices() -> None:
     with _action_context("show_detailed_devices"):
         logger.info("show_detailed_devices")
         try:
-            detailed = [asdict(d) for d in service.discover()]
+            detailed = service.discover()
         except RuntimeError as e:
             logger.exception("failed to list detailed devices")
             display.fail(str(e))
             return
 
+        display.print_section("Connected Devices (Detailed)")
         if not detailed:
             logger.info("no devices attached")
-            display.print_section("Connected Devices (Detailed)")
             print("No devices attached.")
             return
 
@@ -220,12 +219,12 @@ def scan_for_devices() -> None:
 
         rows = [
             [
-                d.get("serial", ""),
-                d.get("state", ""),
-                d.get("product", "-"),
-                d.get("model", "-"),
-                d.get("device", "-"),
-                d.get("transport_id", d.get("transport", "-")),
+                d.serial,
+                d.state,
+                d.product or "-",
+                d.model or "-",
+                d.device or "-",
+                d.transport_id or "-",
             ]
             for d in detailed
         ]
