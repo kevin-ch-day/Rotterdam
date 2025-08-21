@@ -141,6 +141,17 @@ export ROTTERDAM_API_KEY="my-strong-key"  # default "secret" will trigger a warn
 python -m cli.actions serve
 ```
 
+The browser UI sends this key on all requests. Expose it to the page with a
+`<meta>` tag or by pointing to an endpoint that returns the key:
+
+```html
+<meta name="api-key" content="my-strong-key" />
+<!-- or -->
+<meta name="api-key-endpoint" content="/path/to/key" />
+```
+`ui/js/helpers.js` reads one of these tags and sets the `X-API-Key` header
+accordingly.
+
 Using the default API key `secret` is only suitable for local testing and will
 log a warning on startup. The server starts on `localhost:8765` by default and
 exposes endpoints:

@@ -9,7 +9,28 @@ $(function () {
   });
 });
 
-window.API_HEADERS = { 'X-API-Key': 'secret' };
+function resolveApiKey() {
+  const metaKey = document.querySelector("meta[name='api-key']");
+  if (metaKey && metaKey.content) {
+    return metaKey.content;
+  }
+  const metaEndpoint = document.querySelector("meta[name='api-key-endpoint']");
+  if (metaEndpoint && metaEndpoint.content) {
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', metaEndpoint.content, false);
+      xhr.send(null);
+      if (xhr.status === 200 && xhr.responseText.trim()) {
+        return xhr.responseText.trim();
+      }
+    } catch (err) {
+      console.error('Failed to fetch API key', err);
+    }
+  }
+  return 'secret';
+}
+
+window.API_HEADERS = { 'X-API-Key': resolveApiKey() };
 
 window.api = {
   get: (path) =>
