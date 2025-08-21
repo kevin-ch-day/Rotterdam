@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from utils.logging_utils.app_logger import app_logger
@@ -27,7 +27,6 @@ REPO_ROOT = THIS_DIR.parent
 # root so that the mounts below can serve them correctly.
 UI_DIR = (REPO_ROOT / "ui").resolve()
 INDEX_HTML = UI_DIR / "pages" / "index.html"
-FAVICON_ICO = UI_DIR / "favicon.ico"
 
 
 def _mask_path(p: Path) -> str:
@@ -110,7 +109,6 @@ async def _startup_checks() -> None:
     log.info("ROOT_PATH=%s", ROOT_PATH or "(none)")
     log.info("UI_DIR=%s exists=%s", UI_DIR, UI_DIR.exists())
     log.info("INDEX_HTML=%s exists=%s", INDEX_HTML, INDEX_HTML.exists())
-    log.info("FAVICON_ICO=%s exists=%s", FAVICON_ICO, FAVICON_ICO.exists())
     if not UI_DIR.exists():
         log.warning("UI directory missing — static mounts will 404: %s", UI_DIR)
     if not INDEX_HTML.exists():
@@ -139,10 +137,6 @@ async def diag() -> JSONResponse:
                 "path": _mask_path(INDEX_HTML),
                 "exists": INDEX_HTML.exists(),
             },
-            "favicon_ico": {
-                "path": _mask_path(FAVICON_ICO),
-                "exists": FAVICON_ICO.exists(),
-            },
         }
     )
 
@@ -156,10 +150,3 @@ async def root() -> FileResponse:
     masked = _mask_path(INDEX_HTML)
     raise HTTPException(status_code=500, detail=f"index not found at {masked}")
 
-
-# Favicon (no union return annotation)
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
-    if FAVICON_ICO.exists():
-        return FileResponse(str(FAVICON_ICO))
-    return PlainTextResponse("favicon not found", status_code=404)
