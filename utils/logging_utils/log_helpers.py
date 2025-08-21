@@ -14,6 +14,11 @@ class LoggingHelper:
     """Convenience helpers for emitting log messages through ``app_logger``."""
 
     @staticmethod
+    def debug(message: str, *, logger_name: str | None = None) -> None:
+        """Log a debug message."""
+        app_logger.get_logger(logger_name).debug(message)
+
+    @staticmethod
     def info(message: str, *, logger_name: str | None = None) -> None:
         """Log an informational message."""
         app_logger.get_logger(logger_name).info(message)
@@ -31,4 +36,8 @@ class LoggingHelper:
         exc: Exception | None = None,
     ) -> None:
         """Log an error message and optional exception information."""
-        app_logger.get_logger(logger_name).error(message, exc_info=exc)
+        logger = app_logger.get_logger(logger_name)
+        if exc is not None:
+            logger.exception(message, exc_info=exc)
+        else:
+            logger.error(message)

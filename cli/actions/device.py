@@ -138,6 +138,8 @@ def list_installed_packages(
                 "yes" if p.get("system") else "no",
                 "yes" if p.get("priv") else "no",
                 "yes" if p.get("high_value") else "no",
+                ", ".join(p.get("categories", [])),
+                p.get("risk_score", 0),
             ]
             for p in pkg_info
         ]
@@ -151,8 +153,15 @@ def list_installed_packages(
                 "System",
                 "Priv",
                 "High-Value",
+                "Categories",
+                "Risk",
             ],
         )
+
+        total = len(pkg_info)
+        flagged = sum(1 for p in pkg_info if p.get("risk_score", 0) > 0)
+        display.note(f"Total packages: {total}")
+        display.note(f"Flagged packages: {flagged}")
 
         if csv_path:
             try:
@@ -167,6 +176,9 @@ def list_installed_packages(
                             "system",
                             "priv",
                             "high_value",
+                            "categories",
+                            "risk_score",
+                            "dangerous_permissions",
                         ],
                     )
                     writer.writeheader()
@@ -198,8 +210,16 @@ def scan_dangerous_permissions(serial: str) -> None:
             logger.info("no apps with dangerous permissions")
             print("No apps requesting dangerous permissions found.")
             return
-        rows = [[r.get("package", ""), ", ".join(r.get("permissions", []))] for r in risky]
-        display.print_table(rows, headers=["Package", "Permissions"])
+        rows = [
+            [
+                r.get("package", ""),
+                ", ".join(r.get("permissions", [])),
+                ", ".join(r.get("categories", [])),
+                r.get("risk_score", 0),
+            ]
+            for r in risky
+        ]
+        display.print_table(rows, headers=["Package", "Permissions", "Categories", "Risk"])
 
 
 def scan_for_devices() -> None:
