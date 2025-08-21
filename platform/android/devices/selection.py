@@ -7,7 +7,6 @@ with numbered selection for easier navigation.
 
 from typing import Any, Dict, List, Optional
 
-from core import menu
 from utils.display_utils import display
 from . import discovery
 
@@ -39,7 +38,7 @@ def list_and_select_device() -> Optional[Dict[str, Any]]:
             for d in connected
         ]
 
-        choice = menu.show_menu(
+        choice = display.show_menu(
             "ADB Devices",
             labels,
             exit_label="Cancel",

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from core import config, menu as core_menu
+from core import config
 from devices import selection
 from devices.adb import _adb_path, _run_adb
 from utils.display_utils import display
@@ -130,7 +130,7 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
     display.print_app_banner()
 
     while True:
-        num = core_menu.show_menu("Main Menu", options, exit_label="Exit")
+        num = display.show_menu("Main Menu", options, exit_label="Exit")
         if num == 0:
             display.good("Exiting App")
             return None

@@ -7,7 +7,7 @@ General display utilities for Android Tool.
 - Clean banners/headers/dividers
 - Robust status lines (info/warn/error/ok), optional timestamps, stderr routing
 - Handy helpers: clear(), bullets, key/value, truncation, byte formatting
-- Re-exports ``print_table`` from :mod:`core.table`
+- Re-exports ``print_table`` from :mod:`utils.display_utils.table`
 """
 
 from __future__ import annotations
@@ -15,10 +15,10 @@ from __future__ import annotations
 import os
 import shutil
 from textwrap import wrap
-from typing import Iterable, Sequence, Any, Optional
+from typing import Iterable, Sequence, Any, Optional, Callable, List
 
-from ...core import config
-from ...core import table as tables
+from core import config
+from . import table as tables
 from .status import info, good, warn, fail
 
 # -----------------------------
@@ -178,6 +178,64 @@ def prompt_choice(
             return raw
 
         warn("Invalid choice. Please try again.")
+
+
+# -----------------------------
+# Menu helpers
+# -----------------------------
+
+def show_menu(
+    title: str,
+    options: List[str],
+    *,
+    exit_label: str = "Exit",
+    prompt: str = "Select an option",
+    allow_quit_shortcuts: bool = True,
+    default_choice: Optional[int] = None,
+) -> int:
+    """Display a simple numbered menu and return the selected option number."""
+    valid_max = len(options)
+    if default_choice is not None and not (0 <= default_choice <= valid_max):
+        default_choice = None
+
+    valid = {str(i) for i in range(valid_max + 1)}
+    default_str = str(default_choice) if default_choice is not None else None
+
+    while True:
+        print()
+        print(render_menu(title, options, exit_label=exit_label))
+
+        choice = prompt_choice(valid, default_str, message=prompt)
+        if choice == "q":
+            if allow_quit_shortcuts:
+                return 0
+            warn("Invalid choice. Please try again.")
+            continue
+        return int(choice)
+
+
+def run_menu_loop(
+    title: str,
+    options: List[str],
+    handler: Callable[[int, str], None],
+    *,
+    exit_label: str = "Exit",
+    allow_quit_shortcuts: bool = True,
+    default_choice: Optional[int] = None,
+) -> None:
+    """Keep showing the menu until the user selects [0] Exit."""
+    while True:
+        choice = show_menu(
+            title,
+            options,
+            exit_label=exit_label,
+            allow_quit_shortcuts=allow_quit_shortcuts,
+            default_choice=default_choice,
+        )
+        if choice == 0:
+            return
+        label = options[choice - 1]
+        handler(choice, label)
 
 
 # -----------------------------
