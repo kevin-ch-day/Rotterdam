@@ -1,3 +1,6 @@
-# File: analysis/cert_analysis.py
-from rotterdam.android.analysis.static.extractors.crypto import *  # noqa
-__all__ = [name for name in dir() if not name.startswith("_")]
+"""Minimal certificate analysis shim."""
+
+from platform.android.analysis.static.extractors.crypto import analyze_certificates
+
+__all__ = ["analyze_certificates"]
+

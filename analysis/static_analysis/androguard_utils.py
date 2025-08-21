@@ -1,3 +1,6 @@
-# File: analysis/androguard_utils.py
-from rotterdam.android.analysis.static.adapters.androguard import *  # noqa
-__all__ = [name for name in dir() if not name.startswith("_")]
+"""Lightweight Androguard helpers for static analysis."""
+
+from platform.android.analysis.static.adapters.androguard import summarize_apk
+
+__all__ = ["summarize_apk"]
+

@@ -1,4 +1,20 @@
-from rotterdam.android.analysis.dynamic import *  # noqa: F403
-from rotterdam.android.analysis.dynamic import __all__ as dynamic_all
+"""Public sandbox helpers used by the CLI."""
 
-__all__ = list(dynamic_all)
+from platform.android.analysis.dynamic import (
+    analyze_apk,
+    collect_permissions,
+    compute_runtime_metrics,
+    run_analysis,
+    run_sandbox,
+    sniff_network,
+)
+
+__all__ = [
+    "run_analysis",
+    "run_sandbox",
+    "collect_permissions",
+    "sniff_network",
+    "compute_runtime_metrics",
+    "analyze_apk",
+]
+
