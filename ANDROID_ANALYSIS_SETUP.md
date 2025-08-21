@@ -1,7 +1,7 @@
 # Android Analysis Environment Setup
 
-This guide outlines how to prepare a Fedora or Debian based system for
-analyzing Android applications using both static and dynamic techniques.
+This guide outlines how to prepare a Fedora system for analyzing
+Android applications using both static and dynamic techniques.
 
 ## 1. System Preparation
 - Install Android SDK and platform tools (`adb`, `fastboot`).
@@ -23,8 +23,8 @@ analyzing Android applications using both static and dynamic techniques.
   sudo install -m 0755 apktool.jar /usr/local/bin/apktool
   ```
 - Configure `udev` rules to allow ADB access without root. Example rule:
-  `SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", MODE="0666", GROUP="plugdev"`.
-- Ensure your user is part of the `plugdev` (or `adbusers`) group.
+  `SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", MODE="0666", GROUP="adbusers"`.
+- Ensure your user is part of the `adbusers` group.
 - On SELinux systems, relabel analysis directories if write access is denied:
   `sudo chcon -Rt svirt_sandbox_file_t /path/to/dir`.
 - Verify device connectivity with `adb devices`.
@@ -64,4 +64,3 @@ analyzing Android applications using both static and dynamic techniques.
 - Extend the `analysis` Python module or add new utilities to automate
   dynamic testing and report generation.
 - Integrate checks into CI to analyze new APKs continuously.
-

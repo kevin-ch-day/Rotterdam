@@ -2,9 +2,13 @@
 
 Rotterdam is a toolkit for analyzing Android applications and devices. It provides utilities for extracting and scanning APKs, evaluating device behavior, and reporting findings.
 
+## Supported platform
+
+Rotterdam targets **Fedora** Linux only. The helper scripts and package names depend on the `dnf` package manager. Other operating systems are not supported.
+
 ## Quick start
 
-On Fedora systems the helper scripts make it easy to set up and launch the CLI:
+The helper scripts make it easy to set up and launch the CLI on Fedora:
 
 ```bash
 ./setup.sh              # install dependencies and create virtual environment
@@ -18,12 +22,7 @@ On Fedora systems the helper scripts make it easy to set up and launch the CLI:
 
 ## Setup
 
-The helper script targets Fedora but the same dependencies are available on
-other platforms.
-
-### Fedora
-
-Installed automatically by `setup.sh` (defaults to `java-17-openjdk`; override with `JAVA_PACKAGE`):
+`setup.sh` installs the following Fedora packages via `dnf` (defaults to `java-17-openjdk`; override with `JAVA_PACKAGE`):
 
 ```
 python3 python3-virtualenv adb aapt2 apktool java-17-openjdk yara
@@ -34,18 +33,6 @@ unavailable it falls back to the latest `java-*openjdk` package detected via
 `dnf`. Set the `JAVA_PACKAGE` environment variable to specify a different Java
 package explicitly.
 
-### Debian/Ubuntu
-
-```
-sudo apt-get install python3 python3-venv adb aapt apktool openjdk-11-jdk libyara-dev
-```
-
-### macOS (Homebrew)
-
-```
-brew install python3 adb aapt apktool openjdk@11 yara
-```
-
 Optional tools such as Frida or MySQL can be installed separately if needed.
 
 ## Development
@@ -53,8 +40,7 @@ Optional tools such as Frida or MySQL can be installed separately if needed.
 Set up a Python environment and install the project's dependencies.
 Dependencies are listed in `requirements.txt`, including the MySQL driver
 `mysql-connector-python` and YARA bindings via `yara-python`.
-The YARA wrapper requires the system `libyara` library; on Debian-based
-systems it can be installed with `apt-get install libyara-dev`.
+The YARA wrapper requires the system `libyara` library.
 
 ### Git configuration
 

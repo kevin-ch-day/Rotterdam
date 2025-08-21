@@ -15,6 +15,8 @@
 #
 # NOTE: The web server is launched from inside the CLI (e.g., menu option [5]).
 #       We export APP_HOST/APP_PORT/PORT so that server code can bind correctly.
+#       Rotterdam currently targets Fedora systems only; other distributions are
+#       untested and unsupported.
 # =============================================================================
 
 set -euo pipefail
@@ -68,6 +70,7 @@ Usage: ./run.sh [OPTIONS] [-- <cli args>]
 
 Launch the Rotterdam interactive CLI (menu). Any arguments after '--'
 are passed directly to python main.py (e.g., --json).
+This launcher assumes dependencies were installed on Fedora via setup.sh.
 
 Options:
   --setup            Run setup.sh before launching
