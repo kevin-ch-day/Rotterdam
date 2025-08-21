@@ -16,7 +16,15 @@ from .display import (
     term_width,
     wrap_text,
 )
-from .status import fail, good, info, note, warn
+
+# Canonical status helpers
+from .status import info, ok, warn, fail, note, warning, error
+
+# Backward-compatible alias
+def good(*args, **kwargs):
+    """Alias for ok()."""
+    return ok(*args, **kwargs)
+
 
 __all__ = [
     "banner",
@@ -33,9 +41,14 @@ __all__ = [
     "term_width",
     "wrap_text",
     "print_table",
+    # status helpers (canonical)
     "info",
-    "good",
+    "ok",
     "warn",
     "fail",
     "note",
+    # aliases
+    "good",
+    "warning",
+    "error",
 ]

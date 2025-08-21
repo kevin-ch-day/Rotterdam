@@ -2,30 +2,67 @@
 
 from __future__ import annotations
 
+import os
 import sys
-from typing import TextIO
+from datetime import datetime
+from typing import TextIO, Callable, Optional
+
+# Try to source settings from app_config if available, else fall back.
+try:
+    from app_config.app_config import USE_COLOR as _CFG_USE_COLOR  # type: ignore
+except Exception:
+    _CFG_USE_COLOR = None  # type: ignore[assignment]
+
+try:
+    from app_config.app_config import ts as _cfg_ts  # type: ignore
+except Exception:
+    _cfg_ts = None  # type: ignore[assignment]
+
+
+def _fallback_ts() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+# Timestamp function (prefer app_config, else local)
+_ts: Callable[[], str] = _cfg_ts or _fallback_ts  # type: ignore[assignment]
+
+# Determine color usage:
+# - Respect app_config if provided
+# - Otherwise enable only on TTY and when NO_COLOR is not set
+if _CFG_USE_COLOR is not None:
+    USE_COLOR: bool = bool(_CFG_USE_COLOR)
+else:
+    try:
+        USE_COLOR = sys.stdout.isatty() and "NO_COLOR" not in os.environ
+    except Exception:
+        USE_COLOR = False
 
 OK = "[OK]"
 INF = "[*]"
+NOTE = "[.]"
 WARN = "[!]"
 ERR = "[X]"
 
 COLOR_PREFIX = {
-    OK: "\033[32m",
-    INF: "\033[36m",
-    WARN: "\033[33m",
-    ERR: "\033[31m",
+    OK: "\033[32m",   # green
+    INF: "\033[36m",  # cyan
+    NOTE: "\033[36m", # cyan
+    WARN: "\033[33m", # yellow
+    ERR: "\033[31m",  # red
 }
 RESET = "\033[0m"
 
 
 def _emit(prefix: str, msg: str, *, ts: bool = False, stream: TextIO = sys.stdout) -> None:
     """Internal helper to print a prefixed message."""
-    from . import config
-
-    color = COLOR_PREFIX.get(prefix, "") if config.USE_COLOR else ""
+    try:
+        stream_isatty = stream.isatty()  # type: ignore[attr-defined]
+    except Exception:
+        stream_isatty = False
+    use_color = USE_COLOR and stream_isatty
+    color = COLOR_PREFIX.get(prefix, "") if use_color else ""
     pre = f"{color}{prefix}{RESET}" if color else prefix
-    stamp = f"{config.ts()} | " if ts else ""
+    stamp = f"{_ts()} | " if ts else ""
     print(f"{pre} {stamp}{msg}", file=stream)
 
 
@@ -34,7 +71,12 @@ def info(msg: str, *, ts: bool = False) -> None:
     _emit(INF, msg, ts=ts, stream=sys.stdout)
 
 
-def good(msg: str, *, ts: bool = False) -> None:
+def note(msg: str, *, ts: bool = False) -> None:
+    """Print a secondary informational status line (neutral notice)."""
+    _emit(NOTE, msg, ts=ts, stream=sys.stdout)
+
+
+def ok(msg: str, *, ts: bool = False) -> None:
     """Print a success status line."""
     _emit(OK, msg, ts=ts, stream=sys.stdout)
 
@@ -49,6 +91,30 @@ def fail(msg: str, *, ts: bool = False) -> None:
     _emit(ERR, msg, ts=ts, stream=sys.stderr)
 
 
-def note(msg: str, *, ts: bool = False) -> None:
-    """Alias for :func:`info` for backward compatibility."""
-    info(msg, ts=ts)
+# Backward-compatible aliases (retain during migration)
+def good(msg: str, *, ts: bool = False) -> None:
+    """Alias for ok (success line)."""
+    ok(msg, ts=ts)
+
+
+def warning(msg: str, *, ts: bool = False) -> None:
+    """Alias for warn (clearer call sites)."""
+    warn(msg, ts=ts)
+
+
+def error(msg: str, *, ts: bool = False) -> None:
+    """Alias for fail (clearer call sites)."""
+    fail(msg, ts=ts)
+
+
+__all__ = [
+    "info",
+    "note",
+    "ok",
+    "warn",
+    "fail",
+    "good",
+    "warning",
+    "error",
+    "USE_COLOR",
+]

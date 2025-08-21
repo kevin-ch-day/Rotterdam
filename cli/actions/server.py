@@ -48,7 +48,7 @@ def show_database_status() -> None:
 
     ok, ver_or_err, ms = ping_db()
     if ok:
-        display.good(f"MySQL version: {ver_or_err} ({ms:.1f} ms)")
+        display.ok(f"MySQL version: {ver_or_err} ({ms:.1f} ms)")
     else:
         display.warn(f"DB check failed in {ms:.1f} ms → {ver_or_err}")
         return

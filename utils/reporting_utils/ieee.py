@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Sequence
 
 from utils.display_utils import display
 
-if TYPE_CHECKING:  # pragma: no cover - import for type checking only
+if TYPE_CHECKING:  # import for type checking only
     from devices.types import DeviceInfo
-else:  # pragma: no cover - runtime fallback
+else:  # runtime fallback
     DeviceInfo = Any  # type: ignore
 
 
@@ -27,16 +27,17 @@ def format_device_inventory(devices: List[DeviceInfo]) -> str:
     """Return a table summarizing connected devices."""
     rows = [
         [
-            d.serial,
-            d.state,
-            d.product or "-",
-            d.model or "-",
-            d.device or "-",
-            d.transport_id or "-",
+            getattr(d, "serial", "") or "-",
+            getattr(d, "state", "") or "-",
+            getattr(d, "product", "") or "-",
+            getattr(d, "model", "") or "-",
+            getattr(d, "device", "") or "-",
+            getattr(d, "transport_id", getattr(d, "transport", "-")) or "-",
         ]
         for d in devices
     ]
-    return ieee_table(["Serial", "State", "Product", "Model", "Device", "Transport"], rows)
+    headers = ["Serial", "State", "Product", "Model", "Device", "Transport"]
+    return ieee_table(headers, rows)
 
 
 def format_evidence_log(entries: Iterable[Dict[str, Any]]) -> str:
