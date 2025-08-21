@@ -14,7 +14,7 @@ from pathlib import Path
 from fastapi import APIRouter, File, HTTPException, Response, UploadFile, status
 from fastapi.responses import FileResponse
 
-import reporting
+from utils.reporting_utils import generate_report
 from orchestrator.scheduler import scheduler
 from storage.repository import ping_db
 
@@ -48,7 +48,7 @@ def _process_apk(apk_path: str) -> dict[str, str]:
     package_name = path.stem
 
     # Generate a risk report
-    result = reporting.generate(package_name)
+    result = generate_report(package_name)
 
     # Write JSON and HTML versions to a unique directory
     out_dir = _ANALYSIS_ROOT / uuid.uuid4().hex
