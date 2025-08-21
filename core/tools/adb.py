@@ -1,27 +1,14 @@
 from __future__ import annotations
 
-import shutil
 import subprocess
 from typing import List
 
-from app_config import app_config
+from settings import get_settings
 
 
 def adb_path() -> str:
-    """Return the best ``adb`` path available on this system."""
-    path = app_config.get_adb_path()
-    which = shutil.which("adb")
-    try:
-        subprocess.run(
-            [path, "version"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=2,
-            check=True,
-        )
-        return path
-    except Exception:
-        return which or path
+    """Return the resolved ``adb`` path from settings."""
+    return get_settings().adb_bin
 
 
 def run(args: List[str], *, timeout: int = 8) -> subprocess.CompletedProcess:

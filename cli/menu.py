@@ -32,6 +32,8 @@ def run_device_menu(serial: str, *, json_mode: bool = False) -> Optional[str | D
         "List installed packages",
         "Scan installed apps for dangerous permissions",
         "List running processes",
+        "Capture device screenshot",
+        "Show network connections",
         "Analyze a local APK (static)",
         "Pull and analyze an installed app",
     ]
@@ -85,8 +87,12 @@ def run_device_menu(serial: str, *, json_mode: bool = False) -> Optional[str | D
         elif num == 3:
             actions.list_running_processes(serial)
         elif num == 4:
-            actions.analyze_apk_path()
+            actions.capture_screenshot(serial)
         elif num == 5:
+            actions.show_network_connections(serial)
+        elif num == 6:
+            actions.analyze_apk_path()
+        elif num == 7:
             actions.analyze_installed_app(serial)
         else:  # pragma: no cover - defensive
             display.warn("Invalid choice. Please try again.")
@@ -101,7 +107,7 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
         "Scan for devices",
         "Connect to a device",
         "Launch Web app",
-        "Check Application Status",
+        "Health check",
         "Database",
         "About Application",
     ]
@@ -149,7 +155,7 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
         elif num == 5:
             actions.launch_web_app()
         elif num == 6:
-            display.info("Application status check not implemented yet.")
+            actions.run_health_check()
         elif num == 7:
             display.info("Database feature not implemented yet.")
         elif num == 8:

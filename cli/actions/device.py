@@ -3,9 +3,11 @@ from __future__ import annotations
 import csv
 import json
 import re
+import subprocess
 from typing import Optional
 
-from devices import packages, processes, selection, service
+from app_config import app_config
+from devices import adb, packages, processes, selection, service
 from utils.display_utils import display
 from utils.reporting_utils import ieee
 
@@ -270,3 +272,38 @@ def list_running_processes(serial: str) -> None:
 
         rows = [[p.get("pid", ""), p.get("user", ""), p.get("name", "")] for p in procs]
         display.print_table(rows, headers=["PID", "User", "Name"])
+
+
+def capture_screenshot(serial: str) -> None:
+    """Capture a screenshot from the device and save it to the screenshots directory."""
+    with _action_context("capture_screenshot", device_serial=serial):
+        logger.info("capture_screenshot")
+        try:
+            app_config.ensure_dirs()
+            path = app_config.dated_filename("screenshot_", ".png", app_config.SCREENSHOTS_DIR)
+            cmd = [adb._adb_path(), "-s", serial, "exec-out", "screencap", "-p"]
+            with open(path, "wb") as fh:
+                subprocess.run(cmd, check=True, stdout=fh, timeout=15)
+        except Exception as e:  # pragma: no cover - external
+            logger.exception("failed to capture screenshot")
+            display.fail(str(e))
+            return
+        display.ok(f"Screenshot saved to {path}")
+
+
+def show_network_connections(serial: str) -> None:
+    """Display current network connections reported by the device."""
+    with _action_context("show_network_connections", device_serial=serial):
+        logger.info("show_network_connections")
+        try:
+            proc = adb._run_adb(["-s", serial, "shell", "netstat", "-an"])
+        except RuntimeError as e:
+            logger.exception("network query failed")
+            display.fail(str(e))
+            return
+        display.print_section("Network Connections")
+        output = (proc.stdout or "").strip()
+        if not output:
+            print("No network connections found.")
+            return
+        print(output)
