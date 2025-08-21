@@ -9,8 +9,7 @@ from typing import Optional
 
 import uvicorn
 
-# Centralized config (host/port/log level, etc.)
-from server import serv_config as cfg
+from settings import get_settings
 
 
 def _wait_for_port(host: str, port: int, timeout: float = 5.0) -> bool:
@@ -56,16 +55,17 @@ def serve(
 
     Usage (from menu option [5]):
         from server.serve import serve
-        serve()  # uses server/serv_config.py (env overrides honored)
+        serve()  # uses settings.get_settings() (env overrides honored)
 
     You can also override per-call:
         serve(port=8765, reload=True, open_browser=False)
     """
+    s = get_settings()
     # Merge call-time overrides with centralized config
-    h = cfg.HOST if host is None else host
-    p = cfg.PORT if port is None else int(port)
-    lvl = cfg.LOG_LEVEL if log_level is None else str(log_level).lower()
-    ob = cfg.OPEN_BROWSER if open_browser is None else bool(open_browser)
+    h = s.host if host is None else host
+    p = s.port if port is None else int(port)
+    lvl = s.log_level if log_level is None else str(log_level).lower()
+    ob = s.open_browser if open_browser is None else bool(open_browser)
 
     # Reload/worker defaults (safe for dev)
     use_reload = bool(reload) if reload is not None else False
