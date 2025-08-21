@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from app_config import app_config
 from utils.display_utils import display
+from utils.reporting_utils import report_risk
 
 from .adapters import apktool, jadx
 from .diff import diff_snapshots
@@ -49,9 +50,6 @@ try:
     )
 except Exception:  # pragma: no cover
     analyze_certificates = None  # type: ignore[assignment]
-
-# Risk scoring
-import reporting
 
 
 def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
@@ -127,7 +125,10 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
         except RuntimeError as e:
             display.warn(str(e))
     else:
-        display.note("YARA scanning not available (yara_scan module not found)")
+        display.note(
+            "Optional feature unavailable: YARA scanning -- skipping. "
+            "Install yara-python to enable malware scanning."
+        )
 
     # Optional Androguard analysis for API usage
     androguard_summary: Optional[Dict[str, Any]] = None
@@ -138,7 +139,10 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
         except Exception as e:  # pragma: no cover
             display.warn(f"Androguard analysis failed: {e}")
     else:
-        display.note("Androguard analysis not available (androguard_utils module not found)")
+        display.note(
+            "Optional feature unavailable: Androguard analysis -- skipping. "
+            "Install androguard to enable API analysis."
+        )
 
     # Derived metrics (static)
     metrics = calculate_derived_metrics(perm_details, components, sdk_info, features, metadata)
@@ -190,7 +194,10 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
             display.warn(f"Signature verification failed: {e}")
     else:
         metrics["untrusted_signature"] = 0  # neutral if we cannot verify
-        display.note("Signature verification not available (signature module not found)")
+        display.note(
+            "Optional feature unavailable: signature verification -- skipping. "
+            "Install cryptography to enable signature checks."
+        )
 
     # Signing certificate analysis (expiry, self-signed, etc.)
     if analyze_certificates:
@@ -204,7 +211,10 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
     else:
         metrics.setdefault("expired_certificate", 0)
         metrics.setdefault("self_signed_certificate", 0)
-        display.note("Certificate analysis not available (cert_analysis module not found)")
+        display.note(
+            "Optional feature unavailable: certificate analysis -- skipping. "
+            "Install cryptography to enable certificate inspection."
+        )
 
     (out / "derived_metrics.json").write_text(json.dumps(metrics, indent=2))
 
@@ -227,7 +237,7 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
     dynamic_metrics: Dict[str, float] = {}
 
     # Risk scoring (merges static+dynamic and ML-derived metrics)
-    risk = reporting.generate(apk.stem, metrics, dynamic_metrics)
+    risk = report_risk(apk.stem, metrics, dynamic_metrics)
     (out / "risk_score.json").write_text(json.dumps(risk, indent=2))
 
     # Store a snapshot of key manifest data with a simple version tag

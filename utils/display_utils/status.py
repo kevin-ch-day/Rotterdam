@@ -7,12 +7,14 @@ from typing import TextIO
 
 OK = "[OK]"
 INF = "[*]"
+NOTE = "[-]"
 WARN = "[!]"
 ERR = "[X]"
 
 COLOR_PREFIX = {
     OK: "\033[32m",
     INF: "\033[36m",
+    NOTE: "\033[35m",
     WARN: "\033[33m",
     ERR: "\033[31m",
 }
@@ -34,9 +36,19 @@ def info(msg: str, *, ts: bool = False) -> None:
     _emit(INF, msg, ts=ts, stream=sys.stdout)
 
 
+def note(msg: str, *, ts: bool = False) -> None:
+    """Print a neutral status line."""
+    _emit(NOTE, msg, ts=ts, stream=sys.stdout)
+
+
 def good(msg: str, *, ts: bool = False) -> None:
     """Print a success status line."""
     _emit(OK, msg, ts=ts, stream=sys.stdout)
+
+
+def ok(msg: str, *, ts: bool = False) -> None:
+    """Alias for :func:`good`."""
+    good(msg, ts=ts)
 
 
 def warn(msg: str, *, ts: bool = False) -> None:
@@ -44,6 +56,16 @@ def warn(msg: str, *, ts: bool = False) -> None:
     _emit(WARN, msg, ts=ts, stream=sys.stderr)
 
 
+def warning(msg: str, *, ts: bool = False) -> None:
+    """Alias for :func:`warn`."""
+    warn(msg, ts=ts)
+
+
 def fail(msg: str, *, ts: bool = False) -> None:
     """Print an error status line."""
     _emit(ERR, msg, ts=ts, stream=sys.stderr)
+
+
+def error(msg: str, *, ts: bool = False) -> None:
+    """Alias for :func:`fail`."""
+    fail(msg, ts=ts)

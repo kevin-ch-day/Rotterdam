@@ -14,9 +14,10 @@ from pathlib import Path
 from fastapi import APIRouter, File, HTTPException, Response, UploadFile, status
 from fastapi.responses import FileResponse
 
-import reporting
+from app_config import app_config
 from orchestrator.scheduler import scheduler
 from storage.repository import ping_db
+from utils.reporting_utils import report_risk
 
 router = APIRouter()
 
@@ -34,7 +35,7 @@ def health_db():
 
 
 # Directory for analysis outputs and uploaded files
-_ANALYSIS_ROOT = Path("analysis")
+_ANALYSIS_ROOT = app_config.OUTPUT_DIR
 _ANALYSIS_ROOT.mkdir(exist_ok=True)
 
 
@@ -48,7 +49,7 @@ def _process_apk(apk_path: str) -> dict[str, str]:
     package_name = path.stem
 
     # Generate a risk report
-    result = reporting.generate(package_name)
+    result = report_risk(package_name)
 
     # Write JSON and HTML versions to a unique directory
     out_dir = _ANALYSIS_ROOT / uuid.uuid4().hex

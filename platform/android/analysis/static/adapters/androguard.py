@@ -12,8 +12,8 @@ from typing import Any, Dict, List
 
 try:  # pragma: no cover - optional dependency
     from androguard.misc import AnalyzeAPK  # type: ignore[import-not-found]
-except Exception:  # pragma: no cover
-    AnalyzeAPK = None  # type: ignore[assignment]
+except Exception as e:  # pragma: no cover
+    raise ImportError("androguard is required for API analysis") from e
 
 # Rule definitions map a simple name to substrings that should appear in the
 # API call signature. The matching is intentionally coarse but provides a
@@ -41,9 +41,6 @@ def extract_api_calls(apk_path: str) -> Dict[str, int]:
     apk_path:
         Path to the APK file to analyse.
     """
-
-    if AnalyzeAPK is None:  # pragma: no cover - handled gracefully by caller
-        raise RuntimeError("androguard is not installed")
 
     _apk, _d, dx = AnalyzeAPK(apk_path)  # type: ignore[misc]
     calls: Counter[str] = Counter()

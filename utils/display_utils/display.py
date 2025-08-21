@@ -16,15 +16,17 @@ from __future__ import annotations
 import os
 import shutil
 from textwrap import wrap
-from typing import Iterable, Sequence, Any, Optional, Callable, List
+from typing import Any, Callable, Iterable, List, Optional, Sequence
 
 from app_config import app_config
+
 from . import table as tables
-from .status import info, good, warn, fail
+from .status import fail, good, info, note, warn
 
 # -----------------------------
 # Terminal / layout
 # -----------------------------
+
 
 def term_width(default: int = 80) -> int:
     """Best-effort terminal width (falls back safely)."""
@@ -86,10 +88,12 @@ def clear_screen() -> None:
 # Convenience wrappers
 # -----------------------------
 
+
 def print_app_banner(subtitle: Optional[str] = None, *, boxed: bool = False) -> None:
     """Standard app banner using project metadata."""
     title = f"{app_config.APP_NAME} v{app_config.APP_VERSION}"
     print(banner(title, subtitle=subtitle, boxed=boxed))
+
 
 def print_section(title: str, underline: str = "=") -> None:
     """Section header with a blank line around it."""
@@ -107,9 +111,9 @@ def render_menu(
 ) -> str:
     """Return a framed menu string.
 
-    The menu is rendered inside a simple box using box-drawing characters.
-    ``serial`` can be supplied to show contextual information (e.g. the
-    connected device serial).
+    The menu is rendered inside a simple ASCII box. ``serial`` can be
+    supplied to show contextual information (e.g. the connected device
+    serial).
     """
 
     header = title.strip()
@@ -121,13 +125,13 @@ def render_menu(
     body.append(f"[0] {exit_label}")
     width = max(len(header), *(len(line) for line in body)) + 4
 
-    top = "╭" + "─" * (width - 2) + "╮"
-    sep = "├" + "─" * (width - 2) + "┤"
-    bottom = "╰" + "─" * (width - 2) + "╯"
+    top = "+" + "-" * (width - 2) + "+"
+    sep = "+" + "-" * (width - 2) + "+"
+    bottom = "+" + "-" * (width - 2) + "+"
 
-    lines = [top, f"│ {header.ljust(width - 4)} │", sep]
+    lines = [top, f"| {header.ljust(width - 4)} |", sep]
     for line in body:
-        lines.append(f"│ {line.ljust(width - 4)} │")
+        lines.append(f"| {line.ljust(width - 4)} |")
     lines.append(bottom)
     return "\n".join(lines)
 
@@ -184,6 +188,7 @@ def prompt_choice(
 # -----------------------------
 # Menu helpers
 # -----------------------------
+
 
 def show_menu(
     title: str,
@@ -243,10 +248,12 @@ def run_menu_loop(
 # Simple text helpers
 # -----------------------------
 
+
 def print_bullets(items: Iterable[str], bullet: str = " - ") -> None:
     """Print a simple bullet list."""
     for it in items:
         print(f"{bullet}{it}")
+
 
 def print_kv(pairs: Sequence[tuple[str, Any]], key_pad: int = 18) -> None:
     """
@@ -258,10 +265,12 @@ def print_kv(pairs: Sequence[tuple[str, Any]], key_pad: int = 18) -> None:
         val = "" if v is None else str(v)
         print(f"{key:<{key_pad}} : {val}")
 
+
 def wrap_text(text: str, width: Optional[int] = None) -> str:
     """Wrap a long string to terminal width."""
     w = width or (term_width() - 2)
     return "\n".join(wrap(text, w))
+
 
 # -----------------------------
 # Re-export table utilities

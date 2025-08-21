@@ -24,9 +24,7 @@ def device_online(serial: str) -> bool:
     return (proc.stdout or "").strip() == "device"
 
 
-def run_device_menu(
-    serial: str, *, json_mode: bool = False
-) -> Optional[str | Dict[str, Any]]:
+def run_device_menu(serial: str, *, json_mode: bool = False) -> Optional[str | Dict[str, Any]]:
     """Launch the device submenu for a selected device."""
     if not serial:
         display.warn("No device serial provided.")
@@ -147,12 +145,12 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
                 display.print_section("Device Summary")
                 display.print_kv(
                     [
-                        ("Serial", device.get("serial", "")),
-                        ("Model", device.get("model", "")),
-                        ("Android", device.get("android_release", "")),
+                        ("Serial", device.serial),
+                        ("Model", device.model),
+                        ("Android", device.android_release),
                     ]
                 )
-                result = run_device_menu(device.get("serial", ""))
+                result = run_device_menu(device.serial)
                 if result == "quit":
                     display.good("Exiting App")
                     return None

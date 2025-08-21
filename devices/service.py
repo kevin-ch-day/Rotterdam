@@ -1,16 +1,20 @@
 from __future__ import annotations
 
+from typing import Any, Dict, List
+
 from platform.android.devices import discovery as _discovery
 from platform.android.devices import packages as _packages
 from platform.android.devices import props as _props
-from typing import Any, Dict, List
 
 from .types import DeviceInfo
 
 
 def discover() -> List[DeviceInfo]:
     """Return connected devices enriched with metadata."""
-    devices = _discovery.list_detailed_devices()
+    try:
+        devices = _discovery.list_detailed_devices()
+    except RuntimeError:
+        return []
     return [DeviceInfo(**d) for d in devices]
 
 

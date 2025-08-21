@@ -1,5 +1,7 @@
 """Helpers for formatted terminal output."""
 
+from app_config import app_config as config
+
 from .display import (
     banner,
     clear_screen,
@@ -16,7 +18,7 @@ from .display import (
     term_width,
     wrap_text,
 )
-from .status import fail, good, info, warn
+from .status import error, fail, good, info, note, ok, warn, warning
 
 __all__ = [
     "banner",
@@ -34,7 +36,11 @@ __all__ = [
     "wrap_text",
     "print_table",
     "info",
-    "good",
+    "ok",
     "warn",
     "fail",
+    "note",
+    "good",
+    "warning",
+    "error",
 ]

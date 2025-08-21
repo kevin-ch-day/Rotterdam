@@ -4,7 +4,6 @@ target-version = ["py313"]
 
 [tool.isort]
 profile = "black"
-py_version = 313
 known_first_party = [
   "server",
   "cli",
@@ -12,6 +11,8 @@ known_first_party = [
   "core",
   "platform",
   "analysis",
+  "devices",
+  "app_config",
   "storage",
   "orchestrator",
   "workers",

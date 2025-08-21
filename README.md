@@ -35,6 +35,24 @@ package explicitly.
 
 Optional tools such as Frida or MySQL can be installed separately if needed.
 
+### Optional features
+
+Static analysis includes several optional steps such as YARA scanning,
+Androguard API inspection, signature verification, and certificate analysis.
+If the required modules are missing, the pipeline emits neutral lines like::
+
+  Optional feature unavailable: YARA scanning -- skipping. Install yara-python to enable malware scanning.
+
+The messages come from ``display.note`` and do not interrupt execution.
+Install ``yara-python``, ``androguard``, or ``cryptography`` to enable these
+features.
+
+Reporting helpers are available under ``utils.reporting_utils``::
+
+  from utils.reporting_utils import ieee
+
+Use the ``ieee`` helpers to format device inventories and simple reports.
+
 ## Development
 
 Set up a Python environment and install the project's dependencies.
@@ -80,6 +98,8 @@ initialisation failures early.
 ```bash
 pytest
 ```
+
+Run style checks with ``pre-commit run -a``. The hooks target Python 3.13.
 
 ## Usage
 

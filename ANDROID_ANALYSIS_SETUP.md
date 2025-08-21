@@ -40,7 +40,12 @@ Android applications using both static and dynamic techniques.
   from analysis import analyze_apk
   analyze_apk("myapp.apk")
   ```
-  This will generate a simple report in the `analysis/` directory.
+  This will generate a simple report under `output/<timestamp>/`.
+  Optional helpers such as YARA, Androguard, or certificate checks are
+  skipped if their modules are missing. The analyzer prints neutral lines like
+  ``Optional feature unavailable: YARA scanning -- skipping`` so execution
+  continues. Install `yara-python`, `androguard`, or `cryptography` to enable
+  these features.
 - Use the CLI to list running processes on a connected device for quick
   runtime inspection before deeper analysis.
 
@@ -53,7 +58,11 @@ Android applications using both static and dynamic techniques.
   prompts.
 
 ## 4. Reporting
-- Combine static and dynamic results into a single report.
+- Combine static and dynamic results into a single report. Formatting helpers
+  live under ``utils.reporting_utils`` and can be imported via::
+
+     from utils.reporting_utils import ieee
+
 - Prioritize issues using a scoring system (e.g., CVSS) and suggest
   mitigations.
 - Store reports as JSON or CSV for further processing or integration into

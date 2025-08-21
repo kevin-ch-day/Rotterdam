@@ -9,16 +9,14 @@ from typing import Dict, List
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 
-try:
+try:  # pragma: no cover - optional dependency
     from apksigtool import (
         APKSignatureSchemeBlock,
         extract_v2_sig,
         parse_apk_signing_block,
     )
-except Exception:  # pragma: no cover - apksigtool is optional
-    APKSignatureSchemeBlock = None  # type: ignore[assignment]
-    extract_v2_sig = None  # type: ignore[assignment]
-    parse_apk_signing_block = None  # type: ignore[assignment]
+except Exception as e:  # pragma: no cover
+    raise ImportError("apksigtool is required for certificate analysis") from e
 
 
 def _extract_certificates(apk_path: str | Path) -> List[x509.Certificate]:

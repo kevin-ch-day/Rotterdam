@@ -2,30 +2,33 @@
 # File: platform/android/devices/selection.py
 # selection.py
 """
-Allows users to list connected devices and select one to connect to,
-with numbered selection for easier navigation.
+Allows users to list connected devices and select one to connect to, with
+numbered selection for easier navigation.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from utils.display_utils import display
+
 from . import discovery
+from .types import DeviceInfo
 
-_cached_devices: List[Dict[str, Any]] = []
+_cached_devices: List[DeviceInfo] = []
 
 
-def refresh_devices() -> List[Dict[str, Any]]:
+def refresh_devices() -> List[DeviceInfo]:
     """Refresh and return the cached device list."""
     global _cached_devices
-    _cached_devices = discovery.list_detailed_devices()
+    raw = discovery.list_detailed_devices()
+    _cached_devices = [DeviceInfo(**d) for d in raw]
     return _cached_devices
 
 
-def list_and_select_device() -> Optional[Dict[str, Any]]:
-    """Display connected devices and return the chosen device dict."""
+def list_and_select_device() -> Optional[DeviceInfo]:
+    """Display connected devices and return the chosen device."""
     try:
         devices = _cached_devices or refresh_devices()
-        connected = [d for d in devices if d.get("state") == "device"]
+        connected = [d for d in devices if d.state == "device"]
 
         if not connected:
             display.warn("No devices attached.")
@@ -34,10 +37,7 @@ def list_and_select_device() -> Optional[Dict[str, Any]]:
         if len(connected) == 1:
             return connected[0]
 
-        labels = [
-            f"{d.get('serial')} | {d.get('model') or '-'} | {d.get('type', '')}"
-            for d in connected
-        ]
+        labels = [f"{d.serial} | {d.model or '-'} | {d.type}" for d in connected]
 
         choice = display.show_menu(
             "ADB Devices",

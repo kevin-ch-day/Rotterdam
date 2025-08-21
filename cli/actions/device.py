@@ -19,7 +19,7 @@ def show_connected_devices() -> None:
     with _action_context("show_connected_devices"):
         logger.info("show_connected_devices")
         try:
-            devs = [asdict(d) for d in service.discover()]
+            devs = service.discover()
         except RuntimeError as e:
             logger.exception("failed to check connected devices")
             display.fail(str(e))
@@ -33,12 +33,12 @@ def show_connected_devices() -> None:
 
         rows = [
             [
-                d.get("serial", ""),
-                d.get("state", ""),
-                d.get("product", "-"),
-                d.get("model", "-"),
-                d.get("device", "-"),
-                d.get("transport_id", d.get("transport", "-")),
+                d.serial,
+                d.state,
+                d.product or "-",
+                d.model or "-",
+                d.device or "-",
+                d.transport_id or "-",
             ]
             for d in devs
         ]
@@ -60,7 +60,7 @@ def show_detailed_devices() -> None:
     with _action_context("show_detailed_devices"):
         logger.info("show_detailed_devices")
         try:
-            detailed = [asdict(d) for d in service.discover()]
+            detailed = service.discover()
         except RuntimeError as e:
             logger.exception("failed to list detailed devices")
             display.fail(str(e))
@@ -72,7 +72,7 @@ def show_detailed_devices() -> None:
             print("No devices attached.")
             return
 
-        report = ieee.format_device_inventory(detailed)
+        report = ieee.format_device_inventory([asdict(d) for d in detailed])
         logger.info("found %d devices", len(detailed))
         print(report)
 
@@ -220,12 +220,12 @@ def scan_for_devices() -> None:
 
         rows = [
             [
-                d.get("serial", ""),
-                d.get("state", ""),
-                d.get("product", "-"),
-                d.get("model", "-"),
-                d.get("device", "-"),
-                d.get("transport_id", d.get("transport", "-")),
+                d.serial,
+                d.state,
+                d.product or "-",
+                d.model or "-",
+                d.device or "-",
+                d.transport_id or "-",
             ]
             for d in detailed
         ]

@@ -5,13 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List
 
-from utils.display_utils import display
 from rules.android import PACKS_DIR
+from utils.display_utils import display
 
-try:
+try:  # pragma: no cover - optional dependency
     import yara  # type: ignore
-except Exception:  # pragma: no cover - optional dependency
-    yara = None
+except Exception as e:  # pragma: no cover
+    raise ImportError("yara-python is required for YARA scanning") from e
 
 
 def compile_rules(rule_dir: Path) -> "yara.Rules":
@@ -20,9 +20,6 @@ def compile_rules(rule_dir: Path) -> "yara.Rules":
     Raises ``RuntimeError`` if ``yara-python`` is unavailable or no rules are
     found.  Rule file stems are used as namespace identifiers.
     """
-
-    if yara is None:
-        raise RuntimeError("yara-python is not installed")
 
     files = {p.stem: str(p) for p in rule_dir.glob("*.yar") if p.is_file()}
     if not files:
@@ -39,9 +36,6 @@ def scan_directory(
     is provided, it will be used directly.  Returns a mapping of relative file
     paths to lists of matching rule names.
     """
-
-    if yara is None:
-        raise RuntimeError("yara-python is not installed")
 
     if rules is None:
         rules = compile_rules(rule_dir or PACKS_DIR)
