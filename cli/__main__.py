@@ -9,7 +9,7 @@ from . import run_main_menu
 
 # Optional structured logging support
 try:
-    from logs.logging_config import StructuredLogger  # type: ignore[attr-defined]
+    from utils.logging_utils.logging_config import StructuredLogger  # type: ignore[attr-defined]
 except Exception:  # pragma: no cover - logging is optional
     class StructuredLogger:  # type: ignore[override]
         @staticmethod

@@ -16,7 +16,7 @@ from .props import (
     _infer_root_status,
     _short_fingerprint,
 )
-from logs.logging_config import get_logger
+from utils.logging_utils.logging_config import get_logger
 
 
 logger = get_logger(__name__)

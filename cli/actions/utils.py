@@ -5,7 +5,7 @@ from typing import Any
 
 # Optional logging integration
 try:
-    from logs.logging_config import StructuredLogger  # type: ignore
+    from utils.logging_utils.logging_config import StructuredLogger  # type: ignore
 
     logger = StructuredLogger.get_logger(__name__)  # type: ignore
     log_context = StructuredLogger.context  # type: ignore
