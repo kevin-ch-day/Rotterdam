@@ -1,4 +1,8 @@
-"""In-memory job scheduler using a queue."""
+"""In-memory job queue utilities.
+
+This consolidates the previous `workers` and `orchestrator` packages into a
+single module providing a scheduler and helper to start background workers.
+"""
 from __future__ import annotations
 
 import queue
@@ -109,3 +113,22 @@ class Scheduler:
 
 
 scheduler = Scheduler()
+
+
+def worker_loop() -> None:
+    """Continuously pull jobs from the scheduler and execute them."""
+    while True:
+        job = scheduler.get_next_job()
+        try:
+            scheduler.mark_running(job)
+            result = job.func(*job.args, **job.kwargs)
+            scheduler.mark_done(job, result)
+        except Exception as exc:  # pragma: no cover - simple error capture
+            scheduler.mark_failed(job, exc)
+
+
+def start_worker(daemon: bool = True) -> threading.Thread:
+    """Start a background thread running :func:`worker_loop`."""
+    thread = threading.Thread(target=worker_loop, daemon=daemon)
+    thread.start()
+    return thread
