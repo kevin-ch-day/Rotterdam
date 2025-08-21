@@ -60,6 +60,7 @@ Options:
 Notes:
 - This script assumes ./setup.sh has already been run.
 - The web server is typically started from inside the CLI menu.
+- Set ROTTERDAM_API_KEY to configure API authentication.
 EOF
 }
 
@@ -106,10 +107,12 @@ export PYTHONPATH="$ROOT_DIR:${PYTHONPATH:-}"
 export APP_HOST="$APP_HOST"
 export APP_PORT="$APP_PORT"
 export PORT="$APP_PORT"
+export ROTTERDAM_API_KEY="${ROTTERDAM_API_KEY:-secret}"
 
 note "Environment:"
 note "  APP_HOST=${APP_HOST}"
 note "  APP_PORT=${APP_PORT}"
+note "  ROTTERDAM_API_KEY=${ROTTERDAM_API_KEY:-secret}"
 good "Launching Rotterdam menu (python main.py)..."
 
 exec python main.py "${CLI_ARGS[@]}"
