@@ -4,27 +4,28 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from core import config
 from utils.display_utils import display
+
+from .adapters import apktool, jadx
+from .diff import diff_snapshots
 from .extractors.manifest import (
     extract_app_flags,
     extract_components,
     extract_features,
-    extract_permissions,
-    extract_permission_details,
-    extract_sdk_info,
     extract_metadata,
+    extract_permission_details,
+    extract_permissions,
+    extract_sdk_info,
 )
+from .extractors.network import extract_network_security
 from .extractors.permissions import categorize_permissions
 from .extractors.secrets import scan_for_secrets
-from .report.writer import calculate_derived_metrics, write_report
-from .diff import diff_snapshots
-from .extractors.network import extract_network_security
-from .rules.engine import load_rules, evaluate_rules
-from .adapters import apktool, jadx
 from .ml_model import predict_malicious
+from .report.writer import calculate_derived_metrics, write_report
+from .rules.engine import evaluate_rules, load_rules
 
 # Optional imports (degrade gracefully if unavailable)
 try:
@@ -43,12 +44,14 @@ except Exception:  # pragma: no cover
     summarize_apk = None  # type: ignore[assignment]
 
 try:
-    from .extractors.crypto import analyze_certificates  # type: ignore[import-not-found]
+    from .extractors.crypto import (
+        analyze_certificates,  # type: ignore[import-not-found]
+    )
 except Exception:  # pragma: no cover
     analyze_certificates = None  # type: ignore[assignment]
 
-# Risk scoring (assumed available)
-from risk_scoring import calculate_risk_score
+# Risk scoring
+import reporting
 
 
 def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
@@ -103,9 +106,7 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
         try:
             network_security = extract_network_security(apktool_dir)
             if network_security:
-                (out / "network_security.json").write_text(
-                    json.dumps(network_security, indent=2)
-                )
+                (out / "network_security.json").write_text(json.dumps(network_security, indent=2))
         except Exception as e:  # pragma: no cover
             display.warn(f"Network security parsing failed: {e}")
     else:
@@ -133,18 +134,14 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
     if summarize_apk:
         try:
             androguard_summary = summarize_apk(str(apk))
-            (out / "androguard_report.json").write_text(
-                json.dumps(androguard_summary, indent=2)
-            )
+            (out / "androguard_report.json").write_text(json.dumps(androguard_summary, indent=2))
         except Exception as e:  # pragma: no cover
             display.warn(f"Androguard analysis failed: {e}")
     else:
         display.note("Androguard analysis not available (androguard_utils module not found)")
 
     # Derived metrics (static)
-    metrics = calculate_derived_metrics(
-        perm_details, components, sdk_info, features, metadata
-    )
+    metrics = calculate_derived_metrics(perm_details, components, sdk_info, features, metadata)
 
     # Network security → metrics
     if network_security:
@@ -200,9 +197,7 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
         try:
             cert_info = analyze_certificates(apk_path)
             metrics["expired_certificate"] = 1 if cert_info.get("expired") else 0
-            metrics["self_signed_certificate"] = (
-                1 if cert_info.get("self_signed") else 0
-            )
+            metrics["self_signed_certificate"] = 1 if cert_info.get("self_signed") else 0
             (out / "cert_info.json").write_text(json.dumps(cert_info, indent=2))
         except Exception as e:  # pragma: no cover
             display.warn(f"Certificate analysis failed: {e}")
@@ -232,7 +227,7 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
     dynamic_metrics: Dict[str, float] = {}
 
     # Risk scoring (merges static+dynamic and ML-derived metrics)
-    risk = calculate_risk_score(metrics, dynamic_metrics)
+    risk = reporting.generate(apk.stem, metrics, dynamic_metrics)
     (out / "risk_score.json").write_text(json.dumps(risk, indent=2))
 
     # Store a snapshot of key manifest data with a simple version tag
@@ -265,7 +260,7 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
         app_flags,
         metadata,
         metrics,
-        risk,             # placed into "metrics" bucket as additional fields
+        risk,  # placed into "metrics" bucket as additional fields
         yara_matches,
         diff,
         findings,

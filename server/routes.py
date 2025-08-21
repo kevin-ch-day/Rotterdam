@@ -5,17 +5,17 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 import uuid
 from pathlib import Path
-import hashlib
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, Response, status
+from fastapi import APIRouter, File, HTTPException, Response, UploadFile, status
 from fastapi.responses import FileResponse
 
+import reporting
 from orchestrator.scheduler import scheduler
-from reports.risk_reporting import create_risk_report
 from storage.repository import ping_db
 
 router = APIRouter()
@@ -32,6 +32,7 @@ def health_db():
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
     )
 
+
 # Directory for analysis outputs and uploaded files
 _ANALYSIS_ROOT = Path("analysis")
 _ANALYSIS_ROOT.mkdir(exist_ok=True)
@@ -47,7 +48,7 @@ def _process_apk(apk_path: str) -> dict[str, str]:
     package_name = path.stem
 
     # Generate a risk report
-    result = create_risk_report(package_name)
+    result = reporting.generate(package_name)
 
     # Write JSON and HTML versions to a unique directory
     out_dir = _ANALYSIS_ROOT / uuid.uuid4().hex
@@ -57,9 +58,7 @@ def _process_apk(apk_path: str) -> dict[str, str]:
     json_path.write_text(json.dumps(result, indent=2))
 
     html_path = out_dir / "report.html"
-    html_content = "<html><body><pre>{}</pre></body></html>".format(
-        json.dumps(result, indent=2)
-    )
+    html_content = "<html><body><pre>{}</pre></body></html>".format(json.dumps(result, indent=2))
     html_path.write_text(html_content)
 
     # Derive findings from the risk breakdown for demonstration purposes
@@ -204,7 +203,5 @@ async def list_artifacts(scan_id: str) -> list[dict[str, str]]:
     for fmt in ("json", "html"):
         path = Path(analysis_dir) / f"report.{fmt}"
         if path.exists():
-            artifacts.append(
-                {"name": path.name, "url": f"/scans/{scan_id}/report?format={fmt}"}
-            )
+            artifacts.append({"name": path.name, "url": f"/scans/{scan_id}/report?format={fmt}"})
     return artifacts
