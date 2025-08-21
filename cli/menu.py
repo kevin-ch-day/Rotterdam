@@ -130,7 +130,7 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
     while True:
         num = display.show_menu("Main Menu", options, exit_label="Exit")
         if num == 0:
-            display.good("Exiting App")
+            display.ok("Exiting App")
             return None
 
         if num == 1:
@@ -152,7 +152,7 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
                 )
                 result = run_device_menu(device.serial)
                 if result == "quit":
-                    display.good("Exiting App")
+                    display.ok("Exiting App")
                     return None
         elif num == 5:
             actions.launch_web_app()

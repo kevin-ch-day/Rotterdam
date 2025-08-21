@@ -1,7 +1,6 @@
 """Stub risk reporting helpers."""
 
 from __future__ import annotations
-
 from typing import Any, Dict, List
 
 
@@ -16,11 +15,11 @@ def get_latest_report(*args: Any, **kwargs: Any) -> Dict[str, Any]:
 
 
 def get_risk_history(*args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
-    """Return an empty risk history."""
+    """Return an empty risk history list."""
     return []
 
 
-def history() -> List[Dict[str, Any]]:
+def history(*args: Any, **kwargs: Any) -> List[Dict[str, Any]]:
     """Alias for ``get_risk_history``."""
     return []
 
@@ -30,7 +29,7 @@ def report_risk(
     static: Dict[str, Any] | None = None,
     dynamic: Dict[str, Any] | None = None,
 ) -> Dict[str, Any]:
-    """Return a placeholder report summary."""
+    """Return a placeholder risk summary with a consistent schema."""
     return {
         "app": app_name,
         "static": static or {},

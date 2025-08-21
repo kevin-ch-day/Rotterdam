@@ -3,7 +3,6 @@ from __future__ import annotations
 import csv
 import json
 import re
-from dataclasses import asdict
 from typing import Optional
 
 from devices import packages, processes, selection, service
@@ -66,9 +65,9 @@ def show_detailed_devices() -> None:
             display.fail(str(e))
             return
 
+        display.print_section("Connected Devices (Detailed)")
         if not detailed:
             logger.info("no devices attached")
-            display.print_section("Connected Devices (Detailed)")
             print("No devices attached.")
             return
 

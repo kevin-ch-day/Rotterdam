@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # File: utils/display_utils/display.py
-# display.py
 """
 General display utilities for Android Tool.
 - ASCII-only (no external deps)
@@ -21,7 +20,7 @@ from typing import Any, Callable, Iterable, List, Optional, Sequence
 from app_config import app_config
 
 from . import table as tables
-from .status import fail, good, info, note, warn
+from .status import info, ok, warn, fail, note
 
 # -----------------------------
 # Terminal / layout
@@ -53,7 +52,7 @@ def header(text: str, underline: str = "-") -> str:
 
 def banner(title: str, subtitle: Optional[str] = None, boxed: bool = False) -> str:
     """
-    Top banner. If boxed=True, uses a box; else wide dividers.
+    Top banner. If boxed=True, uses an ASCII box; else wide dividers.
     """
     title = title.strip()
     w = term_width()
@@ -81,9 +80,6 @@ def clear_screen() -> None:
     os.system("cls" if os.name == "nt" else "clear")
 
 
-# Status line helpers re-exported from :mod:`core.status`
-
-
 # -----------------------------
 # Convenience wrappers
 # -----------------------------
@@ -109,27 +105,26 @@ def render_menu(
     *,
     serial: Optional[str] = None,
 ) -> str:
-    """Return a framed menu string.
+    """Return a framed ASCII menu string.
 
-    The menu is rendered inside a simple ASCII box. ``serial`` can be
-    supplied to show contextual information (e.g. the connected device
-    serial).
+    The menu is rendered inside a simple ASCII box.
+    ``serial`` can be supplied to show contextual information (e.g. the
+    connected device serial).
     """
-
-    header = title.strip()
+    hdr = title.strip()
     if serial:
-        header = f"{header} (serial: {serial})"
+        hdr = f"{hdr} (serial: {serial})"
 
     # Determine width based on longest line
     body = [f"[{i}] {opt}" for i, opt in enumerate(options, start=1)]
     body.append(f"[0] {exit_label}")
-    width = max(len(header), *(len(line) for line in body)) + 4
+    width = max(len(hdr), *(len(line) for line in body)) + 4
 
     top = "+" + "-" * (width - 2) + "+"
     sep = "+" + "-" * (width - 2) + "+"
     bottom = "+" + "-" * (width - 2) + "+"
 
-    lines = [top, f"| {header.ljust(width - 4)} |", sep]
+    lines = [top, f"| {hdr.ljust(width - 4)} |", sep]
     for line in body:
         lines.append(f"| {line.ljust(width - 4)} |")
     lines.append(bottom)
@@ -158,10 +153,9 @@ def prompt_choice(
     Returns
     -------
     str
-        The chosen option. ``"q"`` is returned if the user requests to quit
-        via ``q``/``Q`` or triggers EOF/KeyboardInterrupt.
+        The chosen option. "q" is returned if the user requests to quit
+        via q/Q or triggers EOF/KeyboardInterrupt.
     """
-
     options = {str(opt) for opt in valid_options}
 
     while True:

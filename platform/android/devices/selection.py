@@ -8,10 +8,10 @@ numbered selection for easier navigation.
 
 from typing import List, Optional
 
+from devices.types import DeviceInfo
 from utils.display_utils import display
 
 from . import discovery
-from .types import DeviceInfo
 
 _cached_devices: List[DeviceInfo] = []
 

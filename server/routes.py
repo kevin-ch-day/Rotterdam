@@ -35,8 +35,9 @@ def health_db():
 
 
 # Directory for analysis outputs and uploaded files
-_ANALYSIS_ROOT = app_config.OUTPUT_DIR
-_ANALYSIS_ROOT.mkdir(exist_ok=True)
+app_config.ensure_dirs()
+_ANALYSIS_ROOT = app_config.OUTPUT_DIR / "analysis"
+_ANALYSIS_ROOT.mkdir(parents=True, exist_ok=True)
 
 
 def _process_apk(apk_path: str) -> dict[str, str]:

@@ -1,8 +1,8 @@
-"""Compatibility wrapper around Python's ``platform`` module.
+"""Platform-specific compatibility wrapper.
 
-This package exposes the repository's platform-specific subpackages while
-re-exporting all public attributes from the standard library ``platform``
-module so third-party imports continue to function.
+This module exposes platform-specific subpackages for the repository
+while re-exporting all public attributes from the standard library
+``platform`` module so third-party imports continue to function.
 """
 from __future__ import annotations
 
@@ -27,4 +27,4 @@ for _name in dir(_stdlib_platform):
     if not _name.startswith("_"):
         globals()[_name] = getattr(_stdlib_platform, _name)
 
-__all__ = [name for name in globals() if not name.startswith("_")]
+__all__: list[str] = [name for name in globals() if not name.startswith("_")]
