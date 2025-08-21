@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 import socket
 import threading
 import webbrowser
+from pathlib import Path
 
 from server.serve import serve
 from settings import get_settings
@@ -10,6 +12,10 @@ from utils.display_utils import display
 
 from .utils import action_context as _action_context
 from .utils import logger
+
+# Ensure repository root is on PYTHONPATH for server imports
+_ROOT = Path(__file__).resolve().parents[2]
+os.environ.setdefault("PYTHONPATH", str(_ROOT))
 
 
 def show_database_status() -> None:
