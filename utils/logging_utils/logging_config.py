@@ -1,6 +1,7 @@
 import contextvars
 import json
 import logging
+import os
 from contextlib import contextmanager
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -47,33 +48,34 @@ class StructuredLogger:
             return json.dumps(log_record)
 
     @classmethod
-    def _configure(cls) -> None:
+    def _configure(cls, *, log_file: Path, log_to_stdout: bool) -> None:
         """Set up root logger with JSON formatting if not already configured."""
         if cls._configured:
             return
 
-        # Place logs under ``<repo_root>/logs/app`` so CLI and server share output
-        repo_root = Path(__file__).resolve().parents[2]
-        log_dir = repo_root / "logs" / "app"
-        log_dir.mkdir(parents=True, exist_ok=True)
-        file_handler = RotatingFileHandler(
-            log_dir / "server.log", maxBytes=1_000_000, backupCount=5
-        )
-        stream_handler = logging.StreamHandler()
         formatter = cls._JsonFormatter()
+        file_handler = RotatingFileHandler(log_file, maxBytes=1_000_000, backupCount=5)
         file_handler.setFormatter(formatter)
-        stream_handler.setFormatter(formatter)
 
         root = logging.getLogger()
         root.setLevel(logging.INFO)
         root.addHandler(file_handler)
-        root.addHandler(stream_handler)
+
+        if log_to_stdout:
+            stream_handler = logging.StreamHandler()
+            stream_handler.setFormatter(formatter)
+            root.addHandler(stream_handler)
+
         cls._configured = True
 
     @classmethod
     def get_logger(cls, name: str | None = None) -> logging.Logger:
         """Return a configured logger with JSON formatting."""
-        cls._configure()
+        if not cls._configured:
+            repo_root = Path(__file__).resolve().parents[2]
+            log_dir = repo_root / "logs" / "app"
+            log_dir.mkdir(parents=True, exist_ok=True)
+            cls._configure(log_file=log_dir / "server.log", log_to_stdout=True)
         return logging.getLogger(name)
 
     @classmethod
@@ -126,3 +128,31 @@ def log_context(
         StructuredLogger.set_session_id(session_id)
     with StructuredLogger.context(device_serial=device_serial, action=action, apk_path=apk_path):
         yield
+
+
+def configure_logging(mode: str, log_to_stdout: bool = False) -> None:
+    """Configure structured logging for the given application mode.
+
+    Parameters
+    ----------
+    mode:
+        One of ``"cli"``, ``"server"`` or ``"job"`` to select the target log file.
+    log_to_stdout:
+        If ``True`` a stream handler is added. Regardless of this flag, setting
+        the ``ROTTERDAM_LOG_TO_STDOUT`` environment variable enables stdout
+        logging. The server mode always logs to stdout.
+    """
+
+    repo_root = Path(__file__).resolve().parents[2]
+    log_dir = repo_root / "logs" / "app"
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    file_map = {"cli": "cli.log", "server": "server.log", "job": "jobs.log"}
+    log_file = log_dir / file_map.get(mode, "app.log")
+
+    env_flag = os.getenv("ROTTERDAM_LOG_TO_STDOUT")
+    stdout_enabled = log_to_stdout or (env_flag not in {None, "", "0", "false", "False"})
+    if mode == "server":
+        stdout_enabled = True
+
+    StructuredLogger._configure(log_file=log_file, log_to_stdout=stdout_enabled)
