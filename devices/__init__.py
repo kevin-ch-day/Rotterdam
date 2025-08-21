@@ -1,6 +1,26 @@
-import sys
-from importlib import import_module
+from __future__ import annotations
 
-_module = import_module('rotterdam.android.devices')
-sys.modules[__name__] = _module
-__all__ = getattr(_module, "__all__", [])
+from platform.android.devices import (
+    adb,
+    apk,
+    discovery,
+    packages,
+    processes,
+    props,
+    selection,
+)
+
+from . import service
+from .types import DeviceInfo
+
+__all__ = [
+    "adb",
+    "apk",
+    "discovery",
+    "packages",
+    "processes",
+    "props",
+    "selection",
+    "service",
+    "DeviceInfo",
+]
