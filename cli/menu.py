@@ -111,6 +111,7 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
         "Check Application Status",
         "Database",
         "About Application",
+        "[h] Health check",
     ]
 
     if json_mode:
@@ -126,12 +127,23 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
     # App banner
     display.print_app_banner()
 
+    valid = {str(i) for i in range(len(options) + 1)}
+    valid.update({"h", "q"})
+
     while True:
-        num = display.show_menu("Main Menu", options, exit_label="Exit")
-        if num == 0:
+        print()
+        print(display.render_menu("Main Menu", options, exit_label="Exit"))
+
+        choice = display.prompt_choice(valid, message="Select option")
+        if choice in {"q", "0"}:
             display.ok("Exiting App")
             return None
 
+        if choice == "h":
+            actions.run_health_check()
+            continue
+
+        num = int(choice)
         if num == 1:
             actions.show_connected_devices()
         elif num == 2:
@@ -161,6 +173,8 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
             display.info("Database feature not implemented yet.")
         elif num == 8:
             display.info("About information not implemented yet.")
+        elif num == 9:
+            actions.run_health_check()
         else:  # pragma: no cover - defensive
             display.warn("Invalid choice. Please try again.")
 
