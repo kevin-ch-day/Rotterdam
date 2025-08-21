@@ -386,3 +386,15 @@ class DatabaseCore:
         """
         with self._provider.connection() as conn:
             yield conn
+
+    # Context manager sugar
+
+    def __enter__(self) -> "DatabaseCore":
+        """Connect on entry so ``with DatabaseCore(...)`` just works."""
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:  # pragma: no cover - thin wrapper
+        self.disconnect()
+        # Do not suppress exceptions
+        return False

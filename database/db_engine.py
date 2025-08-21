@@ -76,6 +76,17 @@ class DbEngine:
     def ping(self, reconnect: bool = True) -> bool:
         return self._core.ping(reconnect=reconnect)
 
+    # Context manager sugar
+
+    def __enter__(self) -> "DbEngine":
+        """Initialise the core on entry for ``with DbEngine(...)`` usage."""
+        self.init()
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:  # pragma: no cover - thin wrapper
+        self.shutdown()
+        return False
+
     # -------------------------
     # Cursor and transaction contexts
     # -------------------------
