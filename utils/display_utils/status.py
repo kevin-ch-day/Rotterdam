@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 from typing import TextIO
 
+from .config import USE_COLOR, ts as _ts
+
 OK = "[OK]"
 INF = "[*]"
 WARN = "[!]"
@@ -21,11 +23,10 @@ RESET = "\033[0m"
 
 def _emit(prefix: str, msg: str, *, ts: bool = False, stream: TextIO = sys.stdout) -> None:
     """Internal helper to print a prefixed message."""
-    from . import config
 
-    color = COLOR_PREFIX.get(prefix, "") if config.USE_COLOR else ""
+    color = COLOR_PREFIX.get(prefix, "") if USE_COLOR else ""
     pre = f"{color}{prefix}{RESET}" if color else prefix
-    stamp = f"{config.ts()} | " if ts else ""
+    stamp = f"{_ts()} | " if ts else ""
     print(f"{pre} {stamp}{msg}", file=stream)
 
 

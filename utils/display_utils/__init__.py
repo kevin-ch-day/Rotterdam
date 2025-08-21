@@ -17,6 +17,7 @@ from .display import (
     wrap_text,
 )
 from .status import fail, good, info, warn
+from . import config
 
 __all__ = [
     "banner",
@@ -37,4 +38,5 @@ __all__ = [
     "good",
     "warn",
     "fail",
+    "config",
 ]
