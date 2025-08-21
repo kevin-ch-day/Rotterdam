@@ -1,7 +1,7 @@
+import contextvars
 import json
 import logging
 from contextlib import contextmanager
-import contextvars
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -15,12 +15,8 @@ class StructuredLogger:
     _device_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
         "device_serial", default=None
     )
-    _action_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-        "action", default=None
-    )
-    _apk_var: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-        "apk_path", default=None
-    )
+    _action_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("action", default=None)
+    _apk_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("apk_path", default=None)
 
     _configured: bool = False
 
@@ -128,7 +124,5 @@ def log_context(
 
     if session_id is not None:
         StructuredLogger.set_session_id(session_id)
-    with StructuredLogger.context(
-        device_serial=device_serial, action=action, apk_path=apk_path
-    ):
+    with StructuredLogger.context(device_serial=device_serial, action=action, apk_path=apk_path):
         yield
