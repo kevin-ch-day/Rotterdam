@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from core import config, display, menu as core_menu
+from core import config, menu as core_menu
 from devices import selection
 from devices.adb import _adb_path, _run_adb
+from utils.display_utils import display
 
 from . import actions
 

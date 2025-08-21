@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Iterable, List, Any, Dict
 
-from . import display
+from ..utils.display_utils import display
 
 
 # ---------------------------------------------------------------------------

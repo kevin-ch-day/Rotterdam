@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from core import display
+from utils.display_utils import display
 from core.diagnostics import BinaryCheck, ModuleCheck, SystemDoctor
 
 

@@ -17,8 +17,8 @@ import shutil
 from textwrap import wrap
 from typing import Iterable, Sequence, Any, Optional
 
-from . import config
-from . import table as tables
+from ...core import config
+from ...core import table as tables
 from .status import info, good, warn, fail
 
 # -----------------------------

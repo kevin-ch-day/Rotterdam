@@ -5,7 +5,7 @@ import webbrowser
 
 from sqlalchemy import text
 
-from core import display
+from utils.display_utils import display
 from storage.repository import (
     session_scope,
     DATABASE_URL,

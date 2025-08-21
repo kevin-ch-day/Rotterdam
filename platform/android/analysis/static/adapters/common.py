@@ -3,7 +3,7 @@ from __future__ import annotations
 import subprocess
 from typing import Sequence
 
-from core import display
+from utils.display_utils import display
 
 
 def run_tool(cmd: Sequence[str], tool_name: str) -> None:

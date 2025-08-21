@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List
 
-from core import display
+from utils.display_utils import display
 from rules.android import PACKS_DIR
 
 try:

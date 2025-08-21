@@ -7,7 +7,8 @@ with numbered selection for easier navigation.
 
 from typing import Any, Dict, List, Optional
 
-from core import display, menu
+from core import menu
+from utils.display_utils import display
 from . import discovery
 
 _cached_devices: List[Dict[str, Any]] = []

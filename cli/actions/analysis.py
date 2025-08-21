@@ -4,13 +4,14 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from core import config, display, menu, renderers
+from core import config, menu, renderers
 from devices import apk, packages
 from analysis import analyze_apk
 from sandbox import run_analysis as sandbox_analyze, compute_runtime_metrics
 from sandbox import ui_driver
 from reports import ieee
 from storage.repository import AnalysisRepository
+from utils.display_utils import display
 
 from ..prompts import prompt_existing_path
 from .utils import action_context as _action_context, logger

@@ -14,7 +14,7 @@ Uses :mod:`core.display` for consistent rendering.
 from __future__ import annotations
 from typing import Callable, List, Optional
 
-from . import display
+from ..utils.display_utils import display
 
 
 # -------- core renderer --------

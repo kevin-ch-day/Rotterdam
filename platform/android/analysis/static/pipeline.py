@@ -6,7 +6,8 @@ import json
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-from core import display, config
+from core import config
+from utils.display_utils import display
 from .extractors.manifest import (
     extract_app_flags,
     extract_components,

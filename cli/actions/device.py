@@ -5,9 +5,10 @@ import json
 import re
 from typing import Optional
 
-from core import display, renderers
+from core import renderers
 from devices import discovery, packages, processes, selection
 from reports import ieee
+from utils.display_utils import display
 
 from .utils import action_context as _action_context, logger
 
