@@ -14,18 +14,29 @@ import DbEngine and build repository-like modules on top of it.
 
 from __future__ import annotations
 
-from contextlib import contextmanager
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Union
 import time
+from contextlib import contextmanager
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
-from mysql.connector import Error
-from mysql.connector import errorcode
-from mysql.connector.cursor import MySQLCursor
+from mysql.connector import Error, errorcode
 from mysql.connector.connection import MySQLConnection
+from mysql.connector.cursor import MySQLCursor
 
 from database.db_core import DatabaseCore
 
 Params = Union[Tuple[Any, ...], Dict[str, Any]]
+T = TypeVar("T")
 
 
 class DbEngine:
@@ -93,7 +104,9 @@ class DbEngine:
         Commits on success, rolls back on exception.
         """
         with self._core.connection() as conn:
-            cur = conn.cursor(dictionary=(self._default_dict_rows if dict_rows is None else dict_rows))
+            cur = conn.cursor(
+                dictionary=(self._default_dict_rows if dict_rows is None else dict_rows)
+            )
             try:
                 yield cur
                 conn.commit()
@@ -128,7 +141,9 @@ class DbEngine:
         only for data-changing statements when outside a transaction context.
         """
         with self._core.connection() as conn:
-            cur = conn.cursor(dictionary=(self._default_dict_rows if dict_rows is None else dict_rows))
+            cur = conn.cursor(
+                dictionary=(self._default_dict_rows if dict_rows is None else dict_rows)
+            )
             try:
                 cur.execute(sql, params)
                 affected = cur.rowcount
@@ -156,7 +171,9 @@ class DbEngine:
         Execute a statement for multiple parameter sets. Returns rowcount.
         """
         with self._core.connection() as conn:
-            cur = conn.cursor(dictionary=(self._default_dict_rows if dict_rows is None else dict_rows))
+            cur = conn.cursor(
+                dictionary=(self._default_dict_rows if dict_rows is None else dict_rows)
+            )
             try:
                 cur.executemany(sql, list(seq_of_params))
                 affected = cur.rowcount
@@ -229,17 +246,28 @@ class DbEngine:
 
     def with_retry(
         self,
-        fn,
+        fn: Callable[[], T],
         *,
         max_attempts: int = 3,
         backoff_sec: float = 0.25,
         transient_only: bool = True,
-    ):
+    ) -> T:
         """
         Run a callable with simple retry for transient MySQL errors.
-        Example:
-            result = engine.with_retry(lambda: engine.fetch_all("SELECT ..."))
+
+        Args:
+            fn: Zero-argument callable to execute.
+            max_attempts: Maximum number of attempts before failing.
+            backoff_sec: Initial backoff time between attempts.
+            transient_only: If True only retry known transient MySQL errors.
+
+        Returns:
+            The value returned by ``fn`` on success.
+
+        Raises:
+            Exception: The last captured exception after exhausting retries.
         """
+
         attempt = 0
         last_exc: Optional[Exception] = None
         transient_codes = {
@@ -254,18 +282,19 @@ class DbEngine:
                 return fn()
             except Error as e:
                 last_exc = e
-                if transient_only:
-                    if not hasattr(e, "errno") or e.errno not in transient_codes:
-                        break
-                time.sleep(backoff_sec * (2 ** attempt))
-                attempt += 1
+                if transient_only and getattr(e, "errno", None) not in transient_codes:
+                    break
             except Exception as e:
                 last_exc = e
                 break
 
-        if last_exc:
+            time.sleep(backoff_sec * (2**attempt))
+            attempt += 1
+
+        if last_exc is not None:
             raise last_exc
-        return None
+
+        raise RuntimeError("with_retry: function did not return a value")
 
 
 # -------------------------
@@ -285,6 +314,7 @@ _WRITE_PREFIXES = (
     "grant",
     "revoke",
 )
+
 
 def _is_write_statement(sql: str) -> bool:
     s = sql.lstrip().lower()
