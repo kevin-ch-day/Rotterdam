@@ -2,6 +2,9 @@
 
 The scoring engine in `platform/android/analysis/static/scoring/risk_score.py` combines static and dynamic metrics into a normalized 0–100 risk score.
 
+The previous `analysis/risk_scoring` helper package has been archived under
+`analysis/archived/`.
+
 ## Metrics and Weights
 
 Default metric weights are tuned for common risk indicators. Values are normalized internally so weights sum to 1.0.
@@ -40,4 +43,3 @@ print(result["score"], result["rationale"])
 ```
 
 Only the provided keys are overridden; unspecified metrics use defaults. This allows experimentation with different scoring strategies.
-

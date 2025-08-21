@@ -18,6 +18,9 @@ Dynamic analysis lives in `platform/android/analysis/dynamic/`. The `runner.py` 
 
 The scoring model in `platform/android/analysis/static/scoring/risk_score.py` combines weighted static and dynamic metrics into a normalized 0‑100 score with a human‑readable rationale.
 
+Legacy wrappers for machine learning and risk scoring have been moved to
+`analysis/archived/`.
+
 ## API Server
 
 A FastAPI application under `server/` exposes REST endpoints for submitting jobs, retrieving reports, querying analytics, and system status. Middleware adds request IDs and basic authentication/rate limiting. Static files for the web UI must reside under the repository's `ui/` directory so they can be mounted at `/ui` and `/static`.
@@ -28,4 +31,3 @@ A FastAPI application under `server/` exposes REST endpoints for submitting jobs
 2. The CLI invokes static or dynamic analysis modules.
 3. Analysis modules generate metrics and artifacts in `output/` and call the risk scorer.
 4. Results are persisted via the `storage` repository and can be served through the API server.
-
