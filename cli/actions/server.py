@@ -1,30 +1,25 @@
 from __future__ import annotations
+
 import socket
 import threading
 import webbrowser
 
 from sqlalchemy import text
 
-from utils.display_utils import display
-from storage.repository import (
-    session_scope,
-    DATABASE_URL,
-    ping_db,
-)
-
-from server import serv_config as cfg
 from server.serve import serve
-from .utils import action_context as _action_context, logger
+from settings import get_settings
+from storage.repository import DATABASE_URL, ping_db, session_scope
+from utils.display_utils import display
+
+from .utils import action_context as _action_context
+from .utils import logger
 
 
 def _fetch_recent_analyses(conn, limit: int = 10) -> list[list[str | int | None]]:
     """Return the most recent analyses records for display."""
     try:
         res = conn.execute(
-            text(
-                "SELECT package_name, score, status "
-                "FROM analyses ORDER BY id DESC LIMIT :lim"
-            ),
+            text("SELECT package_name, score, status " "FROM analyses ORDER BY id DESC LIMIT :lim"),
             {"lim": limit},
         )
         return [[row[0], row[1], row[2]] for row in res]
@@ -71,7 +66,7 @@ def show_database_status() -> None:
         print("No analysis records found.")
 
 
-def launch_web_app(host: str = cfg.HOST, port: int = cfg.PORT) -> None:
+def launch_web_app(host: str = get_settings().host, port: int = get_settings().port) -> None:
     """Launch the web interface, starting the server if needed."""
     logger.info("launch_web_app", extra={"host": host, "port": port})
 
@@ -93,8 +88,7 @@ def launch_web_app(host: str = cfg.HOST, port: int = cfg.PORT) -> None:
         webbrowser.open(f"http://{host}:{port}")
 
 
-def run_server(host: str = cfg.HOST, port: int = cfg.PORT) -> None:
+def run_server(host: str = get_settings().host, port: int = get_settings().port) -> None:
     """Start the API server using centralized config."""
     with _action_context("run_server"):
         serve(host=host, port=port, open_browser=False)
-

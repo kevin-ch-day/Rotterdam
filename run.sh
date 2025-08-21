@@ -24,12 +24,13 @@ SCRIPT_PATH="$(resolve_path "$0")"
 ROOT_DIR="$(dirname "$SCRIPT_PATH")"
 cd "$ROOT_DIR"
 
-# Load default host/port from server/serv_config.py; fallback if import fails
+# Load default host/port from settings package; fallback if import fails
 read_defaults() {
   python3 - <<'PY' || true
 try:
-    from server.serv_config import HOST, PORT
-    print(f"{HOST} {PORT}")
+    from settings import get_settings
+    s = get_settings()
+    print(f"{s.host} {s.port}")
 except Exception:
     print("127.0.0.1 8000")
 PY
