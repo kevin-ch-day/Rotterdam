@@ -7,10 +7,11 @@ from typing import Optional
 
 from core import renderers
 from devices import discovery, packages, processes, selection
-from reports import ieee
+from reporting import ieee
 from utils.display_utils import display
 
-from .utils import action_context as _action_context, logger
+from .utils import action_context as _action_context
+from .utils import logger
 
 
 def show_connected_devices() -> None:
@@ -203,4 +204,3 @@ def list_running_processes(serial: str) -> None:
             print("No process data available.")
             return
         renderers.print_process_table(procs)
-
