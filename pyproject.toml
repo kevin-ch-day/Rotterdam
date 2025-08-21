@@ -4,4 +4,4 @@ target-version = ["py312"]
 
 [tool.isort]
 profile = "black"
-known_first_party = ["server", "cli"]
+known_first_party = ["server","cli","utils","core","platform","analysis","storage","orchestrator","workers"]
