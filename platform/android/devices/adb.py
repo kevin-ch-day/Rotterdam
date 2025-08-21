@@ -4,27 +4,6 @@
 
 from __future__ import annotations
 
-import shutil
-import subprocess
-from app_config import app_config
+from core.tools.adb import adb_path as _adb_path, run as _run_adb
 
-
-def _run_adb(args: list[str], *, timeout: int = 8) -> subprocess.CompletedProcess:
-    """Run adb with robust defaults and return the completed process."""
-    return subprocess.run(args, capture_output=True, text=True, check=True, timeout=timeout)
-
-
-def _adb_path() -> str:
-    """Return the best ``adb`` path available on this system."""
-    path = app_config.get_adb_path()
-    which = shutil.which("adb")
-    try:
-        subprocess.run(
-            [path, "version"],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=2,
-        )
-        return path
-    except Exception:
-        return which or path
+__all__ = ["_run_adb", "_adb_path"]

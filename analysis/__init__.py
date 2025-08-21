@@ -89,3 +89,7 @@ except Exception:
     predict_malicious = None  # type: ignore[assignment]
 else:
     __all__.append("predict_malicious")
+
+# Expose lightweight tool wrappers
+from core.tools import adb, apktool, androguard
+__all__.extend(["adb", "apktool", "androguard"])
