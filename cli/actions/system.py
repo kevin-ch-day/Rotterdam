@@ -26,14 +26,14 @@ def run_doctor() -> None:
     display.print_section("Binary Dependencies")
     for res in (r for r in results if r.category == "binary"):
         if res.ok:
-            display.good(f"{res.name} : {res.detail}")
+            display.ok(f"{res.name} : {res.detail}")
         else:
             display.fail(f"{res.name} : {res.detail}")
 
     display.print_section("Python Modules")
     for res in (r for r in results if r.category == "module"):
         if res.ok:
-            display.good(f"{res.name} : {res.detail}")
+            display.ok(f"{res.name} : {res.detail}")
         else:
             display.fail(f"{res.name} : {res.detail}")
 

@@ -17,6 +17,7 @@ from fastapi.responses import FileResponse
 import reporting
 from orchestrator.scheduler import scheduler
 from storage.repository import ping_db
+from app_config import app_config
 
 router = APIRouter()
 
@@ -34,8 +35,9 @@ def health_db():
 
 
 # Directory for analysis outputs and uploaded files
-_ANALYSIS_ROOT = Path("analysis")
-_ANALYSIS_ROOT.mkdir(exist_ok=True)
+app_config.ensure_dirs()
+_ANALYSIS_ROOT = app_config.OUTPUT_DIR / "analysis"
+_ANALYSIS_ROOT.mkdir(parents=True, exist_ok=True)
 
 
 def _process_apk(apk_path: str) -> dict[str, str]:
