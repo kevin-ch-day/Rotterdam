@@ -20,7 +20,7 @@ usage() {
     cat <<'EOF'
 Usage: ./setup.sh [OPTIONS]
 
-Prepare the Rotterdam environment on Fedora or Debian/Ubuntu systems.
+Prepare the Rotterdam environment on Fedora systems.
 Installs required system packages, creates a Python virtual environment
 and pulls Python dependencies from requirements.txt.
 
@@ -55,77 +55,49 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-PKG_MANAGER=""
-if command -v dnf >/dev/null 2>&1; then
-    PKG_MANAGER="dnf"
-elif command -v apt-get >/dev/null 2>&1; then
-    PKG_MANAGER="apt"
-else
-    echo "This setup script requires either dnf (Fedora) or apt-get (Debian/Ubuntu)." >&2
+if ! command -v dnf >/dev/null 2>&1; then
+    echo "This setup script requires dnf and targets Fedora only." >&2
     exit 1
 fi
 
-if [[ $PKG_MANAGER == "dnf" ]]; then
-    PKG_INSTALL_CMD=(dnf install -y)
-else
-    PKG_INSTALL_CMD=(apt-get install -y)
-fi
+PKG_INSTALL_CMD=(dnf install -y)
 
 if [[ $SKIP_SYSTEM -eq 0 ]]; then
-    echo "Installing system dependencies with $PKG_MANAGER..."
+    echo "Installing system dependencies with dnf..."
 
     : > system_install.log
     packages=()
     JAVA_PKG=""
 
-    if [[ $PKG_MANAGER == "dnf" ]]; then
-        # Allow override via JAVA_PACKAGE (e.g., JAVA_PACKAGE=java-21-openjdk)
-        JAVA_PACKAGE="${JAVA_PACKAGE:-java-17-openjdk}"
+    # Allow override via JAVA_PACKAGE (e.g., JAVA_PACKAGE=java-21-openjdk)
+    JAVA_PACKAGE="${JAVA_PACKAGE:-java-17-openjdk}"
 
-        # Resolve Java package: use requested if available, otherwise latest java-*openjdk.
-        if dnf list "$JAVA_PACKAGE" >/dev/null 2>&1; then
-            JAVA_PKG="$JAVA_PACKAGE"
-        else
-            # Find the latest available java-*openjdk
-            JAVA_PKG="$(dnf list --available 'java-*openjdk' 2>/dev/null \
-                | awk '/^java-[0-9]+-openjdk(\.x86_64)?\s/ {print $1}' \
-                | cut -d'.' -f1 \
-                | sort -t'-' -k2,2n \
-                | tail -1 || true)"
-            if [[ -z "$JAVA_PKG" ]]; then
-                echo "Warning: no java-*openjdk package available; skipping Java installation." >&2
-            fi
-        fi
-
-        # Core packages (Fedora names). Note: aapt2/apktool may need extra repos on some versions.
-        packages=(
-            python3
-            python3-virtualenv
-            adb
-            aapt2
-            apktool
-            yara
-        )
-        if [[ -n "$JAVA_PKG" ]]; then
-            packages+=("$JAVA_PKG")
-        fi
+    # Resolve Java package: use requested if available, otherwise latest java-*openjdk.
+    if dnf list "$JAVA_PACKAGE" >/dev/null 2>&1; then
+        JAVA_PKG="$JAVA_PACKAGE"
     else
-        # Debian/Ubuntu package names
-        JAVA_PKG="${JAVA_PACKAGE:-default-jdk}"
-        packages=(
-            python3
-            python3-venv
-            adb
-            aapt
-            apktool
-            yara
-            "$JAVA_PKG"
-        )
-        echo "Updating package list..."
-        if ! run_as_root apt-get update 2>&1 | tee -a system_install.log; then
-            echo "Failed to update package list" | tee -a system_install.log >&2
-            exit 1
+        # Find the latest available java-*openjdk
+        JAVA_PKG="$(dnf list --available 'java-*openjdk' 2>/dev/null \
+            | awk '/^java-[0-9]+-openjdk(\\.x86_64)?\\s/ {print $1}' \
+            | cut -d'.' -f1 \
+            | sort -t'-' -k2,2n \
+            | tail -1 || true)"
+        if [[ -z "$JAVA_PKG" ]]; then
+            echo "Warning: no java-*openjdk package available; skipping Java installation." >&2
         fi
+    fi
+
+    # Core packages (Fedora names). Note: aapt2/apktool may need extra repos on some versions.
+    packages=(
+        python3
+        python3-virtualenv
+        adb
+        aapt2
+        apktool
+        yara
+    )
+    if [[ -n "$JAVA_PKG" ]]; then
+        packages+=("$JAVA_PKG")
     fi
 
     for pkg in "${packages[@]}"; do

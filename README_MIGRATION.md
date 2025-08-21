@@ -2,7 +2,7 @@
 
 The project is being restructured. This batch moves a few modules and adds shims so existing imports keep working.
 
-Symlinks used previously for cross-platform paths have been replaced with Python shims or real files so the project works on Windows and macOS.
+Symlinks used previously for cross-platform paths have been replaced with Python shims or real files to simplify the layout. Rotterdam now targets Fedora only, and cross-platform compatibility is no longer maintained.
 
 An engine compatibility wrapper now filters unsupported SQLAlchemy keyword arguments for SQLite while preserving behaviour.
 
