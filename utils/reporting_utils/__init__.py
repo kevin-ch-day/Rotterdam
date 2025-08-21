@@ -10,6 +10,7 @@ from .ieee import (
     major_heading,
     subsection_heading,
 )
+from .report_utils import generate_report
 
 __all__ = [
     "format_device_inventory",
@@ -20,4 +21,5 @@ __all__ = [
     "ieee_table",
     "major_heading",
     "subsection_heading",
+    "generate_report",
 ]

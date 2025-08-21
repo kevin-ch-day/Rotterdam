@@ -1,12 +1,5 @@
-from . import adapters, diff, extractors, ml_model, pipeline, report, rules, yara_scan
+"""Minimal package for Android static analysis utilities."""
 
 __all__ = [
-    "adapters",
-    "diff",
-    "extractors",
-    "ml_model",
     "pipeline",
-    "report",
-    "rules",
-    "yara_scan",
 ]
