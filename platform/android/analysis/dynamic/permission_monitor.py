@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# File: platform/android/analysis/dynamic/permission_monitor.py
 """Utility to monitor Android runtime permission accesses via ``adb``.
 
 This module hooks into ``adb shell dumpsys appops`` (or ``appops`` directly)

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# File: run.sh
 set -euo pipefail
 
 OK="[OK]"; WARN="[!]"; ERR="[X]"; INF="[*]"

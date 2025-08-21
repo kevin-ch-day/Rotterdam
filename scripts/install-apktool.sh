@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# File: scripts/install-apktool.sh
 set -euo pipefail
 
 log(){ echo "[*] $*"; } ; good(){ echo "[OK] $*"; } ; fail(){ echo "[X] $*"; exit 1; }

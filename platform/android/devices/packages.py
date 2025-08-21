@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# File: platform/android/devices/packages.py
 """Scan installed apps on a device for dangerous permissions."""
 
 from __future__ import annotations

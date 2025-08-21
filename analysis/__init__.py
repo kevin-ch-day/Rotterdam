@@ -1,3 +1,4 @@
+# File: analysis/__init__.py
 """Static APK analysis helpers."""
 
 from __future__ import annotations

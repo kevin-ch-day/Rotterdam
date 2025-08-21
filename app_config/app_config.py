@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# File: app_config/app_config.py
 # config.py
 """Central configuration for Android Tool.
 
