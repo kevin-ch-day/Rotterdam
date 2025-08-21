@@ -7,9 +7,6 @@ from typing import Any, Dict
 from analysis import analyze_apk
 from app_config import app_config
 from devices import apk, packages
-from sandbox import compute_runtime_metrics
-from sandbox import run_analysis as sandbox_analyze
-from sandbox import ui_driver
 from utils.display_utils import display
 from utils.reporting_utils import ieee
 
@@ -60,7 +57,9 @@ def analyze_installed_app(serial: str) -> None:
             print("Status: No packages found.")
             return
 
-        options = [(pkg + (" (Twitter)" if pkg == "com.twitter.android" else ""), pkg) for pkg in pkgs]
+        options = [
+            (pkg + (" (Twitter)" if pkg == "com.twitter.android" else ""), pkg) for pkg in pkgs
+        ]
         choice = display.show_menu(
             "Installed Packages",
             [label for label, _ in options],
@@ -97,77 +96,13 @@ def analyze_installed_app(serial: str) -> None:
 
 
 def sandbox_analyze_apk() -> None:
-    """Prompt for an APK path and run sandbox analysis."""
-    apk_path = prompt_existing_path(
-        "Enter path to APK (or press Enter to cancel): ",
-        "Status: Sandbox analysis canceled.",
-    )
-    if not apk_path:
-        return
-
-    app_name = Path(apk_path).stem
-    outdir = app_config.OUTPUT_DIR / app_config.ts()
-    with _action_context("sandbox_analyze_apk", apk_path=apk_path):
-        logger.info("sandbox_analyze_apk", extra={"apk": apk_path})
-        try:
-            results = sandbox_analyze(apk_path, outdir)
-        except Exception as e:  # pragma: no cover - broad catch for user feedback
-            logger.exception("sandbox analysis failed")
-            display.fail(f"Sandbox analysis failed: {e}")
-            return
-
-        report_path = outdir / "metrics.json"
-        # Persistence is not available in the trimmed MVP.
-
-        logger.info("sandbox analysis completed", extra={"output": str(outdir)})
-        print(f"Status: Sandbox analysis completed. Results in {outdir}")
-
-        perms = results.get("permissions", [])
-        if perms:
-            display.print_section("Observed Permissions")
-            for p in perms:
-                print(p)
-
-        nets = results.get("network", [])
-        if nets:
-            display.print_section("Network Activity")
-            for n in nets:
-                print(f"{n.get('protocol', '')} -> {n.get('destination', '')}")
+    """Stub for removed sandbox analysis functionality."""
+    print("Sandbox features are disabled.")
 
 
 def explore_installed_app(serial: str) -> None:
-    """Select an installed package and run automated UI exploration."""
-    with _action_context("explore_installed_app", device_serial=serial):
-        try:
-            pkgs = packages.list_installed_packages(serial)
-        except RuntimeError as e:
-            display.fail(str(e))
-            return
-        if not pkgs:
-            print("Status: No packages found.")
-            return
-
-        choice = display.show_menu(
-            "Installed Packages",
-            pkgs,
-            exit_label="Cancel",
-            prompt="Select package",
-        )
-        if choice == 0:
-            print("Status: No package selected.")
-            return
-
-        package = pkgs[choice - 1]
-        activities = ui_driver.run_monkey(serial, package)
-        metrics = compute_runtime_metrics([], [], [], activities)
-
-        display.print_section("Visited Activities")
-        if metrics.get("activities"):
-            for act in metrics["activities"]:
-                print(act)
-            print(f"Total: {metrics['activity_count']}")
-        else:
-            print("No activity coverage recorded.")
+    """Stub for removed sandbox UI exploration functionality."""
+    print("Sandbox features are disabled.")
 
 
 def _display_manifest_insights(outdir: Path) -> None:
@@ -215,8 +150,7 @@ def _display_manifest_insights(outdir: Path) -> None:
         if prefix_counts:
             display.print_section("Permission Patterns")
             rows = [
-                [p, str(c)]
-                for p, c in sorted(prefix_counts.items(), key=lambda x: (-x[1], x[0]))
+                [p, str(c)] for p, c in sorted(prefix_counts.items(), key=lambda x: (-x[1], x[0]))
             ]
             display.print_table(rows, headers=["Prefix", "Count"])
 
