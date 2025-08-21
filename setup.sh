@@ -1,32 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# --- Paths ---
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
-if [[ -n "${SUDO_USER:-}" ]]; then
-    cat <<'EOF' >&2
-Warning: Detected execution via sudo.
-It is recommended to run this script as the invoking user and allow it to
-elevate only when installing dependencies (e.g. pass --install-deps).
-Running the whole setup as root can create files owned by root and lead to
-permission issues. To avoid these quirks, rerun without sudo and use the
---install-deps option so only dependency installation requires elevation.
-Continuing execution, but future permission problems may occur.
-EOF
+LOG_DIR="$ROOT_DIR/logs/setup"
+mkdir -p "$LOG_DIR"
+chmod 755 "$LOG_DIR"
+
+# --- Fedora guard ---
+if ! command -v dnf >/dev/null 2>&1; then
+  echo "This setup script is only for Fedora (requires dnf)." >&2
+  exit 1
 fi
 
+# --- Usage / flags ---
 usage() {
-    cat <<'EOF'
+  cat <<'EOF'
 Usage: ./setup.sh [OPTIONS]
 
-Prepare the Rotterdam environment on Fedora systems.
-Installs required system packages, creates a Python virtual environment
-and pulls Python dependencies from requirements.txt.
+Prepare the Rotterdam environment on Fedora.
+- Installs baseline system packages with dnf
+- Ensures aapt2 (via scripts/install-aapt2.sh)
+- Ensures apktool (via scripts/install-apktool.sh)
+- Creates or updates a Python venv and installs requirements
 
 Options:
   --force-venv   Recreate the virtual environment even if it exists
-  --skip-system  Do not install system packages
+  --skip-system  Skip system package installation (dnf)
   -h, --help     Show this help message
 EOF
 }
@@ -35,119 +37,101 @@ FORCE_VENV=0
 SKIP_SYSTEM=0
 FAILED_PACKAGES=()
 
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --force-venv) FORCE_VENV=1; shift ;;
+    --skip-system) SKIP_SYSTEM=1; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
+  esac
+done
+
+# --- Helpers ---
 run_as_root() {
-    if command -v sudo >/dev/null 2>&1; then
-        sudo "$@"
-    elif [[ ${EUID:-0} -eq 0 ]]; then
-        "$@"
-    else
-        echo "Root privileges are required: $*" >&2
-        return 1
-    fi
+  if command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  elif [[ ${EUID:-0} -eq 0 ]]; then
+    "$@"
+  else
+    echo "Root privileges are required: $*" >&2
+    return 1
+  fi
 }
 
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --force-venv) FORCE_VENV=1; shift ;;
-        --skip-system) SKIP_SYSTEM=1; shift ;;
-        -h|--help) usage; exit 0 ;;
-        *) echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
-    esac
-done
+LOG_FILE="$LOG_DIR/system_install.log"
 
-if ! command -v dnf >/dev/null 2>&1; then
-    echo "This setup script requires dnf and targets Fedora only." >&2
-    exit 1
-fi
-
-PKG_INSTALL_CMD=(dnf install -y)
-
+# --- System packages ---
 if [[ $SKIP_SYSTEM -eq 0 ]]; then
-    echo "Installing system dependencies with dnf..."
+  echo "Installing system dependencies with dnf..."
+  echo "Logging to: $LOG_FILE"
 
-    : > system_install.log
-    packages=()
-    JAVA_PKG=""
+  packages=(python3 python3-virtualenv adb yara curl wget unzip)
+  if dnf list java-21-openjdk-headless >/dev/null 2>&1; then
+    packages+=(java-21-openjdk-headless)
+  elif dnf list java-17-openjdk-headless >/dev/null 2>&1; then
+    packages+=(java-17-openjdk-headless)
+  fi
 
-    # Allow override via JAVA_PACKAGE (e.g., JAVA_PACKAGE=java-21-openjdk)
-    JAVA_PACKAGE="${JAVA_PACKAGE:-java-17-openjdk}"
-
-    # Resolve Java package: use requested if available, otherwise latest java-*openjdk.
-    if dnf list "$JAVA_PACKAGE" >/dev/null 2>&1; then
-        JAVA_PKG="$JAVA_PACKAGE"
-    else
-        # Find the latest available java-*openjdk
-        JAVA_PKG="$(dnf list --available 'java-*openjdk' 2>/dev/null \
-            | awk '/^java-[0-9]+-openjdk(\\.x86_64)?\\s/ {print $1}' \
-            | cut -d'.' -f1 \
-            | sort -t'-' -k2,2n \
-            | tail -1 || true)"
-        if [[ -z "$JAVA_PKG" ]]; then
-            echo "Warning: no java-*openjdk package available; skipping Java installation." >&2
-        fi
+  for pkg in "${packages[@]}"; do
+    echo "Installing $pkg..."
+    if ! run_as_root dnf install -y "$pkg" 2>&1 | tee -a "$LOG_FILE"; then
+      echo "Failed to install $pkg" | tee -a "$LOG_FILE" >&2
+      FAILED_PACKAGES+=("$pkg")
     fi
-
-    # Core packages (Fedora names). Note: aapt2/apktool may need extra repos on some versions.
-    packages=(
-        python3
-        python3-virtualenv
-        adb
-        aapt2
-        apktool
-        yara
-    )
-    if [[ -n "$JAVA_PKG" ]]; then
-        packages+=("$JAVA_PKG")
-    fi
-
-    for pkg in "${packages[@]}"; do
-        echo "Installing $pkg..."
-        if ! run_as_root "${PKG_INSTALL_CMD[@]}" "$pkg" 2>&1 | tee -a system_install.log; then
-            echo "Failed to install $pkg" | tee -a system_install.log >&2
-            FAILED_PACKAGES+=("$pkg")
-        fi
-    done
+  done
 fi
 
-# Verify required commands are available before creating the Python environment
-REQUIRED_CMDS=(adb apktool java yara)
+# --- Tool installers ---
+SCRIPTS_DIR="$ROOT_DIR/scripts"
+
+if ! command -v aapt2 >/dev/null 2>&1; then
+  if [[ -x "$SCRIPTS_DIR/install-aapt2.sh" ]]; then
+    echo "[*] aapt2 not found - running scripts/install-aapt2.sh"
+    if ! bash "$SCRIPTS_DIR/install-aapt2.sh" 2>&1 | tee -a "$LOG_FILE"; then
+      echo "[X] Failed to install aapt2" | tee -a "$LOG_FILE" >&2
+      FAILED_PACKAGES+=("aapt2")
+    fi
+  fi
+fi
+
+if ! command -v apktool >/dev/null 2>&1; then
+  if [[ -x "$SCRIPTS_DIR/install-apktool.sh" ]]; then
+    echo "[*] apktool not found - running scripts/install-apktool.sh"
+    if ! bash "$SCRIPTS_DIR/install-apktool.sh" 2>&1 | tee -a "$LOG_FILE"; then
+      echo "[X] Failed to install apktool" | tee -a "$LOG_FILE" >&2
+      FAILED_PACKAGES+=("apktool")
+    fi
+  fi
+fi
+
+# --- Verify required tools ---
+REQUIRED_CMDS=(adb yara aapt2 apktool)
 missing_tools=()
 for cmd in "${REQUIRED_CMDS[@]}"; do
-    if ! command -v "$cmd" >/dev/null 2>&1; then
-        echo "Required tool '$cmd' is not installed or not found in PATH." >&2
-        missing_tools+=("$cmd")
-    fi
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Required tool '$cmd' is not installed." >&2
+    missing_tools+=("$cmd")
+  fi
 done
-
-# Check for either aapt2 or aapt
-if ! command -v aapt2 >/dev/null 2>&1 && ! command -v aapt >/dev/null 2>&1; then
-    echo "Required tool 'aapt2' or 'aapt' is not installed or not found in PATH." >&2
-    missing_tools+=("aapt2/aapt")
+if ! command -v java >/dev/null 2>&1; then
+  echo "Warning: 'java' not found. apktool requires Java." >&2
+  missing_tools+=("java")
 fi
 
 if (( ${#missing_tools[@]} )); then
-    echo "Please install the missing tools and run the setup script again." >&2
-    if (( ${#FAILED_PACKAGES[@]} )); then
-        echo "Packages that failed to install: ${FAILED_PACKAGES[*]}" >&2
-        if [[ " ${FAILED_PACKAGES[*]} " == *" aapt2 "* ]]; then
-            echo "aapt2 failed to install. Consider using the SDK-based installer (install-aapt2.sh) or install it manually." >&2
-        fi
-        if [[ " ${FAILED_PACKAGES[*]} " == *" apktool "* ]]; then
-            echo "apktool failed to install. You may need to install it manually or via a custom script." >&2
-        fi
-        echo "See system_install.log for details." >&2
-    fi
-    exit 1
+  echo "Missing tools: ${missing_tools[*]}" >&2
+  exit 1
 fi
 
+# --- Python venv + deps ---
 if [[ $FORCE_VENV -eq 1 && -d .venv ]]; then
-    echo "Removing existing virtual environment..."
-    rm -rf .venv
+  echo "Removing existing virtual environment..."
+  rm -rf .venv
 fi
 
 if [[ ! -d .venv ]]; then
-    echo "Creating virtual environment..."
-    python3 -m venv .venv
+  echo "Creating virtual environment..."
+  python3 -m venv .venv
 fi
 
 # shellcheck disable=SC1091
@@ -157,32 +141,23 @@ echo "Installing Python requirements..."
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 
-echo "Verifying installed packages..."
-if ! python -m pip check 2>&1 | tee pip_check.log; then
-    echo "Dependency conflicts detected. Some issues may stem from system packages and must be resolved manually. See pip_check.log for details." >&2
-    exit 1
+echo "Verifying installed Python packages..."
+if ! python -m pip check 2>&1 | tee "$LOG_DIR/pip_check.log"; then
+  echo "Dependency conflicts detected. See logs/setup/pip_check.log for details." >&2
+  exit 1
 fi
 
-if [[ ${#FAILED_PACKAGES[@]} -gt 0 ]]; then
-    echo "The following packages failed to install: ${FAILED_PACKAGES[*]}" >&2
-    if [[ " ${FAILED_PACKAGES[*]} " == *" aapt2 "* ]]; then
-        echo "aapt2 failed to install. Consider using the SDK-based installer (install-aapt2.sh) or install it manually." >&2
-    fi
-    if [[ " ${FAILED_PACKAGES[*]} " == *" apktool "* ]]; then
-        echo "apktool failed to install. You may need to install it manually or via a custom script." >&2
-    fi
-    echo "You may need to install them manually. See system_install.log for details." >&2
-    exit 1
+# --- CLI symlink ---
+if [[ ! -e /usr/local/bin/rotterdam ]]; then
+  run_as_root ln -sf "$ROOT_DIR/run.sh" /usr/local/bin/rotterdam
 fi
 
-# Create a convenient symlink to the CLI if absent
-if [[ -n "${SUDO_USER:-}" && ! -e /usr/local/bin/rotterdam ]]; then
-    run_as_root ln -sf "$ROOT_DIR/run.sh" /usr/local/bin/rotterdam
+# --- Ownership fix ---
+if [[ -d "$ROOT_DIR/output" && -n "${SUDO_USER:-}" ]]; then
+  run_as_root chown -R "$SUDO_USER":"$SUDO_USER" "$ROOT_DIR/output"
 fi
 
-# Ensure the output directory is owned by the invoking user
-if [[ -n "${SUDO_USER:-}" && -d "$ROOT_DIR/output" ]]; then
-    run_as_root chown -R "$SUDO_USER":"$SUDO_USER" "$ROOT_DIR/output"
-fi
-
-echo "Setup complete. Run ./run.sh to start the application."
+echo
+echo "Setup complete."
+echo "Logs stored in: $LOG_DIR"
+echo "Try:  rotterdam   # or ./run.sh"
