@@ -177,3 +177,8 @@ Additional reference material:
 - [Risk scoring](docs/risk-scoring.md)
 - [Bring-up checklist](docs/BRING-UP-CHECKLIST.md)
 - [Subsystem ownership](docs/OWNERSHIP.md)
+
+## Archived modules
+
+Legacy helper packages for machine learning and risk scoring now live under
+`analysis/archived/`.

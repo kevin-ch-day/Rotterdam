@@ -12,7 +12,9 @@ from __future__ import annotations
 try:  # pragma: no cover - defensive import
     from rotterdam.android.analysis.static.ml_model import predict_malicious
 except Exception as exc:  # pragma: no cover - missing platform module
+
     def predict_malicious(*args: object, **kwargs: object):  # type: ignore[override]
         raise RuntimeError("ML model unavailable") from exc
+
 
 __all__ = ["predict_malicious"]
