@@ -110,6 +110,8 @@ python -m cli.actions list-packages <device-serial>
 
 #### Sandbox analysis
 
+> **Note:** Dynamic sandboxing is deferred for the MVP. The sandbox code is parked; see [sandbox/PARKED.md](sandbox/PARKED.md). Avoid modifying or relying on this functionality.
+
 ```
 python main.py
 # Analysis → Sandbox APK → select /path/to/app.apk
