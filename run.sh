@@ -60,6 +60,7 @@ Options:
 Notes:
 - This script assumes ./setup.sh has already been run.
 - The web server is typically started from inside the CLI menu.
+- Set ROTTERDAM_API_KEY to configure API authentication.
 EOF
 }
 
@@ -83,7 +84,7 @@ diagnostics() {
   echo "ADB:            $(command -v adb || echo missing)"
   echo "aapt2:          $(command -v aapt2 || echo missing)"
   echo "apktool:        $(command -v apktool || echo missing)"
-echo "Host/Port:      ${APP_HOST}:${APP_PORT}"
+  echo "Host/Port:      ${APP_HOST}:${APP_PORT}"
   echo "---------------------"
 }
 
@@ -108,11 +109,18 @@ export ROTTERDAM_APP_PORT="$APP_PORT"
 export APP_HOST="$APP_HOST" # legacy
 export APP_PORT="$APP_PORT" # legacy
 export PORT="$APP_PORT"
+export ROTTERDAM_API_KEY="${ROTTERDAM_API_KEY:-secret}"
 
 note "Environment:"
 note "  ROTTERDAM_APP_HOST=${APP_HOST}"
 note "  ROTTERDAM_APP_PORT=${APP_PORT}"
-warn "  APP_HOST/APP_PORT are deprecated"
-good "Launching Rotterdam menu (python main.py)..."
+warn "  APP_HOST/APP_PORT are deprecated (using legacy exports for compatibility)"
+# Mask API key when printing
+if [[ -n "${ROTTERDAM_API_KEY:-}" ]]; then
+  note "  ROTTERDAM_API_KEY=$(printf '%s' "${ROTTERDAM_API_KEY:0:4}")***"
+else
+  note "  ROTTERDAM_API_KEY=(unset)"
+fi
 
+good "Launching Rotterdam menu (python main.py)..."
 exec python main.py "${CLI_ARGS[@]}"

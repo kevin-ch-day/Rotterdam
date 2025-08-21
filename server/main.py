@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app_config import app_config
 from utils.logging_utils.app_logger import app_logger
+from utils.logging_utils.logging_config import configure_logging
 
 from .middleware import DEFAULT_API_KEY, AuthRateLimitMiddleware, RequestIDMiddleware
 from .routers import (
@@ -45,6 +46,7 @@ app = FastAPI(title=app_config.APP_NAME, version=app_config.APP_VERSION, root_pa
 
 # ---------- Logging ----------
 # Configure structured logging once at import time
+configure_logging("server")
 log = app_logger.get_logger("uvicorn.error")
 
 # ---------- Middleware ----------
@@ -84,6 +86,7 @@ app.include_router(jobs_router)
 app.include_router(reports_router)
 app.include_router(analytics_router)
 app.include_router(system_router)  # owns /health, /about, /_healthz, /_ready
+
 
 
 # ---------- Favicon ----------
