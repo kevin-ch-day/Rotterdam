@@ -15,7 +15,7 @@ from fastapi import APIRouter, File, HTTPException, Response, UploadFile, status
 from fastapi.responses import FileResponse
 
 from utils.reporting_utils import generate_report
-from orchestrator.scheduler import scheduler
+from utils.jobqueue import scheduler
 from storage.repository import ping_db
 from app_config import app_config
 

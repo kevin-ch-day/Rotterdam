@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from analysis import analyze_apk
-from orchestrator import scheduler, start_worker
+from utils.jobqueue import scheduler, start_worker
 
 
 def submit(apk: str) -> str:
