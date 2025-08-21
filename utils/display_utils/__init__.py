@@ -17,25 +17,13 @@ from .display import (
     wrap_text,
 )
 
-# Standard status helpers
-from .status import fail, ok, info, warn  # canonical names
+# Canonical status helpers
+from .status import info, ok, warn, fail, note, warning, error
 
-# Backward-compatible aliases (some callers use these)
+# Backward-compatible alias
 def good(*args, **kwargs):
+    """Alias for ok()."""
     return ok(*args, **kwargs)
-
-
-def warning(*args, **kwargs):
-    return warn(*args, **kwargs)
-
-
-def error(*args, **kwargs):
-    return fail(*args, **kwargs)
-
-
-def note(*args, **kwargs):
-    # Neutral/low-importance message; map to info
-    return info(*args, **kwargs)
 
 
 __all__ = [
@@ -58,9 +46,9 @@ __all__ = [
     "ok",
     "warn",
     "fail",
-    # aliases for backward compatibility
+    "note",
+    # aliases
     "good",
     "warning",
     "error",
-    "note",
 ]

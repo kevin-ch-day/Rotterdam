@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import sys
 from datetime import datetime
-from typing import TextIO
+from typing import TextIO, Callable, Optional
 
 # Try to source settings from app_config if available, else fall back.
 try:
@@ -24,7 +24,7 @@ def _fallback_ts() -> str:
 
 
 # Timestamp function (prefer app_config, else local)
-_ts = _cfg_ts or _fallback_ts  # type: ignore[assignment]
+_ts: Callable[[], str] = _cfg_ts or _fallback_ts  # type: ignore[assignment]
 
 # Determine color usage:
 # - Respect app_config if provided
@@ -55,7 +55,11 @@ RESET = "\033[0m"
 
 def _emit(prefix: str, msg: str, *, ts: bool = False, stream: TextIO = sys.stdout) -> None:
     """Internal helper to print a prefixed message."""
-    use_color = USE_COLOR and hasattr(stream, "isatty") and stream.isatty()
+    try:
+        stream_isatty = stream.isatty()  # type: ignore[attr-defined]
+    except Exception:
+        stream_isatty = False
+    use_color = USE_COLOR and stream_isatty
     color = COLOR_PREFIX.get(prefix, "") if use_color else ""
     pre = f"{color}{prefix}{RESET}" if color else prefix
     stamp = f"{_ts()} | " if ts else ""
@@ -65,6 +69,11 @@ def _emit(prefix: str, msg: str, *, ts: bool = False, stream: TextIO = sys.stdou
 def info(msg: str, *, ts: bool = False) -> None:
     """Print an informational status line."""
     _emit(INF, msg, ts=ts, stream=sys.stdout)
+
+
+def note(msg: str, *, ts: bool = False) -> None:
+    """Print a secondary informational status line (neutral notice)."""
+    _emit(NOTE, msg, ts=ts, stream=sys.stdout)
 
 
 def ok(msg: str, *, ts: bool = False) -> None:
@@ -82,12 +91,7 @@ def fail(msg: str, *, ts: bool = False) -> None:
     _emit(ERR, msg, ts=ts, stream=sys.stderr)
 
 
-# Backward-compatible aliases (do not remove yet)
-def note(msg: str, *, ts: bool = False) -> None:
-    """Alias for info (secondary informational line)."""
-    info(msg, ts=ts)
-
-
+# Backward-compatible aliases (retain during migration)
 def good(msg: str, *, ts: bool = False) -> None:
     """Alias for ok (success line)."""
     ok(msg, ts=ts)
@@ -101,3 +105,16 @@ def warning(msg: str, *, ts: bool = False) -> None:
 def error(msg: str, *, ts: bool = False) -> None:
     """Alias for fail (clearer call sites)."""
     fail(msg, ts=ts)
+
+
+__all__ = [
+    "info",
+    "note",
+    "ok",
+    "warn",
+    "fail",
+    "good",
+    "warning",
+    "error",
+    "USE_COLOR",
+]
