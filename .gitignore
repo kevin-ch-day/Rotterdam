@@ -16,8 +16,6 @@ output/
 coverage.xml
 htmlcov/
 logs/
-reports/logs/*.log
-*.log
 .idea/
 .vscode/
 .DS_Store

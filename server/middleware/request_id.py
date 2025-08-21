@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-import logging
 import uuid
 
 from fastapi import Request
 from fastapi.responses import JSONResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from utils.logging_utils.app_logger import app_logger
+
 from .context import set_request_id
 
-request_logger = logging.getLogger("rotterdam.request")
+request_logger = app_logger.get_logger("rotterdam.request")
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):

@@ -12,12 +12,13 @@ basic confidence information.
 from __future__ import annotations
 
 import json
-import logging
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Any, Dict, List, Tuple
+
+from utils.logging_utils.app_logger import app_logger
 
 _BASELINE_PATH = Path(__file__).with_name("ml_baseline.json")
-_LOG = logging.getLogger(__name__)
+_LOG = app_logger.get_logger(__name__)
 
 
 def _load_baseline() -> List[Tuple[Dict[str, float], str]]:
@@ -100,9 +101,8 @@ def predict_malicious(metrics: Dict[str, float], k: int = 3) -> Dict[str, Any]:
     return {
         "label": label,
         "confidence": confidence,
-        "neighbors": [
-            {"distance": round(dist, 3), "label": lbl} for dist, lbl in neighbours
-        ],
+        "neighbors": [{"distance": round(dist, 3), "label": lbl} for dist, lbl in neighbours],
     }
+
 
 __all__ = ["predict_malicious"]

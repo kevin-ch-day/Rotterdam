@@ -1,13 +1,14 @@
 # server/main.py
 from __future__ import annotations
 
-import logging
 import os
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
+
+from utils.logging_utils.app_logger import app_logger
 
 from .constants import APP_NAME, APP_VERSION
 from .middleware import DEFAULT_API_KEY, AuthRateLimitMiddleware, RequestIDMiddleware
@@ -43,7 +44,8 @@ ROOT_PATH = os.getenv("ROOT_PATH", "")
 app = FastAPI(title=APP_NAME, version=APP_VERSION, root_path=ROOT_PATH)
 
 # ---------- Logging ----------
-log = logging.getLogger("uvicorn.error")
+# Configure structured logging once at import time
+log = app_logger.get_logger("uvicorn.error")
 
 # ---------- Middleware ----------
 app.add_middleware(RequestIDMiddleware)

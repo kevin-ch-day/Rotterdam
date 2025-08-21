@@ -1,13 +1,15 @@
 """Compatibility wrapper for SQLAlchemy engine creation."""
+
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import make_url
 
-logger = logging.getLogger(__name__)
+from utils.logging_utils.app_logger import app_logger
+
+logger = app_logger.get_logger(__name__)
 
 
 def create_engine_safe(url: str, **kwargs: Any):

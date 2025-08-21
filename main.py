@@ -1,13 +1,14 @@
 """Top-level entry point for the Android Tool CLI."""
+
 from __future__ import annotations
 
 import argparse
 import json
 
 from cli import run_main_menu
-from utils.logging_utils.logging_config import get_logger
+from utils.logging_utils.app_logger import app_logger
 
-logger = get_logger(__name__)
+logger = app_logger.get_logger(__name__)
 
 
 def main() -> None:
