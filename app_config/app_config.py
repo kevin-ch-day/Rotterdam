@@ -16,7 +16,7 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Any, MutableMapping, Optional, Mapping
 
-from config.loader import load as _load_config
+from app_config.load_configs import load as _load_config
 
 # -----------------------------
 # App metadata

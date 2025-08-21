@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-from core import config
+from app_config import app_config
 
 
 def _run_adb(args: list[str], *, timeout: int = 8) -> subprocess.CompletedProcess:
@@ -15,7 +15,7 @@ def _run_adb(args: list[str], *, timeout: int = 8) -> subprocess.CompletedProces
 
 def _adb_path() -> str:
     """Return the best ``adb`` path available on this system."""
-    path = config.get_adb_path()
+    path = app_config.get_adb_path()
     which = shutil.which("adb")
     try:
         subprocess.run(

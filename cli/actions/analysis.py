@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from analysis import analyze_apk
-from core import config
+from app_config import app_config
 from devices import apk, packages
 from sandbox import compute_runtime_metrics
 from sandbox import run_analysis as sandbox_analyze
@@ -31,7 +31,7 @@ def analyze_apk_path() -> None:
     app_name = Path(apk_path).stem
     with _action_context("analyze_apk_path", apk_path=apk_path):
         logger.info("analyze_apk_path", extra={"apk": apk_path})
-        outdir = config.OUTPUT_DIR / config.ts()
+        outdir = app_config.OUTPUT_DIR / app_config.ts()
         try:
             out = analyze_apk(apk_path, outdir=outdir)
         except Exception as e:  # pragma: no cover - broad catch for user feedback
@@ -76,7 +76,7 @@ def analyze_installed_app(serial: str) -> None:
             return
         package = options[choice - 1][1]
 
-        outdir = config.OUTPUT_DIR / config.ts()
+        outdir = app_config.OUTPUT_DIR / app_config.ts()
         try:
             evidence = apk.acquire_apk(serial, package, dest_dir=str(outdir))
             apk_path = str(evidence["artifact"])
@@ -111,7 +111,7 @@ def sandbox_analyze_apk() -> None:
         return
 
     app_name = Path(apk_path).stem
-    outdir = config.OUTPUT_DIR / config.ts()
+    outdir = app_config.OUTPUT_DIR / app_config.ts()
     with _action_context("sandbox_analyze_apk", apk_path=apk_path):
         logger.info("sandbox_analyze_apk", extra={"apk": apk_path})
         try:

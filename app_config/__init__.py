@@ -1,5 +1,5 @@
 """Configuration package providing file loading utilities."""
 
-from .loader import load, ConfigError
+from .load_configs import load, ConfigError
 
 __all__ = ["load", "ConfigError"]

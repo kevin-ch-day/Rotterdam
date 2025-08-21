@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from core import config
+from app_config import app_config
 from utils.display_utils import display
 
 from .adapters import apktool, jadx
@@ -60,7 +60,7 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
     Returns the output directory used for analysis.
     """
     apk = Path(apk_path)
-    out = Path(outdir) if outdir else config.OUTPUT_DIR / config.ts()
+    out = Path(outdir) if outdir else app_config.OUTPUT_DIR / app_config.ts()
     out.mkdir(parents=True, exist_ok=True)
     apktool_dir = out / "apktool"
     jadx_dir = out / "jadx"
@@ -235,11 +235,11 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
         "permissions": perms,
         "components": {k: [c.get("name", "") for c in v] for k, v in components.items()},
     }
-    config.STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+    app_config.STORAGE_DIR.mkdir(parents=True, exist_ok=True)
     base = apk.stem
-    existing = sorted(config.STORAGE_DIR.glob(f"{base}_v*.json"))
+    existing = sorted(app_config.STORAGE_DIR.glob(f"{base}_v*.json"))
     version = len(existing) + 1
-    snap_path = config.STORAGE_DIR / f"{base}_v{version}.json"
+    snap_path = app_config.STORAGE_DIR / f"{base}_v{version}.json"
     snap_path.write_text(json.dumps(snapshot, indent=2))
 
     diff: Optional[Dict[str, Any]] = None

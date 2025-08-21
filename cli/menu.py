@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from core import config
+from app_config import app_config
 from devices import selection
 from devices.adb import _adb_path, _run_adb
 from utils.display_utils import display
@@ -124,7 +124,7 @@ def run_main_menu(*, json_mode: bool = False) -> Optional[Dict[str, Any]]:
         }
 
     # Ensure required directories exist
-    config.ensure_dirs()
+    app_config.ensure_dirs()
 
     # App banner
     display.print_app_banner()

@@ -17,7 +17,7 @@ import shutil
 from textwrap import wrap
 from typing import Iterable, Sequence, Any, Optional, Callable, List
 
-from core import config
+from app_config import app_config
 from . import table as tables
 from .status import info, good, warn, fail
 
@@ -87,7 +87,7 @@ def clear_screen() -> None:
 
 def print_app_banner(subtitle: Optional[str] = None, *, boxed: bool = False) -> None:
     """Standard app banner using project metadata."""
-    title = f"{config.APP_NAME} v{config.APP_VERSION}"
+    title = f"{app_config.APP_NAME} v{app_config.APP_VERSION}"
     print(banner(title, subtitle=subtitle, boxed=boxed))
 
 def print_section(title: str, underline: str = "=") -> None:
