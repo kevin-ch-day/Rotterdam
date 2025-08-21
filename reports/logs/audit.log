@@ -68,3 +68,193 @@
 {"time": "2025-08-20 17:58:46,557", "level": "WARNING", "module": "rotterdam.security", "message": "Unauthorized request from 127.0.0.1 path=/partials/header.html"}
 {"time": "2025-08-20 17:58:46,564", "level": "WARNING", "module": "rotterdam.security", "message": "Unauthorized request from 127.0.0.1 path=/partials/footer.html"}
 {"time": "2025-08-20 17:58:46,572", "level": "WARNING", "module": "rotterdam.security", "message": "Unauthorized request from 127.0.0.1 path=/partials/sidebar.html"}
+{"time": "2025-08-20 19:30:55,083", "level": "INFO", "module": "devices.discovery", "message": "parsed 2 devices"}
+{"time": "2025-08-20 19:30:55,084", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:30:55,980", "level": "INFO", "module": "rotterdam.android.analysis.dynamic.permission_monitor", "message": "2025-08-21T00:30:55.980313+00:00 | ACCESS_FINE_LOCATION accessed by com.example", "action": "permission_monitor"}
+{"time": "2025-08-20 19:30:55,980", "level": "INFO", "module": "rotterdam.android.analysis.dynamic.permission_monitor", "message": "2025-08-21T00:30:55.980571+00:00 | READ_SMS accessed by com.sms.app", "action": "permission_monitor"}
+{"time": "2025-08-20 19:30:55,987", "level": "ERROR", "module": "core.errors", "message": "Failed to list processes on device SER: Command '['adb', '-s', 'SER', 'shell', 'ps']' returned non-zero exit status 1."}
+{"time": "2025-08-20 19:30:56,080", "level": "INFO", "module": "rotterdam.request", "message": "POST /scans - id=152d3af7-51e5-4be8-94d1-c80bdb170225"}
+{"time": "2025-08-20 19:30:56,081", "level": "INFO", "module": "httpx", "message": "HTTP Request: POST http://testserver/scans \"HTTP/1.1 404 Not Found\""}
+{"time": "2025-08-20 19:30:56,139", "level": "INFO", "module": "rotterdam.request", "message": "POST /scans - id=1c73bd0e-6fe0-4cfb-877c-b933dfcff276"}
+{"time": "2025-08-20 19:30:56,141", "level": "INFO", "module": "httpx", "message": "HTTP Request: POST http://testserver/scans \"HTTP/1.1 404 Not Found\""}
+{"time": "2025-08-20 19:30:56,162", "level": "INFO", "module": "rotterdam.request", "message": "GET / - id=361cc08c-f113-43b1-8fc2-f546e246dfbd"}
+{"time": "2025-08-20 19:30:56,164", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:56,166", "level": "INFO", "module": "rotterdam.request", "message": "GET /ui/js/helpers.js - id=e6124930-140b-4e13-95c8-69d6c0337323"}
+{"time": "2025-08-20 19:30:56,168", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ui/js/helpers.js \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:56,173", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:30:56,205", "level": "INFO", "module": "devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-20 19:30:56,210", "level": "INFO", "module": "devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-20 19:30:56,210", "level": "INFO", "module": "devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-20 19:30:56,557", "level": "INFO", "module": "rotterdam.request", "message": "GET /devices - id=d38d2cf1-9b94-430f-95d6-8e7366eac2ef"}
+{"time": "2025-08-20 19:30:56,561", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:56,568", "level": "INFO", "module": "rotterdam.request", "message": "POST /jobs - id=4694dab1-051e-407b-896d-2feda4f57052"}
+{"time": "2025-08-20 19:30:56,570", "level": "INFO", "module": "httpx", "message": "HTTP Request: POST http://testserver/jobs \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:56,575", "level": "INFO", "module": "rotterdam.request", "message": "GET /reports/4f10bda7-1eb1-4846-8c6e-5205cecae3eb - id=f672d09b-a7ad-49de-8ef4-b52fff6a539a"}
+{"time": "2025-08-20 19:30:56,577", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/reports/4f10bda7-1eb1-4846-8c6e-5205cecae3eb \"HTTP/1.1 202 Accepted\""}
+{"time": "2025-08-20 19:30:57,179", "level": "INFO", "module": "rotterdam.request", "message": "GET /reports/4f10bda7-1eb1-4846-8c6e-5205cecae3eb - id=b5939d3d-0564-4ea2-b171-f1195e784d98"}
+{"time": "2025-08-20 19:30:57,181", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/reports/4f10bda7-1eb1-4846-8c6e-5205cecae3eb \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,184", "level": "INFO", "module": "rotterdam.request", "message": "GET /jobs - id=9dfeef2c-6870-4c24-8d1e-1bb016f404fe"}
+{"time": "2025-08-20 19:30:57,185", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/jobs \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,187", "level": "INFO", "module": "rotterdam.request", "message": "GET /jobs/4f10bda7-1eb1-4846-8c6e-5205cecae3eb - id=b817bb4c-4965-48df-bf3b-03b45720caf0"}
+{"time": "2025-08-20 19:30:57,188", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/jobs/4f10bda7-1eb1-4846-8c6e-5205cecae3eb \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,189", "level": "INFO", "module": "rotterdam.request", "message": "GET /reports - id=c540282f-ea93-4cdb-9923-a5f36ec2be56"}
+{"time": "2025-08-20 19:30:57,191", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/reports \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,193", "level": "INFO", "module": "rotterdam.request", "message": "GET /analytics - id=f11539ce-22d6-4548-9cbc-1f66c0580914"}
+{"time": "2025-08-20 19:30:57,194", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/analytics \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,196", "level": "INFO", "module": "rotterdam.request", "message": "GET /analytics/devices - id=6a73e78b-da42-42d5-b508-8a4f932010d7"}
+{"time": "2025-08-20 19:30:57,197", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/analytics/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,199", "level": "INFO", "module": "rotterdam.request", "message": "DELETE /jobs/4f10bda7-1eb1-4846-8c6e-5205cecae3eb - id=5f74a0cc-9cf1-4179-bde0-b5dedd4d01f7"}
+{"time": "2025-08-20 19:30:57,200", "level": "INFO", "module": "httpx", "message": "HTTP Request: DELETE http://testserver/jobs/4f10bda7-1eb1-4846-8c6e-5205cecae3eb \"HTTP/1.1 204 No Content\""}
+{"time": "2025-08-20 19:30:57,202", "level": "INFO", "module": "rotterdam.request", "message": "GET /jobs/4f10bda7-1eb1-4846-8c6e-5205cecae3eb - id=4b555e48-afad-405a-a88a-9d9137d9cf7d"}
+{"time": "2025-08-20 19:30:57,203", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/jobs/4f10bda7-1eb1-4846-8c6e-5205cecae3eb \"HTTP/1.1 404 Not Found\""}
+{"time": "2025-08-20 19:30:57,204", "level": "INFO", "module": "rotterdam.request", "message": "GET /reports/4f10bda7-1eb1-4846-8c6e-5205cecae3eb - id=b41812c0-06a7-42ff-a3ef-b4dc1924e2f2"}
+{"time": "2025-08-20 19:30:57,205", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/reports/4f10bda7-1eb1-4846-8c6e-5205cecae3eb \"HTTP/1.1 404 Not Found\""}
+{"time": "2025-08-20 19:30:57,208", "level": "INFO", "module": "rotterdam.request", "message": "GET /_stats - id=d7a076ef-7be8-4223-9def-8cf13898ccb8"}
+{"time": "2025-08-20 19:30:57,210", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/_stats \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,211", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:30:57,215", "level": "INFO", "module": "devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-20 19:30:57,218", "level": "INFO", "module": "devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-20 19:30:57,218", "level": "INFO", "module": "devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-20 19:30:57,219", "level": "INFO", "module": "rotterdam.request", "message": "GET /devices - id=e745549a-bfd6-47f7-9c42-611868931e60"}
+{"time": "2025-08-20 19:30:57,221", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,229", "level": "INFO", "module": "rotterdam.request", "message": "GET /ui/partials/header.html - id=b0c73a26-bc51-4c32-b4ea-9c864fb7e553"}
+{"time": "2025-08-20 19:30:57,230", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ui/partials/header.html \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,232", "level": "INFO", "module": "rotterdam.request", "message": "GET /_healthz - id=ff3c30d5-d4f2-48de-882f-a47e33f4787a"}
+{"time": "2025-08-20 19:30:57,234", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/_healthz \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,237", "level": "INFO", "module": "rotterdam.request", "message": "GET /_diag - id=8faafb59-ce6f-40f3-9603-d5f545e3d3d6"}
+{"time": "2025-08-20 19:30:57,238", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/_diag \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,245", "level": "INFO", "module": "rotterdam.request", "message": "GET / - id=a1dfc4da-9717-4e78-98fa-8d6e5d8a8ad2"}
+{"time": "2025-08-20 19:30:57,246", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,250", "level": "INFO", "module": "rotterdam.request", "message": "GET /ui/css/styles.css - id=2e3e5200-9b9b-402a-8a80-7d049d205886"}
+{"time": "2025-08-20 19:30:57,252", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ui/css/styles.css \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,254", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:30:57,258", "level": "INFO", "module": "devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-20 19:30:57,261", "level": "INFO", "module": "devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-20 19:30:57,262", "level": "INFO", "module": "devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-20 19:30:57,262", "level": "INFO", "module": "rotterdam.request", "message": "GET /devices - id=0226f283-ebe3-4add-b0cd-823268c31460"}
+{"time": "2025-08-20 19:30:57,264", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,269", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:30:57,274", "level": "INFO", "module": "devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-20 19:30:57,277", "level": "INFO", "module": "devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-20 19:30:57,277", "level": "INFO", "module": "devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-20 19:30:57,278", "level": "INFO", "module": "rotterdam.request", "message": "GET /devices - id=1d0194ec-546c-4e45-81d9-e4cc8a6d0e96"}
+{"time": "2025-08-20 19:30:57,279", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,280", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:30:57,284", "level": "INFO", "module": "devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-20 19:30:57,288", "level": "INFO", "module": "devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-20 19:30:57,288", "level": "INFO", "module": "devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-20 19:30:57,289", "level": "INFO", "module": "rotterdam.request", "message": "GET /devices - id=ec8828ab-b7eb-4697-9c11-411bc4886ecf"}
+{"time": "2025-08-20 19:30:57,290", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,292", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:30:57,296", "level": "INFO", "module": "devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-20 19:30:57,301", "level": "INFO", "module": "devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-20 19:30:57,301", "level": "INFO", "module": "devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-20 19:30:57,302", "level": "INFO", "module": "rotterdam.request", "message": "GET /devices - id=31d5a5a1-989e-4d4e-acc4-4f382a63a1c0"}
+{"time": "2025-08-20 19:30:57,303", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,309", "level": "INFO", "module": "rotterdam.request", "message": "GET / - id=fcb41f6a-3e60-460c-88bb-57073afd89ed"}
+{"time": "2025-08-20 19:30:57,312", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,316", "level": "INFO", "module": "rotterdam.request", "message": "GET /static/js/helpers.js - id=6df7a908-8e64-4ebe-b95e-17f954bd8f76"}
+{"time": "2025-08-20 19:30:57,318", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/static/js/helpers.js \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,322", "level": "INFO", "module": "rotterdam.request", "message": "GET /_healthz - id=6125c2c2-b412-4c2b-b426-6869dee5c0cc"}
+{"time": "2025-08-20 19:30:57,323", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/_healthz \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,326", "level": "INFO", "module": "rotterdam.request", "message": "GET / - id=815a0c71-73ea-4eb5-80e9-c19707295d99"}
+{"time": "2025-08-20 19:30:57,328", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,331", "level": "INFO", "module": "rotterdam.request", "message": "GET /ui/js/main.js - id=5b4fe3bf-4496-456a-b19d-b86c1e7e49c9"}
+{"time": "2025-08-20 19:30:57,337", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ui/js/main.js \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:30:57,341", "level": "INFO", "module": "rotterdam.request", "message": "GET /_diag - id=9600f4e3-8fa0-41a7-a546-1273f2f6ad82"}
+{"time": "2025-08-20 19:30:57,343", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/_diag \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:05,829", "level": "INFO", "module": "devices.discovery", "message": "parsed 2 devices"}
+{"time": "2025-08-20 19:32:05,831", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:32:06,357", "level": "INFO", "module": "rotterdam.android.analysis.dynamic.permission_monitor", "message": "2025-08-21T00:32:06.357847+00:00 | ACCESS_FINE_LOCATION accessed by com.example", "action": "permission_monitor"}
+{"time": "2025-08-20 19:32:06,358", "level": "INFO", "module": "rotterdam.android.analysis.dynamic.permission_monitor", "message": "2025-08-21T00:32:06.358108+00:00 | READ_SMS accessed by com.sms.app", "action": "permission_monitor"}
+{"time": "2025-08-20 19:32:06,363", "level": "ERROR", "module": "core.errors", "message": "Failed to list processes on device SER: Command '['adb', '-s', 'SER', 'shell', 'ps']' returned non-zero exit status 1."}
+{"time": "2025-08-20 19:32:06,393", "level": "INFO", "module": "rotterdam.request", "message": "POST /scans - id=ed3cf97d-7b35-43c9-b70a-88498efa4692"}
+{"time": "2025-08-20 19:32:06,395", "level": "INFO", "module": "httpx", "message": "HTTP Request: POST http://testserver/scans \"HTTP/1.1 404 Not Found\""}
+{"time": "2025-08-20 19:32:06,451", "level": "INFO", "module": "rotterdam.request", "message": "POST /scans - id=7d8f1c75-ec05-4f9e-b2e0-b6d010a59d87"}
+{"time": "2025-08-20 19:32:06,452", "level": "INFO", "module": "httpx", "message": "HTTP Request: POST http://testserver/scans \"HTTP/1.1 404 Not Found\""}
+{"time": "2025-08-20 19:32:06,467", "level": "INFO", "module": "rotterdam.request", "message": "GET / - id=cbdce721-3287-43ac-9cb8-d36492063bf9"}
+{"time": "2025-08-20 19:32:06,469", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:06,473", "level": "INFO", "module": "rotterdam.request", "message": "GET /ui/js/helpers.js - id=64164956-061a-48c6-b68f-2ddf257cbc30"}
+{"time": "2025-08-20 19:32:06,475", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ui/js/helpers.js \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:06,478", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:32:06,482", "level": "INFO", "module": "devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-20 19:32:06,485", "level": "INFO", "module": "devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-20 19:32:06,485", "level": "INFO", "module": "devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-20 19:32:06,774", "level": "INFO", "module": "rotterdam.request", "message": "GET /devices - id=4e4d9e88-da07-4a3d-80a4-a6905fb4d6ab"}
+{"time": "2025-08-20 19:32:06,778", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:06,790", "level": "INFO", "module": "rotterdam.request", "message": "POST /jobs - id=c2d692f3-cc23-4e99-94ff-0534fc23d7ac"}
+{"time": "2025-08-20 19:32:06,794", "level": "INFO", "module": "httpx", "message": "HTTP Request: POST http://testserver/jobs \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:06,800", "level": "INFO", "module": "rotterdam.request", "message": "GET /reports/21026cb0-5589-423e-8c66-4d1ec548a74a - id=4d106810-fef1-4420-8258-1dab14f24f72"}
+{"time": "2025-08-20 19:32:06,805", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/reports/21026cb0-5589-423e-8c66-4d1ec548a74a \"HTTP/1.1 202 Accepted\""}
+{"time": "2025-08-20 19:32:07,411", "level": "INFO", "module": "rotterdam.request", "message": "GET /reports/21026cb0-5589-423e-8c66-4d1ec548a74a - id=3e33a686-dc29-4c2b-bd47-dc9bdeebe443"}
+{"time": "2025-08-20 19:32:07,415", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/reports/21026cb0-5589-423e-8c66-4d1ec548a74a \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,420", "level": "INFO", "module": "rotterdam.request", "message": "GET /jobs - id=43f9dfaf-c229-40ac-9b74-955b7c376b5f"}
+{"time": "2025-08-20 19:32:07,424", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/jobs \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,429", "level": "INFO", "module": "rotterdam.request", "message": "GET /jobs/21026cb0-5589-423e-8c66-4d1ec548a74a - id=6af5de14-73db-43da-950a-72802ed714c5"}
+{"time": "2025-08-20 19:32:07,433", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/jobs/21026cb0-5589-423e-8c66-4d1ec548a74a \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,439", "level": "INFO", "module": "rotterdam.request", "message": "GET /reports - id=ce11e22c-7281-4dae-ae89-2862357a71a0"}
+{"time": "2025-08-20 19:32:07,443", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/reports \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,449", "level": "INFO", "module": "rotterdam.request", "message": "GET /analytics - id=787c4f54-ee93-4c41-91fa-dccb43a961ac"}
+{"time": "2025-08-20 19:32:07,452", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/analytics \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,458", "level": "INFO", "module": "rotterdam.request", "message": "GET /analytics/devices - id=4fbeed51-0b12-4d55-8755-eaab134c74cb"}
+{"time": "2025-08-20 19:32:07,462", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/analytics/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,467", "level": "INFO", "module": "rotterdam.request", "message": "DELETE /jobs/21026cb0-5589-423e-8c66-4d1ec548a74a - id=b97515b4-4651-4b76-adb9-949c9516eccb"}
+{"time": "2025-08-20 19:32:07,471", "level": "INFO", "module": "httpx", "message": "HTTP Request: DELETE http://testserver/jobs/21026cb0-5589-423e-8c66-4d1ec548a74a \"HTTP/1.1 204 No Content\""}
+{"time": "2025-08-20 19:32:07,476", "level": "INFO", "module": "rotterdam.request", "message": "GET /jobs/21026cb0-5589-423e-8c66-4d1ec548a74a - id=d2975f8f-107b-471e-a2d3-33e80d28df80"}
+{"time": "2025-08-20 19:32:07,480", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/jobs/21026cb0-5589-423e-8c66-4d1ec548a74a \"HTTP/1.1 404 Not Found\""}
+{"time": "2025-08-20 19:32:07,484", "level": "INFO", "module": "rotterdam.request", "message": "GET /reports/21026cb0-5589-423e-8c66-4d1ec548a74a - id=1bb565f7-b16d-48dc-9b14-dc7118dcd296"}
+{"time": "2025-08-20 19:32:07,488", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/reports/21026cb0-5589-423e-8c66-4d1ec548a74a \"HTTP/1.1 404 Not Found\""}
+{"time": "2025-08-20 19:32:07,497", "level": "INFO", "module": "rotterdam.request", "message": "GET /_stats - id=f4929120-2867-47d4-998a-ebb7c7071a95"}
+{"time": "2025-08-20 19:32:07,502", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/_stats \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,505", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:32:07,510", "level": "INFO", "module": "devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-20 19:32:07,514", "level": "INFO", "module": "devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-20 19:32:07,514", "level": "INFO", "module": "devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-20 19:32:07,515", "level": "INFO", "module": "rotterdam.request", "message": "GET /devices - id=18bfba16-69bc-4274-850a-62365ba93b2b"}
+{"time": "2025-08-20 19:32:07,516", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,527", "level": "INFO", "module": "rotterdam.request", "message": "GET /ui/partials/header.html - id=5181f901-9ff8-47f5-ad58-44a3e94d6a9f"}
+{"time": "2025-08-20 19:32:07,530", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ui/partials/header.html \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,532", "level": "INFO", "module": "rotterdam.request", "message": "GET /_healthz - id=65725933-1a0f-4d49-8018-bc8432b71455"}
+{"time": "2025-08-20 19:32:07,533", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/_healthz \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,537", "level": "INFO", "module": "rotterdam.request", "message": "GET /_diag - id=c158e30e-00dc-403f-b4ca-4f0d5cf29bcd"}
+{"time": "2025-08-20 19:32:07,539", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/_diag \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,545", "level": "INFO", "module": "rotterdam.request", "message": "GET / - id=b47ad213-ba2f-4c58-9b17-fdb2b6ddf5b2"}
+{"time": "2025-08-20 19:32:07,547", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,551", "level": "INFO", "module": "rotterdam.request", "message": "GET /ui/css/styles.css - id=381a1e7a-9d96-4ba8-be57-d472a468e40d"}
+{"time": "2025-08-20 19:32:07,553", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ui/css/styles.css \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,558", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:32:07,562", "level": "INFO", "module": "devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-20 19:32:07,566", "level": "INFO", "module": "devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-20 19:32:07,566", "level": "INFO", "module": "devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-20 19:32:07,567", "level": "INFO", "module": "rotterdam.request", "message": "GET /devices - id=04e7c336-9667-44af-9cf6-bb95481e5409"}
+{"time": "2025-08-20 19:32:07,568", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,575", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:32:07,579", "level": "INFO", "module": "devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-20 19:32:07,583", "level": "INFO", "module": "devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-20 19:32:07,583", "level": "INFO", "module": "devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-20 19:32:07,584", "level": "INFO", "module": "rotterdam.request", "message": "GET /devices - id=510fcafb-13c4-4b2f-b933-648d9cd62dd7"}
+{"time": "2025-08-20 19:32:07,586", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,588", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:32:07,593", "level": "INFO", "module": "devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-20 19:32:07,596", "level": "INFO", "module": "devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-20 19:32:07,596", "level": "INFO", "module": "devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-20 19:32:07,597", "level": "INFO", "module": "rotterdam.request", "message": "GET /devices - id=6d9a7a66-052a-4aa4-b376-8d9659eb24dd"}
+{"time": "2025-08-20 19:32:07,599", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,601", "level": "INFO", "module": "devices.discovery", "message": "list_detailed_devices"}
+{"time": "2025-08-20 19:32:07,605", "level": "INFO", "module": "devices.discovery", "message": "checking connected devices"}
+{"time": "2025-08-20 19:32:07,609", "level": "INFO", "module": "devices.discovery", "message": "adb devices output received"}
+{"time": "2025-08-20 19:32:07,609", "level": "INFO", "module": "devices.discovery", "message": "parsed 1 devices"}
+{"time": "2025-08-20 19:32:07,610", "level": "INFO", "module": "rotterdam.request", "message": "GET /devices - id=b690ece1-c6c3-461c-89c1-dc46cba961d6"}
+{"time": "2025-08-20 19:32:07,612", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/devices \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,618", "level": "INFO", "module": "rotterdam.request", "message": "GET / - id=f0567195-39a5-4631-90ae-67c4aed1c29b"}
+{"time": "2025-08-20 19:32:07,621", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,627", "level": "INFO", "module": "rotterdam.request", "message": "GET /static/js/helpers.js - id=e48c4e3f-e56b-45d6-a4ed-4a36f1a7b653"}
+{"time": "2025-08-20 19:32:07,629", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/static/js/helpers.js \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,633", "level": "INFO", "module": "rotterdam.request", "message": "GET /_healthz - id=17bb73f0-8843-4844-a2fc-b51a2781059d"}
+{"time": "2025-08-20 19:32:07,635", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/_healthz \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,640", "level": "INFO", "module": "rotterdam.request", "message": "GET / - id=8eba28f5-99a6-4a2f-80e1-23b051329427"}
+{"time": "2025-08-20 19:32:07,642", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,646", "level": "INFO", "module": "rotterdam.request", "message": "GET /ui/js/main.js - id=55648ebd-e861-4cd9-9836-9d28c2bd7be3"}
+{"time": "2025-08-20 19:32:07,654", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/ui/js/main.js \"HTTP/1.1 200 OK\""}
+{"time": "2025-08-20 19:32:07,659", "level": "INFO", "module": "rotterdam.request", "message": "GET /_diag - id=01881b3f-f785-49d4-986c-c8e4580d53fd"}
+{"time": "2025-08-20 19:32:07,661", "level": "INFO", "module": "httpx", "message": "HTTP Request: GET http://testserver/_diag \"HTTP/1.1 200 OK\""}
