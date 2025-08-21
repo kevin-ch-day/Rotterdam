@@ -63,7 +63,6 @@ try:
         compile_rules,
         scan_directory,
     )
-
 except Exception:
     compile_rules = None  # type: ignore[assignment]
     scan_directory = None  # type: ignore[assignment]
@@ -73,7 +72,6 @@ else:
 # Optional: APK signature verification
 try:
     from .signature import verify_signature  # type: ignore[import-not-found]
-
 except Exception:
     verify_signature = None  # type: ignore[assignment]
 else:
@@ -84,8 +82,23 @@ try:
     from .static_analysis.cert_analysis import (
         analyze_certificates,  # type: ignore[import-not-found]
     )
-
 except Exception:  # pragma: no cover - missing dependencies
     analyze_certificates = None  # type: ignore[assignment]
 else:
     __all__.append("analyze_certificates")
+
+# Optional: simple machine learning classifier
+try:
+    from .machine_learning.ml_model import predict_malicious  # type: ignore[import-not-found]
+except Exception:
+    predict_malicious = None  # type: ignore[assignment]
+else:
+    __all__.append("predict_malicious")
+
+# Expose lightweight tool wrappers
+try:
+    from core.tools import adb, apktool, androguard
+except Exception:
+    adb = apktool = androguard = None  # type: ignore[assignment]
+else:
+    __all__.extend(["adb", "apktool", "androguard"])
