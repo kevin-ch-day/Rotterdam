@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from server import app
+from server.main import app
 from orchestrator.scheduler import scheduler
 
 

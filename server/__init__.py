@@ -1,19 +1,11 @@
-"""FastAPI application exposing scan submission and report retrieval endpoints."""
+"""Server package initializer.
 
-from __future__ import annotations
+Keep this module side-effect free:
+- Do NOT import routes here
+- Do NOT create a FastAPI app here
+- Do NOT start workers here
 
-from fastapi import FastAPI
+The app is created and served from `server/main.py` (and `server/serve.py`).
+"""
 
-from orchestrator.worker import start_worker
-
-from .routes import router
-from .constants import APP_NAME, APP_VERSION
-
-# FastAPI application
-app = FastAPI(title=APP_NAME, version=APP_VERSION)
-app.include_router(router)
-
-# Background worker to process scheduled jobs
-start_worker()
-
-__all__ = ["app"]
+__all__: list[str] = []
