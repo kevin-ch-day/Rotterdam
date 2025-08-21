@@ -10,5 +10,12 @@ def fetch_latest(*args, **kwargs):
     return None
 
 def generate_report(*args, **kwargs):
-    """Return a placeholder report string."""
-    return ""
+    """Return a placeholder risk report structure.
+
+    The full reporting subsystem has been stripped for the MVP, but callers
+    in the static analysis pipeline still expect a mapping of risk metrics.
+    Returning an empty ``dict`` keeps the interface intact without performing
+    any scoring logic.
+    """
+
+    return {}

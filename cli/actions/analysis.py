@@ -10,7 +10,6 @@ from devices import apk, packages
 from sandbox import compute_runtime_metrics
 from sandbox import run_analysis as sandbox_analyze
 from sandbox import ui_driver
-from storage.repository import AnalysisRepository
 from utils.display_utils import display
 from utils.reporting_utils import ieee
 
@@ -39,10 +38,8 @@ def analyze_apk_path() -> None:
             display.fail(f"Analysis failed: {e}")
             return
         report_path = out / "report.json"
-        try:
-            AnalysisRepository().upsert(app_name, str(report_path))
-        except Exception:
-            logger.exception("failed to record analysis")
+        # Database storage has been removed for the MVP, so the report path is
+        # not persisted.  Future iterations may reintroduce this functionality.
         logger.info("analysis completed", extra={"output": str(out)})
         print(f"Status: Static analysis completed. Report at {report_path}")
         _display_manifest_insights(out)
@@ -90,10 +87,8 @@ def analyze_installed_app(serial: str) -> None:
             return
 
         report_path = out / "report.json"
-        try:
-            AnalysisRepository().upsert(package, str(report_path))
-        except Exception:
-            logger.exception("failed to record analysis")
+        # Storage of analysis metadata is temporarily disabled in the CLI-only
+        # phase.
         logger.info("analysis completed", extra={"report": str(report_path)})
         print(f"Status: Static analysis completed. Report at {report_path}")
         _display_manifest_insights(out)
@@ -122,11 +117,7 @@ def sandbox_analyze_apk() -> None:
             return
 
         report_path = outdir / "metrics.json"
-        try:
-            target_path = report_path if report_path.exists() else outdir
-            AnalysisRepository().upsert(app_name, str(target_path))
-        except Exception:
-            logger.exception("failed to record analysis")
+        # Persistence is not available in the trimmed MVP.
 
         logger.info("sandbox analysis completed", extra={"output": str(outdir)})
         print(f"Status: Sandbox analysis completed. Results in {outdir}")
