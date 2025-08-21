@@ -1,16 +1,16 @@
 # server/main.py
 from __future__ import annotations
 
-from pathlib import Path
 import logging
 import os
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse, PlainTextResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from .constants import APP_NAME, APP_VERSION
-from .middleware import AuthRateLimitMiddleware, RequestIDMiddleware, DEFAULT_API_KEY
+from .middleware import DEFAULT_API_KEY, AuthRateLimitMiddleware, RequestIDMiddleware
 from .routers import (
     analytics_router,
     devices_router,
@@ -101,6 +101,7 @@ for mount, subdir in (
     if d.exists():
         app.mount(mount, StaticFiles(directory=str(d)), name=subdir)
 
+
 # ---------- Startup diagnostics ----------
 @app.on_event("startup")
 async def _startup_checks() -> None:
@@ -113,10 +114,17 @@ async def _startup_checks() -> None:
     if not INDEX_HTML.exists():
         log.warning("Index file missing — GET / will 500: %s", INDEX_HTML)
     api_key = os.getenv("ROTTERDAM_API_KEY", DEFAULT_API_KEY)
-    if api_key == DEFAULT_API_KEY:
+    disable_auth = os.getenv("DISABLE_AUTH", "true").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    if not disable_auth and api_key == DEFAULT_API_KEY:
         log.critical(
             "ROTTERDAM_API_KEY is using the default value; set a custom key for production"
         )
+
 
 # ---------- Diagnostics (protected by middleware unless you allowlist it there) ----------
 @app.get("/_diag", include_in_schema=False)
@@ -135,6 +143,7 @@ async def diag() -> JSONResponse:
             },
         }
     )
+
 
 # ---------- Web UI entry ----------
 @app.get("/", include_in_schema=False)

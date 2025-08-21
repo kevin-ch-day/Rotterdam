@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 
 from server.main import app
 
-
 client = TestClient(app)
 HEADERS = {"X-API-Key": "secret"}
 
@@ -18,6 +17,7 @@ def test_ui_index_served():
 
     resp = client.get("/ui/js/helpers.js", headers=HEADERS)
     assert resp.status_code == 200
+
 
 def test_job_lifecycle():
     # Devices endpoint should always return a list
@@ -112,3 +112,6 @@ def test_partials_public_and_healthz_no_auth():
     assert resp.status_code == 200
     assert resp.json()["status"] == "ok"
 
+    resp = client.get("/_ready")
+    assert resp.status_code == 200
+    assert resp.json()["ready"] is True

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import time
+
 from fastapi import APIRouter
 
 from server.job_service import get_stats
@@ -24,11 +25,6 @@ async def ready() -> dict[str, bool]:
     """Readiness probe (add lightweight dependency checks here if needed)."""
     return {"ready": True}
 
-
-@router.get("/_healthz", include_in_schema=False)
-async def healthz() -> dict[str, str]:
-    """Liveness probe for uptime checks."""
-    return {"status": "ok"}
 
 @router.get("/_stats", include_in_schema=False)
 async def stats() -> dict[str, float | int]:

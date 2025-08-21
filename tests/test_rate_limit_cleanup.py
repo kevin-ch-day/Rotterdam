@@ -1,19 +1,15 @@
 from collections import deque
 
-from server import middleware
-
-
-def setup_function():
-    middleware._request_log.clear()
-    middleware._last_cleanup = 0
+from server.middleware.rate_limiter import RateLimiter
+from server.middleware.settings import Settings
 
 
 def test_cleanup_removes_empty_and_stale_entries():
-    middleware._request_log["empty"] = deque()
-    middleware._request_log["stale"] = deque([0])
-    now = middleware.RATE_WINDOW_SECS + 1
-    middleware._cleanup_request_log(now)
-    assert "empty" not in middleware._request_log
-    assert "stale" not in middleware._request_log
-
-
+    settings = Settings.from_env()
+    limiter = RateLimiter(settings)
+    limiter.buckets["empty"] = deque()
+    limiter.buckets["stale"] = deque([0])
+    now = settings.rate_window_secs + 1
+    limiter.cleanup(now)
+    assert "empty" not in limiter.buckets
+    assert "stale" not in limiter.buckets
