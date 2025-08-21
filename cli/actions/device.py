@@ -3,13 +3,15 @@ from __future__ import annotations
 import csv
 import json
 import re
+from dataclasses import asdict
 from typing import Optional
 
-from devices import discovery, packages, processes, selection
-from reports import ieee
+from devices import packages, processes, selection, service
 from utils.display_utils import display
+from utils.reporting_utils import ieee
 
-from .utils import action_context as _action_context, logger
+from .utils import action_context as _action_context
+from .utils import logger
 
 
 def show_connected_devices() -> None:
@@ -17,8 +19,7 @@ def show_connected_devices() -> None:
     with _action_context("show_connected_devices"):
         logger.info("show_connected_devices")
         try:
-            output = discovery.check_connected_devices()
-            devs = discovery.parse_devices_l(output)
+            devs = [asdict(d) for d in service.discover()]
         except RuntimeError as e:
             logger.exception("failed to check connected devices")
             display.fail(str(e))
@@ -59,7 +60,7 @@ def show_detailed_devices() -> None:
     with _action_context("show_detailed_devices"):
         logger.info("show_detailed_devices")
         try:
-            detailed = discovery.list_detailed_devices()
+            detailed = [asdict(d) for d in service.discover()]
         except RuntimeError as e:
             logger.exception("failed to list detailed devices")
             display.fail(str(e))
@@ -91,7 +92,7 @@ def list_installed_packages(
     with _action_context("list_installed_packages", device_serial=serial):
         logger.info("list_installed_packages")
         try:
-            pkg_info = packages.inventory_packages(serial)
+            pkg_info = service.list_packages(serial)
         except RuntimeError as e:
             logger.exception("failed to inventory packages")
             display.fail(str(e))
@@ -267,8 +268,6 @@ def list_running_processes(serial: str) -> None:
             logger.info("no process data available")
             print("No process data available.")
             return
-        rows = [
-            [p.get("pid", ""), p.get("user", ""), p.get("name", "")] for p in procs
-        ]
-        display.print_table(rows, headers=["PID", "User", "Name"])
 
+        rows = [[p.get("pid", ""), p.get("user", ""), p.get("name", "")] for p in procs]
+        display.print_table(rows, headers=["PID", "User", "Name"])

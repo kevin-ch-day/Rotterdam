@@ -2,19 +2,21 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
+from analysis import analyze_apk
 from core import config
 from devices import apk, packages
-from analysis import analyze_apk
-from sandbox import run_analysis as sandbox_analyze, compute_runtime_metrics
+from sandbox import compute_runtime_metrics
+from sandbox import run_analysis as sandbox_analyze
 from sandbox import ui_driver
-from reports import ieee
 from storage.repository import AnalysisRepository
 from utils.display_utils import display
+from utils.reporting_utils import ieee
 
 from ..prompts import prompt_existing_path
-from .utils import action_context as _action_context, logger
+from .utils import action_context as _action_context
+from .utils import logger
 
 
 def analyze_apk_path() -> None:
@@ -241,4 +243,3 @@ def _display_manifest_insights(outdir: Path) -> None:
         for kind, names in diff.get("removed_components", {}).items():
             if names:
                 print(f"Removed {kind.title()}s: {', '.join(names)}")
-

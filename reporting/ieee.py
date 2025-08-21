@@ -5,15 +5,26 @@ from __future__ import annotations
 
 import io
 from contextlib import redirect_stdout
-from typing import Iterable, Sequence, Any, List, Dict
+from typing import Any, Dict, Iterable, List, Sequence
 
 from core import table
 
 _ROMAN_MAP = [
-    (1000, "M"), (900, "CM"), (500, "D"), (400, "CD"),
-    (100, "C"), (90, "XC"), (50, "L"), (40, "XL"),
-    (10, "X"), (9, "IX"), (5, "V"), (4, "IV"), (1, "I")
+    (1000, "M"),
+    (900, "CM"),
+    (500, "D"),
+    (400, "CD"),
+    (100, "C"),
+    (90, "XC"),
+    (50, "L"),
+    (40, "XL"),
+    (10, "X"),
+    (9, "IX"),
+    (5, "V"),
+    (4, "IV"),
+    (1, "I"),
 ]
+
 
 def _roman(num: int) -> str:
     """Return the uppercase Roman numeral for ``num`` (1 <= num < 4000)."""
@@ -27,6 +38,7 @@ def _roman(num: int) -> str:
             n -= val
     return "".join(res)
 
+
 def major_heading(title: str, number: int) -> str:
     """Return an uppercase ``SECTION`` heading with a Roman numeral index."""
     numeral = _roman(number)
@@ -38,6 +50,7 @@ def subsection_heading(title: str, section: int, letter: str) -> str:
     numeral = _roman(section)
     return f"{numeral}.{letter} – {title}".strip()
 
+
 def _table_to_str(rows: Iterable[Sequence[Any]], headers: Sequence[str]) -> str:
     """Render the existing ASCII table utility to a string."""
     buf = io.StringIO()
@@ -45,11 +58,15 @@ def _table_to_str(rows: Iterable[Sequence[Any]], headers: Sequence[str]) -> str:
         table.print_table(rows, headers=headers)
     return buf.getvalue().rstrip()
 
-def ieee_table(title: str, headers: Sequence[str], rows: Iterable[Sequence[Any]], table_number: int) -> str:
+
+def ieee_table(
+    title: str, headers: Sequence[str], rows: Iterable[Sequence[Any]], table_number: int
+) -> str:
     """Return a table with an IEEE-style caption."""
     caption = f"Table {_roman(table_number)}. {title}"
     table_str = _table_to_str(rows, headers)
     return f"{caption}\n{table_str}"
+
 
 def format_device_inventory(devices: List[dict[str, Any]]) -> str:
     """Format a device inventory into a section with headings, table, and observation."""
@@ -73,13 +90,12 @@ def format_device_inventory(devices: List[dict[str, Any]]) -> str:
     )
     return f"{heading}\n{sub}\n{intro}\n\n{table}\n\n{obs}"
 
+
 def format_package_inventory(packages: List[dict[str, Any]]) -> str:
     """Format application inventory with headings, table, and observation."""
     heading = major_heading("Application Inventory", 2)
     sub = subsection_heading("Application Discovery", 2, "A")
-    intro = (
-        "Installed packages were cataloged with version, installer source, and high-value flag."
-    )
+    intro = "Installed packages were cataloged with version, installer source, and high-value flag."
     rows = [
         [
             p.get("package", ""),
@@ -96,11 +112,14 @@ def format_package_inventory(packages: List[dict[str, Any]]) -> str:
         2,
     )
     obs = (
-        "Observation: Package inventory produced {} candidate application(s) for review.".format(len(packages))
+        "Observation: Package inventory produced {} candidate application(s) for review.".format(
+            len(packages)
+        )
         if packages
         else "Observation: No packages were enumerated."
     )
     return f"{heading}\n{sub}\n{intro}\n\n{table}\n\n{obs}"
+
 
 def format_evidence_log(entries: List[dict[str, str]]) -> str:
     """Render an evidence log appendix with headings, table, and observation."""
