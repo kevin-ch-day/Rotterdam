@@ -15,9 +15,8 @@ def device_online(serial: str) -> bool:
     """Return True if the device is online according to ``adb get-state``."""
     if not serial:
         return False
-    adb_path = adb._adb_path()
     try:
-        proc = adb._run_adb([adb_path, "-s", serial, "get-state"])
+        proc = adb._run_adb(["-s", serial, "get-state"])
     except Exception:
         return False
     return (proc.stdout or "").strip() == "device"
@@ -35,8 +34,6 @@ def run_device_menu(serial: str, *, json_mode: bool = False) -> Optional[str | D
         "List running processes",
         "Analyze a local APK (static)",
         "Pull and analyze an installed app",
-        "Sandbox analyze a local APK",
-        "Explore installed app UI",
     ]
 
     if json_mode:
@@ -91,10 +88,6 @@ def run_device_menu(serial: str, *, json_mode: bool = False) -> Optional[str | D
             actions.analyze_apk_path()
         elif num == 5:
             actions.analyze_installed_app(serial)
-        elif num == 6:
-            actions.sandbox_analyze_apk()
-        elif num == 7:
-            actions.explore_installed_app(serial)
         else:  # pragma: no cover - defensive
             display.warn("Invalid choice. Please try again.")
 
