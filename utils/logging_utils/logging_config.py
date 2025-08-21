@@ -56,10 +56,12 @@ class StructuredLogger:
         if cls._configured:
             return
 
-        log_dir = Path(__file__).resolve().parent / "reports" / "logs"
+        # Place logs under ``<repo_root>/logs/app`` so CLI and server share output
+        repo_root = Path(__file__).resolve().parents[2]
+        log_dir = repo_root / "logs" / "app"
         log_dir.mkdir(parents=True, exist_ok=True)
         file_handler = RotatingFileHandler(
-            log_dir / "audit.log", maxBytes=1_000_000, backupCount=5
+            log_dir / "server.log", maxBytes=1_000_000, backupCount=5
         )
         stream_handler = logging.StreamHandler()
         formatter = cls._JsonFormatter()

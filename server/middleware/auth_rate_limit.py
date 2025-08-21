@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-import logging
 import time
 
 from fastapi import Request
 from fastapi.responses import JSONResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from utils.logging_utils.app_logger import app_logger
+
 from .policies import AuthPolicy, SimpleApiPolicy
 from .rate_limiter import RateLimiter
 from .settings import Settings, SettingsError
 
-security_logger = logging.getLogger("rotterdam.security")
+security_logger = app_logger.get_logger("rotterdam.security")
 
 
 def _rate_limit_headers(limit: int, remaining: int, reset_in: int) -> dict[str, str]:

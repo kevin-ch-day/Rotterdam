@@ -1,28 +1,11 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Any
 
-# Optional logging integration
-try:
-    from utils.logging_utils.logging_config import StructuredLogger  # type: ignore
+from utils.logging_utils.app_logger import app_logger
 
-    logger = StructuredLogger.get_logger(__name__)  # type: ignore
-    log_context = StructuredLogger.context  # type: ignore
-except Exception:  # pragma: no cover
-    import logging
-
-    logger = logging.getLogger(__name__)
-    if not logger.handlers:
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
-
-    @contextmanager
-    def log_context(**_: Any):  # type: ignore
-        yield
+logger = app_logger.get_logger(__name__)
+log_context = app_logger.context
 
 
 @contextmanager
