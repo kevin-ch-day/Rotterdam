@@ -1,3 +1,6 @@
-# File: analysis/static.py
-from rotterdam.android.analysis.static.pipeline import *  # noqa
-__all__ = [name for name in dir() if not name.startswith("_")]
+"""Entry points for static APK analysis."""
+
+from platform.android.analysis.static.pipeline import analyze_apk
+
+__all__ = ["analyze_apk"]
+
