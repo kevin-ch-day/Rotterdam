@@ -9,7 +9,7 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List
 
-from .adb import _adb_path, _run_adb
+from .adb import _run_adb
 from .props import (
     get_props,
     _infer_connection_kind,
@@ -29,14 +29,13 @@ logger = get_logger(__name__)
 
 def check_connected_devices() -> str:
     """Run `adb devices -l` and return the raw stdout."""
-    adb = _adb_path()
-    logger.info("checking connected devices", extra={"adb": adb})
+    logger.info("checking connected devices")
     try:
-        result = _run_adb([adb, "devices", "-l"])
+        result = _run_adb(["devices", "-l"])
     except PermissionError as e:
         logger.exception("adb not executable")
         raise RuntimeError(
-            f"adb at '{adb}' is not executable (Permission denied). "
+            "adb is not executable (Permission denied). "
             "Fix perms/SELinux or use system 'adb' (dnf install android-tools)."
         ) from e
     except FileNotFoundError as e:
@@ -47,9 +46,9 @@ def check_connected_devices() -> str:
     except subprocess.CalledProcessError:
         logger.warning("initial adb devices failed; restarting adb server")
         try:
-            _run_adb([adb, "kill-server"])
-            _run_adb([adb, "start-server"])
-            result = _run_adb([adb, "devices", "-l"])
+            _run_adb(["kill-server"])
+            _run_adb(["start-server"])
+            result = _run_adb(["devices", "-l"])
         except subprocess.CalledProcessError as e:
             logger.exception("error running adb after restart")
             raise RuntimeError(f"Error running adb: {e}") from e
