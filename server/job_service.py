@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from pydantic import BaseModel, field_validator
 
-from risk_scoring.risk_score import calculate_risk_score
+import reporting
 
 
 class JobRequest(BaseModel):
@@ -41,10 +41,10 @@ _jobs: Dict[str, Dict[str, Any]] = {}
 def _process_job(job_id: str, req: JobRequest) -> None:
     """Simulate job processing and populate the report."""
     time.sleep(0.5)
-    score = calculate_risk_score(req.static_metrics, req.dynamic_metrics)
+    risk = reporting.generate("unknown", req.static_metrics, req.dynamic_metrics)
     _jobs[job_id]["report"] = {
         "status": "completed",
-        "risk": score,
+        "risk": risk,
         "params": req.params or {},
     }
 
