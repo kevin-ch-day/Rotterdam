@@ -44,11 +44,24 @@ def check_connected_devices() -> str:
         raise RuntimeError(
             "adb not found. Install platform-tools or `dnf install android-tools`, and ensure it's on PATH."
         ) from e
-    except subprocess.CalledProcessError as e:
-        logger.exception("error running adb")
-        raise RuntimeError(f"Error running adb: {e}") from e
+    except subprocess.CalledProcessError:
+        logger.warning("initial adb devices failed; restarting adb server")
+        try:
+            _run_adb([adb, "kill-server"])
+            _run_adb([adb, "start-server"])
+            result = _run_adb([adb, "devices", "-l"])
+        except subprocess.CalledProcessError as e:
+            logger.exception("error running adb after restart")
+            raise RuntimeError(f"Error running adb: {e}") from e
 
     output = (result.stdout or "").strip()
+    if not parse_devices_l(output):
+        print("No Android devices detected.")
+        print("Fedora users may need a udev rule such as:")
+        print('  SUBSYSTEM=="usb", ATTR{idVendor}=="18d1", MODE="0666", GROUP="plugdev"')
+        print(
+            "SELinux may also need adjustment. See ANDROID_ANALYSIS_SETUP.md for details."
+        )
     logger.info("adb devices output received")
     return output
 
