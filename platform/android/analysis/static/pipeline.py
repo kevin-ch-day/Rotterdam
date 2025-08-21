@@ -51,7 +51,7 @@ except Exception:  # pragma: no cover
     analyze_certificates = None  # type: ignore[assignment]
 
 # Risk scoring
-import reporting
+from utils.reporting_utils import generate_report
 
 
 def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
@@ -227,7 +227,7 @@ def analyze_apk(apk_path: str, outdir: str | Path | None = None) -> Path:
     dynamic_metrics: Dict[str, float] = {}
 
     # Risk scoring (merges static+dynamic and ML-derived metrics)
-    risk = reporting.generate(apk.stem, metrics, dynamic_metrics)
+    risk = generate_report(apk.stem, metrics, dynamic_metrics)
     (out / "risk_score.json").write_text(json.dumps(risk, indent=2))
 
     # Store a snapshot of key manifest data with a simple version tag
