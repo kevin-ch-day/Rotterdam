@@ -84,6 +84,15 @@ app.include_router(reports_router)
 app.include_router(analytics_router)
 app.include_router(system_router)  # owns /_healthz (and /_ready if present)
 
+# ---------- Favicon ----------
+async def _favicon() -> Response:
+    if FAVICON_ICO.exists():
+        return FileResponse(str(FAVICON_ICO))
+    return Response(status_code=204)
+
+app.add_api_route("/favicon.ico", _favicon, include_in_schema=False)
+app.add_api_route("/ui/favicon.ico", _favicon, include_in_schema=False)
+
 # ---------- Static mounts ----------
 # Serve entire ui/ under both /ui and /static for compatibility.
 # Use check_dir=False so startup won't crash if UI_DIR is missing (we log warnings).
@@ -157,9 +166,3 @@ async def root() -> FileResponse:
     raise HTTPException(status_code=500, detail=f"index not found at {masked}")
 
 
-# Favicon (no union return annotation)
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
-    if FAVICON_ICO.exists():
-        return FileResponse(str(FAVICON_ICO))
-    return PlainTextResponse("favicon not found", status_code=404)

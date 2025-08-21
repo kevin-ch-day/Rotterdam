@@ -19,3 +19,6 @@ logs/
 .idea/
 .vscode/
 .DS_Store
+
+# Ignore favicon binaries
+*.ico
