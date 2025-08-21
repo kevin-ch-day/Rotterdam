@@ -3,27 +3,28 @@
 
 from __future__ import annotations
 
-# Core imports (required)
-from .static import analyze_apk
-from .report import calculate_derived_metrics, write_report
+from .dependencies import (
+    analyze_dependencies,
+    find_vulnerable_dependencies,
+    load_cve_db,
+    parse_apk_dependencies,
+)
 from .manifest import (
     extract_app_flags,
     extract_components,
     extract_features,
-    extract_permissions,
-    extract_permission_details,
-    extract_sdk_info,
     extract_metadata,
+    extract_permission_details,
+    extract_permissions,
+    extract_sdk_info,
 )
+from .network_security import extract_network_security, parse_network_security_config
 from .permissions import categorize_permissions
+from .report import calculate_derived_metrics, write_report
 from .secrets import scan_for_secrets
-from .dependencies import (
-    parse_apk_dependencies,
-    load_cve_db,
-    find_vulnerable_dependencies,
-    analyze_dependencies,
-)
-from .network_security import parse_network_security_config, extract_network_security
+
+# Core imports (required)
+from .static import analyze_apk
 
 __all__ = [
     "analyze_apk",
@@ -48,7 +49,9 @@ __all__ = [
 
 # Optional: Androguard-based DEX inspection
 try:
-    from .static_analysis.androguard_utils import summarize_apk  # type: ignore[import-not-found]
+    from .static_analysis.androguard_utils import (
+        summarize_apk,  # type: ignore[import-not-found]
+    )
 except Exception:
     summarize_apk = None  # type: ignore[assignment]
 else:
@@ -56,7 +59,10 @@ else:
 
 # Optional: YARA scanning utilities
 try:
-    from .yara_scan import compile_rules, scan_directory  # type: ignore[import-not-found]
+    from .yara_scan import (  # type: ignore[import-not-found]
+        compile_rules,
+        scan_directory,
+    )
 
 except Exception:
     compile_rules = None  # type: ignore[assignment]
@@ -75,17 +81,11 @@ else:
 
 # Optional: certificate analysis utilities
 try:
-    from .static_analysis.cert_analysis import analyze_certificates  # type: ignore[import-not-found]
+    from .static_analysis.cert_analysis import (
+        analyze_certificates,  # type: ignore[import-not-found]
+    )
 
 except Exception:  # pragma: no cover - missing dependencies
     analyze_certificates = None  # type: ignore[assignment]
 else:
     __all__.append("analyze_certificates")
-
-# Optional: simple machine learning classifier
-try:
-    from .machine_learning.ml_model import predict_malicious  # type: ignore[import-not-found]
-except Exception:
-    predict_malicious = None  # type: ignore[assignment]
-else:
-    __all__.append("predict_malicious")
