@@ -1,4 +1,4 @@
-"""CLI package for Android Tool menus and actions."""
+"""CLI package for Rotterdam menus and actions."""
 
 from .menu import run_main_menu
 

@@ -1,4 +1,4 @@
-"""CLI entry point for the Android Tool."""
+"""CLI entry point for Rotterdam."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ app_logger.set_session_id(SESSION_ID)
 
 def main() -> None:
     """Execute the main menu."""
-    parser = argparse.ArgumentParser(description="Android Tool CLI")
+    parser = argparse.ArgumentParser(description="Rotterdam CLI")
     parser.add_argument(
         "--json",
         action="store_true",

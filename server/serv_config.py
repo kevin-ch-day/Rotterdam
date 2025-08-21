@@ -6,7 +6,9 @@ uvicorn serve, API checks, and any error handling code.
 """
 
 from __future__ import annotations
+
 import os
+import warnings
 from typing import Literal
 
 LogLevel = Literal["critical", "error", "warning", "info", "debug", "trace"]
@@ -17,9 +19,20 @@ DEFAULT_PORT: int = 8765  # safer, less likely to be taken
 DEFAULT_LOG_LEVEL: LogLevel = "info"
 
 # Environment overrides
-HOST: str = os.getenv("APP_HOST", DEFAULT_HOST)
+
+
+def _env(new: str, old: str, default: str) -> str:
+    if (val := os.getenv(new)) is not None:
+        return val
+    if (val := os.getenv(old)) is not None:
+        warnings.warn(f"{old} is deprecated; use {new}", DeprecationWarning, stacklevel=2)
+        return val
+    return default
+
+
+HOST: str = _env("ROTTERDAM_APP_HOST", "APP_HOST", DEFAULT_HOST)
 try:
-    PORT: int = int(os.getenv("APP_PORT", DEFAULT_PORT))
+    PORT: int = int(_env("ROTTERDAM_APP_PORT", "APP_PORT", str(DEFAULT_PORT)))
 except ValueError:
     PORT = DEFAULT_PORT
 

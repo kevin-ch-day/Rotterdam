@@ -7,8 +7,8 @@ the project.
 
 | Variable            | Default     | Description                                       |
 |---------------------|-------------|---------------------------------------------------|
-| `APP_HOST`          | `127.0.0.1` | Host interface for the web server                 |
-| `APP_PORT`          | `8765`      | Port for the web server                           |
+| `ROTTERDAM_APP_HOST`| `127.0.0.1` | Host interface for the web server                 |
+| `ROTTERDAM_APP_PORT`| `8765`      | Port for the web server                           |
 | `UVICORN_LOG_LEVEL` | `info`      | Log level for Uvicorn                             |
 | `OPEN_BROWSER`      | `true`      | Whether to open a browser when server starts      |
 

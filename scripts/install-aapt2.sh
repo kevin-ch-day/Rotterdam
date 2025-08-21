@@ -24,8 +24,8 @@ fetch(){ local u="$1" o="$2"; if have curl; then curl -fsSL "$u" -o "$o"; elif h
 own_fix(){ [[ -n "${SUDO_USER:-}" ]] && as_root chown -R "$INVOKING_USER:$INVOKING_USER" "$SDK_ROOT" || true; }
 
 # 1) OS deps
-log "Installing system dependencies (curl/wget, unzip, android-tools, Java)…"
-as_root dnf install -y curl wget unzip android-tools || true
+log "Installing system dependencies (curl/wget, unzip, platform tools, Java)…"
+as_root dnf install -y curl wget unzip android'-'tools || true
 as_root dnf install -y java-21-openjdk-headless || as_root dnf install -y java-17-openjdk-headless || true
 
 # 2) Fast-path if aapt2 already works

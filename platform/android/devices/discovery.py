@@ -9,16 +9,16 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List
 
+from utils.logging_utils.logging_config import get_logger
+
 from .adb import _adb_path, _run_adb
 from .props import (
-    get_props,
     _infer_connection_kind,
     _infer_is_emulator,
     _infer_root_status,
     _short_fingerprint,
+    get_props,
 )
-from utils.logging_utils.logging_config import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -26,6 +26,7 @@ logger = get_logger(__name__)
 # -----------------------------
 # Top-level: raw check
 # -----------------------------
+
 
 def check_connected_devices() -> str:
     """Run `adb devices -l` and return the raw stdout."""
@@ -37,12 +38,13 @@ def check_connected_devices() -> str:
         logger.exception("adb not executable")
         raise RuntimeError(
             f"adb at '{adb}' is not executable (Permission denied). "
-            "Fix perms/SELinux or use system 'adb' (dnf install android-tools)."
+            "Fix perms/SELinux or use system 'adb' (dnf install android" - "tools)."
         ) from e
     except FileNotFoundError as e:
         logger.exception("adb not found")
         raise RuntimeError(
-            "adb not found. Install platform-tools or `dnf install android-tools`, and ensure it's on PATH."
+            "adb not found. Install platform-tools or `dnf install android"
+            - "tools`, and ensure it's on PATH."
         ) from e
     except subprocess.CalledProcessError as e:
         logger.exception("error running adb")
@@ -56,6 +58,7 @@ def check_connected_devices() -> str:
 # -----------------------------
 # Parse `adb devices -l` output
 # -----------------------------
+
 
 def parse_devices_l(output: str) -> List[Dict[str, str]]:
     """Parse `adb devices -l` into a list of dicts."""
@@ -87,6 +90,7 @@ def parse_devices_l(output: str) -> List[Dict[str, str]]:
 # Public: list detailed devices
 # -----------------------------
 
+
 def list_detailed_devices() -> List[Dict[str, Any]]:
     """Return a list of enriched device dicts for display/selection."""
     logger.info("list_detailed_devices")
@@ -96,6 +100,7 @@ def list_detailed_devices() -> List[Dict[str, Any]]:
     serials = [d["serial"] for d in base if d.get("state", "").lower() == "device"]
     props_map: Dict[str, Dict[str, str]] = {}
     if serials:
+
         def _fetch(serial: str) -> tuple[str, Dict[str, str]]:
             return serial, get_props(serial)
 

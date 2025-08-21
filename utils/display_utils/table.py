@@ -2,13 +2,14 @@
 # File: utils/display_utils/table.py
 # table.py
 """
-Table display utilities for Android Tool.
+Table display utilities for Rotterdam.
 Pure ASCII table rendering with width handling and safe truncation.
 """
 
 from __future__ import annotations
+
 import shutil
-from typing import Iterable, Sequence, Optional, Any, List
+from typing import Any, Iterable, List, Optional, Sequence
 
 
 def term_width(default: int = 80) -> int:
@@ -23,7 +24,9 @@ def _stringify(row: Sequence[Any]) -> List[str]:
     return ["" if (c is None) else str(c) for c in row]
 
 
-def _compute_widths(rows: List[List[str]], headers: Optional[Sequence[str]], max_total: int) -> List[int]:
+def _compute_widths(
+    rows: List[List[str]], headers: Optional[Sequence[str]], max_total: int
+) -> List[int]:
     all_rows = []
     if headers:
         all_rows.append(list(headers))
@@ -65,9 +68,11 @@ def _truncate(cell: str, width: int) -> str:
     return cell[: width - 1 - 2] + "…"
 
 
-def print_table(rows: Iterable[Sequence[Any]],
-                headers: Optional[Sequence[str]] = None,
-                max_width: Optional[int] = None) -> None:
+def print_table(
+    rows: Iterable[Sequence[Any]],
+    headers: Optional[Sequence[str]] = None,
+    max_width: Optional[int] = None,
+) -> None:
     """
     Render a simple ASCII table.
     - rows: iterable of sequences

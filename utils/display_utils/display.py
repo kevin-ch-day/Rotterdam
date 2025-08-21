@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # File: utils/display_utils/display.py
 """
-General display utilities for Android Tool.
+General display utilities for Rotterdam.
 - ASCII-only (no external deps)
 - Terminal-aware widths
 - Clean banners/headers/dividers
@@ -15,11 +15,12 @@ from __future__ import annotations
 import os
 import shutil
 from textwrap import wrap
-from typing import Iterable, Sequence, Any, Optional, Callable, List
+from typing import Any, Callable, Iterable, List, Optional, Sequence
 
 from app_config import app_config
+
 from . import table as tables
-from .status import info, ok, warn, fail
+from .status import fail, info, ok, warn
 
 # -----------------------------
 # Terminal / layout

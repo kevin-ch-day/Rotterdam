@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # File: app_config/app_config.py
 # config.py
-"""Central configuration for Android Tool.
+"""Central configuration for Rotterdam.
 
 - Resolves project root robustly (even if imported from elsewhere).
 - Defines standard output/log/screenshot directories.
@@ -12,10 +12,11 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
-from datetime import datetime
+import warnings
 from dataclasses import dataclass, field
-from typing import Any, MutableMapping, Optional, Mapping
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Mapping, MutableMapping, Optional
 
 from app_config.load_configs import load as _load_config
 
@@ -23,11 +24,37 @@ from app_config.load_configs import load as _load_config
 # App metadata
 # -----------------------------
 
-APP_NAME: str = "Android Tool"
+APP_NAME: str = "Rotterdam"
 APP_VERSION: str = "0.0.1"
+APP_VENDOR: str = "Rotterdam Project"
+APP_HOMEPAGE: str = "https://rotterdam.example.com"
+
 
 # Optional terminal colour output
-USE_COLOR: bool = os.getenv("AT_COLOR", "0") not in ("0", "false", "False", "")
+def _env(key_new: str, key_old: str | None = None, default: str | None = None) -> str | None:
+    """Fetch environment variable ``key_new`` with fallback to ``key_old``.
+
+    Emits a :class:`DeprecationWarning` if the legacy key is used.
+    """
+    val = os.getenv(key_new)
+    if val is not None:
+        return val
+    if key_old and (legacy := os.getenv(key_old)) is not None:
+        warnings.warn(
+            f"{key_old} is deprecated; use {key_new}",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return legacy
+    return default
+
+
+USE_COLOR: bool = _env("ROTTERDAM_COLOR", "AT_COLOR", "0") not in (
+    "0",
+    "false",
+    "False",
+    "",
+)
 
 # Timestamp format (12-hour with AM/PM) e.g., 20250818-1234PM
 TS_FMT_FILENAME: str = "%Y%m%d-%I%M%p"
@@ -36,6 +63,7 @@ TS_FMT_FILENAME: str = "%Y%m%d-%I%M%p"
 # -----------------------------
 # Project root discovery
 # -----------------------------
+
 
 def _discover_project_root() -> Path:
     """
@@ -56,6 +84,7 @@ def _discover_project_root() -> Path:
     except IndexError:
         return here.parent
 
+
 PROJECT_ROOT: Path = _discover_project_root()
 
 
@@ -63,14 +92,24 @@ PROJECT_ROOT: Path = _discover_project_root()
 # Standard directories
 # -----------------------------
 
-OUTPUT_DIR: Path = PROJECT_ROOT / "output"
-LOGS_DIR: Path = PROJECT_ROOT / "logs"
-SCREENSHOTS_DIR: Path = OUTPUT_DIR / "device_screenshots"
-STORAGE_DIR: Path = PROJECT_ROOT / "storage"
+# Base data directory (dev: ~/.rotterdam, prod: overridable via env)
+DATA_DIR: Path = Path(
+    _env("ROTTERDAM_DATA_DIR", default=str(Path.home() / ".rotterdam"))
+).expanduser()
+
+EVIDENCE_DIR: Path = DATA_DIR / "evidence"
+TMP_DIR: Path = DATA_DIR / "tmp"
+LOGS_DIR: Path = DATA_DIR / "logs"
+REPORTS_DIR: Path = DATA_DIR / "reports"
+
+OUTPUT_DIR: Path = REPORTS_DIR  # Backwards compatibility alias
+STORAGE_DIR: Path = TMP_DIR
+SCREENSHOTS_DIR: Path = EVIDENCE_DIR / "device_screenshots"
+
 
 def ensure_dirs() -> None:
     """Create required directories if missing."""
-    for d in (OUTPUT_DIR, LOGS_DIR, SCREENSHOTS_DIR, STORAGE_DIR):
+    for d in (EVIDENCE_DIR, TMP_DIR, LOGS_DIR, REPORTS_DIR, SCREENSHOTS_DIR):
         d.mkdir(parents=True, exist_ok=True)
 
 
@@ -102,7 +141,9 @@ class GlobalConfig:
         defaults: Mapping[str, Any] | None = None,
     ) -> None:
         """Load configuration from ``path`` using :mod:`config.loader`."""
-        target = path or Path(os.getenv("AT_CONFIG", PROJECT_ROOT / "config.yaml"))
+        env_path = _env("ROTTERDAM_CONFIG", "AT_CONFIG")
+        default_path = PROJECT_ROOT / "config.yaml"
+        target = path or Path(env_path or default_path)
         if target.exists():
             self.data = _load_config(target, schema=schema, defaults=defaults)
         else:
@@ -144,10 +185,10 @@ def get_database_url() -> str:
     return "sqlite:///:memory:"
 
 
-
 # -----------------------------
 # Timestamp helpers
 # -----------------------------
+
 
 def ts(fmt: str = TS_FMT_FILENAME) -> str:
     """
@@ -155,6 +196,7 @@ def ts(fmt: str = TS_FMT_FILENAME) -> str:
     Example: '20250818-1234PM'
     """
     return datetime.now().strftime(fmt)
+
 
 def dated_filename(prefix: str, suffix: str, directory: Optional[Path] = None) -> Path:
     """
@@ -170,6 +212,7 @@ def dated_filename(prefix: str, suffix: str, directory: Optional[Path] = None) -
 # Android SDK / ADB discovery
 # -----------------------------
 
+
 def _sdk_root_from_env() -> Optional[Path]:
     """Return SDK root from env vars if set."""
     for env in ("ANDROID_SDK_ROOT", "ANDROID_HOME"):
@@ -180,6 +223,7 @@ def _sdk_root_from_env() -> Optional[Path]:
                 return p
     return None
 
+
 def get_sdk_root(default: Path = Path("/opt/android-sdk")) -> Path:
     """
     Resolve the Android SDK root. Preference order:
@@ -187,6 +231,7 @@ def get_sdk_root(default: Path = Path("/opt/android-sdk")) -> Path:
     2) /opt/android-sdk (default)
     """
     return _sdk_root_from_env() or default
+
 
 def get_adb_path() -> str:
     """
@@ -203,17 +248,20 @@ def get_adb_path() -> str:
 # Simple config echo (optional)
 # -----------------------------
 
+
 def debug_summary() -> str:
     """Return a small, human-readable summary of key paths/settings."""
-    return "\n".join([
-        f"App           : {APP_NAME} v{APP_VERSION}",
-        f"Project Root  : {PROJECT_ROOT}",
-        f"Output Dir    : {OUTPUT_DIR}",
-        f"Logs Dir      : {LOGS_DIR}",
-        f"Screenshots   : {SCREENSHOTS_DIR}",
-        f"SDK Root      : {get_sdk_root()}",
-        f"ADB Path      : {get_adb_path()}",
-    ])
+    return "\n".join(
+        [
+            f"App           : {APP_NAME} v{APP_VERSION}",
+            f"Data Dir      : {DATA_DIR}",
+            f"Reports Dir   : {REPORTS_DIR}",
+            f"Logs Dir      : {LOGS_DIR}",
+            f"Screenshots   : {SCREENSHOTS_DIR}",
+            f"SDK Root      : {get_sdk_root()}",
+            f"ADB Path      : {get_adb_path()}",
+        ]
+    )
 
 
 # Load configuration on import

@@ -8,9 +8,9 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
+from app_config import app_config
 from utils.logging_utils.app_logger import app_logger
 
-from .constants import APP_NAME, APP_VERSION
 from .middleware import DEFAULT_API_KEY, AuthRateLimitMiddleware, RequestIDMiddleware
 from .routers import (
     analytics_router,
@@ -41,7 +41,7 @@ def _mask_path(p: Path) -> str:
 # Optional base path if served behind a proxy (e.g., /rotterdam)
 ROOT_PATH = os.getenv("ROOT_PATH", "")
 
-app = FastAPI(title=APP_NAME, version=APP_VERSION, root_path=ROOT_PATH)
+app = FastAPI(title=app_config.APP_NAME, version=app_config.APP_VERSION, root_path=ROOT_PATH)
 
 # ---------- Logging ----------
 # Configure structured logging once at import time
@@ -71,6 +71,7 @@ async def add_headers(request: Request, call_next):
     resp.headers.setdefault("X-Content-Type-Options", "nosniff")
     resp.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     resp.headers.setdefault("X-XSS-Protection", "0")
+    resp.headers.setdefault("Server", f"{app_config.APP_NAME}/{app_config.APP_VERSION}")
     # Cache static assets
     if request.url.path.startswith(_STATIC_PREFIXES):
         resp.headers.setdefault("Cache-Control", "public, max-age=3600, immutable")
@@ -82,13 +83,15 @@ app.include_router(devices_router)
 app.include_router(jobs_router)
 app.include_router(reports_router)
 app.include_router(analytics_router)
-app.include_router(system_router)  # owns /_healthz (and /_ready if present)
+app.include_router(system_router)  # owns /health, /about, /_healthz, /_ready
+
 
 # ---------- Favicon ----------
 async def _favicon() -> Response:
     if FAVICON_ICO.exists():
         return FileResponse(str(FAVICON_ICO))
     return Response(status_code=204)
+
 
 app.add_api_route("/favicon.ico", _favicon, include_in_schema=False)
 app.add_api_route("/ui/favicon.ico", _favicon, include_in_schema=False)
@@ -164,5 +167,3 @@ async def root() -> FileResponse:
     # Mask path to avoid leaking full FS layout
     masked = _mask_path(INDEX_HTML)
     raise HTTPException(status_code=500, detail=f"index not found at {masked}")
-
-

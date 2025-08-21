@@ -2,11 +2,12 @@
 # File: core/helpers.py
 # helpers.py
 """
-General-purpose helper functions for Android Tool.
+General-purpose helper functions for Rotterdam.
 Not specific to display, menus, or config.
 """
 
 from __future__ import annotations
+
 import hashlib
 
 
@@ -35,7 +36,7 @@ def truncate_middle(s: str, max_len: int) -> str:
     if len(s) <= max_len or max_len < 5:
         return s if len(s) <= max_len else s[:max_len]
     half = (max_len - 1) // 2
-    return s[:half] + "…" + s[-(max_len - half - 1):]
+    return s[:half] + "…" + s[-(max_len - half - 1) :]
 
 
 def sha256sum(data: bytes) -> str:

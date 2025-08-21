@@ -1,4 +1,4 @@
-"""CLI menus for the Android Tool."""
+"""CLI menus for Rotterdam."""
 
 from __future__ import annotations
 

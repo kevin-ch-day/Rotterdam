@@ -5,6 +5,8 @@ from contextlib import contextmanager
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+from app_config import app_config
+
 
 class StructuredLogger:
     """Central logging utility providing JSON logs with contextual fields."""
@@ -27,6 +29,7 @@ class StructuredLogger:
             log_record = {
                 "time": self.formatTime(record, self.datefmt),
                 "level": record.levelname,
+                "app": app_config.APP_NAME,
                 "module": record.name,
                 "message": record.getMessage(),
             }
@@ -52,13 +55,9 @@ class StructuredLogger:
         if cls._configured:
             return
 
-        # Place logs under ``<repo_root>/logs/app`` so CLI and server share output
-        repo_root = Path(__file__).resolve().parents[2]
-        log_dir = repo_root / "logs" / "app"
+        log_dir = app_config.LOGS_DIR
         log_dir.mkdir(parents=True, exist_ok=True)
-        file_handler = RotatingFileHandler(
-            log_dir / "server.log", maxBytes=1_000_000, backupCount=5
-        )
+        file_handler = RotatingFileHandler(log_dir / "app.log", maxBytes=1_000_000, backupCount=5)
         stream_handler = logging.StreamHandler()
         formatter = cls._JsonFormatter()
         file_handler.setFormatter(formatter)
