@@ -20,27 +20,21 @@ from database.db_engine import DbEngine
 
 
 def main() -> None:
-    core = DatabaseCore.from_config()
-    engine = DbEngine(core, default_dict_rows=True)
-
     try:
-        engine.init()
+        with DatabaseCore.from_config() as core:
+            with DbEngine(core, default_dict_rows=True) as engine:
+                if not engine.ping():
+                    print("Database ping failed")
+                    return
+
+                version = db_queries.fetch_version(engine)
+                print(f"Database version: {version}")
+
+                tables = db_queries.list_tables(engine)
+                print(f"Tables ({len(tables)}): {tables}")
     except Error as exc:  # pragma: no cover - diagnostic script
         print(f"Failed to connect: {exc}")
         return
-
-    try:
-        if not engine.ping():
-            print("Database ping failed")
-            return
-
-        version = db_queries.fetch_version(engine)
-        print(f"Database version: {version}")
-
-        tables = db_queries.list_tables(engine)
-        print(f"Tables ({len(tables)}): {tables}")
-    finally:
-        engine.shutdown()
 
 
 if __name__ == "__main__":  # pragma: no cover - diagnostic script
