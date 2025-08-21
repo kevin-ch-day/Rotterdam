@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
-from reports.report_utils import generate_report, fetch_history, fetch_latest
+from . import report_utils
 
 __all__ = [
     "create_risk_report",
@@ -26,7 +26,7 @@ def create_risk_report(
 ) -> Dict[str, Any]:
     """Generate and persist a new risk report."""
 
-    return generate_report(
+    return report_utils.generate_report(
         package_name,
         static_metrics,
         dynamic_metrics,
@@ -41,7 +41,7 @@ def get_risk_history(
 ) -> List[Dict[str, Any]]:
     """Return previously generated risk reports for ``package_name``."""
 
-    return fetch_history(package_name, session=session)
+    return report_utils.fetch_history(package_name, session=session)
 
 
 def get_latest_report(
@@ -51,7 +51,7 @@ def get_latest_report(
 ) -> Optional[Dict[str, Any]]:
     """Return the most recent risk report for ``package_name`` if available."""
 
-    return fetch_latest(package_name, session=session)
+    return report_utils.fetch_latest(package_name, session=session)
 
 
 # Backwards compatible aliases for potential legacy callers
