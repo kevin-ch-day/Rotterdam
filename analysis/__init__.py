@@ -48,7 +48,7 @@ __all__ = [
 
 # Optional: Androguard-based DEX inspection
 try:
-    from .androguard_utils import summarize_apk  # type: ignore[import-not-found]
+    from .static_analysis.androguard_utils import summarize_apk  # type: ignore[import-not-found]
 except Exception:
     summarize_apk = None  # type: ignore[assignment]
 else:
@@ -75,7 +75,7 @@ else:
 
 # Optional: certificate analysis utilities
 try:
-    from .cert_analysis import analyze_certificates  # type: ignore[import-not-found]
+    from .static_analysis.cert_analysis import analyze_certificates  # type: ignore[import-not-found]
 
 except Exception:  # pragma: no cover - missing dependencies
     analyze_certificates = None  # type: ignore[assignment]
@@ -84,7 +84,7 @@ else:
 
 # Optional: simple machine learning classifier
 try:
-    from .ml_model import predict_malicious  # type: ignore[import-not-found]
+    from .machine_learning.ml_model import predict_malicious  # type: ignore[import-not-found]
 except Exception:
     predict_malicious = None  # type: ignore[assignment]
 else:
