@@ -1,6 +1,6 @@
 # Risk Scoring Model
 
-The scoring engine in `platform/android/analysis/static/scoring/risk_score.py` combines static and dynamic metrics into a normalized 0–100 risk score.
+The scoring engine in `android/analysis/static/scoring/risk_score.py` combines static and dynamic metrics into a normalized 0–100 risk score.
 
 The previous `analysis/risk_scoring` helper package has been archived under
 `analysis/archived/`.
@@ -33,7 +33,7 @@ Count-based metrics are capped before weighting to prevent a single large value 
 Callers may supply alternative weights or caps:
 
 ```python
-from platform.android.analysis.static.scoring.risk_score import calculate_risk_score
+from android.analysis.static.scoring.risk_score import calculate_risk_score
 
 static_metrics = {"permission_density": 0.6}
 

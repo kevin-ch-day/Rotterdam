@@ -1,6 +1,6 @@
 """Network capture helpers exposed for sandbox analysis."""
 
-from platform.android.analysis.dynamic.network import (
+from android.analysis.dynamic.network import (
     NetworkSniffer,
     export_summary,
     parse_pcap,

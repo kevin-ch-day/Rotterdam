@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from platform.android.devices import discovery as _discovery
-from platform.android.devices import packages as _packages
-from platform.android.devices import props as _props
+from android.devices import discovery as _discovery
+from android.devices import packages as _packages
+from android.devices import props as _props
 from typing import Any, Dict, List
 
 from .types import DeviceInfo

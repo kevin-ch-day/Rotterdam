@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# File: platform/android/analysis/dynamic/permission_monitor.py
+# File: android/analysis/dynamic/permission_monitor.py
 """Utility to monitor Android runtime permission accesses via ``adb``.
 
 This module hooks into ``adb shell dumpsys appops`` (or ``appops`` directly)
@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import DefaultDict, Dict, Iterable, List
 
-from devices import adb
+from android.adb import run as _run_adb
 from utils.logging_utils.logging_config import StructuredLogger
 
 logger = StructuredLogger.get_logger(__name__)
@@ -25,8 +25,7 @@ logger = StructuredLogger.get_logger(__name__)
 
 def _run_shell(cmd: list[str]) -> str:
     """Run ``adb shell`` with *cmd* and return stdout as text."""
-    adb_path = adb._adb_path()
-    proc = adb._run_adb([adb_path, "shell", *cmd])
+    proc = _run_adb(["shell", *cmd])
     return proc.stdout
 
 

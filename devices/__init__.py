@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from platform.android.devices import (
-    adb,
+from android.devices import (
     apk,
     discovery,
     packages,
@@ -14,7 +13,6 @@ from . import service
 from .types import DeviceInfo
 
 __all__ = [
-    "adb",
     "apk",
     "discovery",
     "packages",

@@ -8,17 +8,17 @@ The interactive CLI in `cli/` provides menus for interacting with connected devi
 
 ## Static Analysis Pipeline
 
-The static pipeline under `platform/android/analysis/static/` decompiles APKs, extracts manifest data, searches for secrets, optionally applies YARA rules, and feeds metrics to the risk‑scoring model. The pipeline's output is a report written to `output/<timestamp>/`.
+The static pipeline under `android/analysis/static/` decompiles APKs, extracts manifest data, searches for secrets, optionally applies YARA rules, and feeds metrics to the risk‑scoring model. The pipeline's output is a report written to `output/<timestamp>/`.
 
 ## Dynamic Sandbox
 
 **Note:** The dynamic sandbox is parked for the MVP. See [sandbox/PARKED.md](../sandbox/PARKED.md). Avoid modifying or relying on this component until work resumes.
 
-Dynamic analysis lives in `platform/android/analysis/dynamic/`. The `runner.py` module simulates execution of an APK with Frida instrumentation hooks defined in `frida/`. Observed runtime events are converted into metrics that complement static findings.
+Dynamic analysis lives in `android/analysis/dynamic/`. The `runner.py` module simulates execution of an APK with Frida instrumentation hooks defined in `frida/`. Observed runtime events are converted into metrics that complement static findings.
 
 ## Risk Scoring
 
-The scoring model in `platform/android/analysis/static/scoring/risk_score.py` combines weighted static and dynamic metrics into a normalized 0‑100 score with a human‑readable rationale.
+The scoring model in `android/analysis/static/scoring/risk_score.py` combines weighted static and dynamic metrics into a normalized 0‑100 score with a human‑readable rationale.
 
 Legacy wrappers for machine learning and risk scoring have been moved to
 `analysis/archived/`.

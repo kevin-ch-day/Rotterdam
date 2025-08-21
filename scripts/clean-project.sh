@@ -36,7 +36,7 @@ cd "$PROJECT_ROOT" || fail "Cannot cd to project root: $PROJECT_ROOT"
 
 # Repo markers
 [[ -f "pyproject.toml" ]] || fail "pyproject.toml not found—are you in the repo root?"
-[[ -d "server" && -d "platform/android" ]] || fail "server/ or platform/android/ missing—wrong directory?"
+[[ -d "server" && -d "android" ]] || fail "server/ or android/ missing—wrong directory?"
 
 say "Cleaning repo at: $PROJECT_ROOT"
 

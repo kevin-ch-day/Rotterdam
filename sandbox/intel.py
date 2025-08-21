@@ -1,6 +1,6 @@
 """Threat intelligence helpers."""
 
-from platform.android.analysis.dynamic.intel import (
+from android.analysis.dynamic.intel import (
     BAD_DOMAINS,
     BAD_IPS,
     load_feeds,

@@ -5,7 +5,8 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from app_config import app_config
-from devices import adb, selection
+from android.adb import run as _run_adb
+from devices import selection
 from utils.display_utils import display
 
 from . import actions
@@ -15,9 +16,8 @@ def device_online(serial: str) -> bool:
     """Return True if the device is online according to ``adb get-state``."""
     if not serial:
         return False
-    adb_path = adb._adb_path()
     try:
-        proc = adb._run_adb([adb_path, "-s", serial, "get-state"])
+        proc = _run_adb(["-s", serial, "get-state"])
     except Exception:
         return False
     return (proc.stdout or "").strip() == "device"

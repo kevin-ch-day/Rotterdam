@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# File: platform/android/devices/props.py
+# File: android/devices/props.py
 """Helpers for retrieving and interpreting device properties."""
 
 from __future__ import annotations
@@ -7,7 +7,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Dict
 
-from .adb import _adb_path, _run_adb
+from android.adb import run as _run_adb
 from core.errors import log_exception
 
 
@@ -30,11 +30,10 @@ _PROP_KEYS = [
 
 def _shell_getprops(serial: str, keys: list[str]) -> Dict[str, str]:
     """Fetch multiple getprop keys in one shell call and return a mapping."""
-    adb = _adb_path()
     lines = [f'echo "{k}=$(getprop {k})"' for k in keys]
     cmd = " ; ".join(lines)
     try:
-        proc = _run_adb([adb, "-s", serial, "shell", cmd], timeout=6)
+        proc = _run_adb(["-s", serial, "shell", cmd], timeout=6)
         out = proc.stdout or ""
     except Exception as exc:
         log_exception("Failed to retrieve device properties", exc)

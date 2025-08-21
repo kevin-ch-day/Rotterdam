@@ -1,6 +1,6 @@
 """Manifest extraction helpers exposed to the CLI."""
 
-from platform.android.analysis.static.extractors.manifest import (
+from android.analysis.static.extractors.manifest import (
     extract_app_flags,
     extract_components,
     extract_features,

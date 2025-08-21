@@ -1,13 +1,13 @@
 """Facade for permission monitoring utilities.
 
 This module wraps select helpers from
-:mod:`platform.android.analysis.dynamic.permission_monitor` so that tests can
+:mod:`android.analysis.dynamic.permission_monitor` so that tests can
 patch internal helpers like :func:`_run_shell`.
 """
 from __future__ import annotations
 
-import platform.android.analysis.dynamic.permission_monitor as _impl
-from platform.android.analysis.dynamic.permission_monitor import PermissionAccess
+import android.analysis.dynamic.permission_monitor as _impl
+from android.analysis.dynamic.permission_monitor import PermissionAccess
 
 
 def _run_shell(cmd: list[str]) -> str:

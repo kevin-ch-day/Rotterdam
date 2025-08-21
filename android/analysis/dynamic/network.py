@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# File: platform/android/analysis/dynamic/network.py
+# File: android/analysis/dynamic/network.py
 """Utility for capturing and summarizing network traffic from an emulator.
 
 This module provides a light abstraction around ``tcpdump`` or ``mitmproxy``
@@ -24,7 +24,7 @@ import time
 from pathlib import Path
 from typing import Iterable, Optional
 
-from ...devices.adb import _adb_path, _run_adb
+from android.adb import run as _run_adb
 from . import intel
 
 
@@ -79,9 +79,8 @@ class NetworkSniffer:
     def start(self) -> None:
         """Start the capture process before launching the target app."""
         if self.tool == "tcpdump":
-            adb = _adb_path()
             cmd = [
-                adb,
+                "adb",
                 "-s",
                 self.serial,
                 "shell",
@@ -108,15 +107,20 @@ class NetworkSniffer:
                 self._proc.kill()
 
         if self.tool == "tcpdump":
-            adb = _adb_path()
             try:
-                _run_adb([adb, "-s", self.serial, "shell", "pkill tcpdump"])
+                _run_adb(["-s", self.serial, "shell", "pkill tcpdump"])
             except Exception:
                 # best effort: tcpdump may already be stopped
                 pass
-            _run_adb([adb, "-s", self.serial, "pull", self._device_pcap, str(self.pcap_path)])
+            _run_adb([
+                "-s",
+                self.serial,
+                "pull",
+                self._device_pcap,
+                str(self.pcap_path),
+            ])
             try:
-                _run_adb([adb, "-s", self.serial, "shell", f"rm {self._device_pcap}"])
+                _run_adb(["-s", self.serial, "shell", f"rm {self._device_pcap}"])
             except Exception:
                 pass
         return self.pcap_path

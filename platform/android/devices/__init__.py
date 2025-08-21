@@ -1,5 +1,2 @@
-from . import apk
-from .apk import pull_apk
-
-__all__ = ["apk", "pull_apk"]
-
+"""DEPRECATED: use `android.devices` instead."""
+from android.devices import *  # noqa: F401,F403

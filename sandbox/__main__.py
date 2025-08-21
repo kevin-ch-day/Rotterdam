@@ -1,6 +1,6 @@
 """Entry point for running sandbox analysis as a script."""
 
-from platform.android.analysis.dynamic.__main__ import main
+from android.analysis.dynamic.__main__ import main
 
 __all__ = ["main"]
 

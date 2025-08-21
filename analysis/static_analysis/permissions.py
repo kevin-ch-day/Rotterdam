@@ -1,6 +1,6 @@
 """Permission analysis utilities."""
 
-from platform.android.analysis.static.extractors.permissions import (
+from android.analysis.static.extractors.permissions import (
     DANGEROUS_PERMISSIONS,
     categorize_permissions,
 )

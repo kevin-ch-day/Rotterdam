@@ -1,6 +1,6 @@
 """Public sandbox helpers used by the CLI."""
 
-from platform.android.analysis.dynamic import (
+from android.analysis.dynamic import (
     analyze_apk,
     collect_permissions,
     compute_runtime_metrics,

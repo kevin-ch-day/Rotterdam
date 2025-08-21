@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# File: platform/android/devices/discovery.py
+# File: android/devices/discovery.py
 # discovery.py
 """Helpers for discovering and enriching connected Android devices via ADB."""
 
@@ -9,7 +9,8 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List
 
-from .adb import _adb_path, _run_adb
+from android.adb import run as _run_adb
+from android.adb.parse import parse_devices_l
 from .props import (
     get_props,
     _infer_connection_kind,
@@ -27,16 +28,16 @@ logger = get_logger(__name__)
 # Top-level: raw check
 # -----------------------------
 
+
 def check_connected_devices() -> str:
     """Run `adb devices -l` and return the raw stdout."""
-    adb = _adb_path()
-    logger.info("checking connected devices", extra={"adb": adb})
+    logger.info("checking connected devices")
     try:
-        result = _run_adb([adb, "devices", "-l"])
+        result = _run_adb(["devices", "-l"])
     except PermissionError as e:
         logger.exception("adb not executable")
         raise RuntimeError(
-            f"adb at '{adb}' is not executable (Permission denied). "
+            "adb is not executable (Permission denied). "
             "Fix perms/SELinux or use system 'adb' (dnf install android-tools)."
         ) from e
     except FileNotFoundError as e:
@@ -54,38 +55,9 @@ def check_connected_devices() -> str:
 
 
 # -----------------------------
-# Parse `adb devices -l` output
-# -----------------------------
-
-def parse_devices_l(output: str) -> List[Dict[str, str]]:
-    """Parse `adb devices -l` into a list of dicts."""
-    lines = [ln.strip() for ln in (output or "").splitlines() if ln.strip()]
-    if not lines:
-        logger.info("no devices in adb output")
-        return []
-    if lines[0].lower().startswith("list of devices"):
-        lines = lines[1:]
-
-    devices: List[Dict[str, str]] = []
-    for ln in lines:
-        parts = ln.split()
-        if not parts:
-            continue
-        serial = parts[0]
-        state = parts[1] if len(parts) > 1 else "unknown"
-        meta: Dict[str, str] = {}
-        for p in parts[2:]:
-            if ":" in p:
-                k, v = p.split(":", 1)
-                meta[k] = v
-        devices.append({"serial": serial, "state": state, **meta})
-    logger.info("parsed %d devices", len(devices))
-    return devices
-
-
-# -----------------------------
 # Public: list detailed devices
 # -----------------------------
+
 
 def list_detailed_devices() -> List[Dict[str, Any]]:
     """Return a list of enriched device dicts for display/selection."""
@@ -96,6 +68,7 @@ def list_detailed_devices() -> List[Dict[str, Any]]:
     serials = [d["serial"] for d in base if d.get("state", "").lower() == "device"]
     props_map: Dict[str, Dict[str, str]] = {}
     if serials:
+
         def _fetch(serial: str) -> tuple[str, Dict[str, str]]:
             return serial, get_props(serial)
 

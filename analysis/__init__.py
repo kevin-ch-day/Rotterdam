@@ -62,6 +62,7 @@ else:
     __all__.append("analyze_certificates")
 
 # Expose lightweight tool wrappers
-from core.tools import adb, androguard, apktool
+from android import adb
+from core.tools import androguard, apktool
 
 __all__.extend(["adb", "apktool", "androguard"])
