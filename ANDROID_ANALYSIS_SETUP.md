@@ -45,6 +45,8 @@ Android applications using both static and dynamic techniques.
   runtime inspection before deeper analysis.
 
 ## 3. Dynamic Analysis (Optional)
+
+**Note:** The dynamic sandbox is deferred for the MVP. See [sandbox/PARKED.md](sandbox/PARKED.md); avoid relying on sandboxing until it resumes.
 - Use a dedicated device or emulator and install monitoring tools such as
   `mitmproxy` for network inspection and `logcat` for runtime logs.
 - Execute the target APK and monitor network requests, system calls, and

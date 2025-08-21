@@ -1,5 +1,8 @@
 # Dynamic Analysis
 
+**Note:** The dynamic sandbox is parked for the MVP. See [sandbox/PARKED.md](../sandbox/PARKED.md) for details. Avoid modifying or relying on these modules.
+
+
 Rotterdam's dynamic analysis simulates running an APK inside a temporary sandbox and collects runtime behavior.
 
 ## Runner

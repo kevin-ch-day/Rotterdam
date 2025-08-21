@@ -12,11 +12,16 @@ The static pipeline under `platform/android/analysis/static/` decompiles APKs, e
 
 ## Dynamic Sandbox
 
+**Note:** The dynamic sandbox is parked for the MVP. See [sandbox/PARKED.md](../sandbox/PARKED.md). Avoid modifying or relying on this component until work resumes.
+
 Dynamic analysis lives in `platform/android/analysis/dynamic/`. The `runner.py` module simulates execution of an APK with Frida instrumentation hooks defined in `frida/`. Observed runtime events are converted into metrics that complement static findings.
 
 ## Risk Scoring
 
 The scoring model in `platform/android/analysis/static/scoring/risk_score.py` combines weighted static and dynamic metrics into a normalized 0‑100 score with a human‑readable rationale.
+
+Legacy wrappers for machine learning and risk scoring have been moved to
+`analysis/archived/`.
 
 ## API Server
 
@@ -28,4 +33,3 @@ A FastAPI application under `server/` exposes REST endpoints for submitting jobs
 2. The CLI invokes static or dynamic analysis modules.
 3. Analysis modules generate metrics and artifacts in `output/` and call the risk scorer.
 4. Results are persisted via the `storage` repository and can be served through the API server.
-
