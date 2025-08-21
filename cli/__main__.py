@@ -12,7 +12,9 @@ from . import run_main_menu
 try:
     from utils.logging_utils.app_logger import app_logger  # type: ignore[attr-defined]
     from utils.logging_utils.log_helpers import LoggingHelper
+    from utils.logging_utils.logging_config import configure_logging
 
+    configure_logging("cli")
     logger = app_logger.get_logger(__name__)
     LoggingHelper.info("CLI initialized", logger_name=__name__)
 except Exception:  # pragma: no cover - logging is optional

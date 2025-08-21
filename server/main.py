@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from utils.logging_utils.app_logger import app_logger
+from utils.logging_utils.logging_config import configure_logging
 
 from .constants import APP_NAME, APP_VERSION
 from .middleware import DEFAULT_API_KEY, AuthRateLimitMiddleware, RequestIDMiddleware
@@ -45,6 +46,7 @@ app = FastAPI(title=APP_NAME, version=APP_VERSION, root_path=ROOT_PATH)
 
 # ---------- Logging ----------
 # Configure structured logging once at import time
+configure_logging("server")
 log = app_logger.get_logger("uvicorn.error")
 
 # ---------- Middleware ----------
@@ -84,11 +86,13 @@ app.include_router(reports_router)
 app.include_router(analytics_router)
 app.include_router(system_router)  # owns /_healthz (and /_ready if present)
 
+
 # ---------- Favicon ----------
 async def _favicon() -> Response:
     if FAVICON_ICO.exists():
         return FileResponse(str(FAVICON_ICO))
     return Response(status_code=204)
+
 
 app.add_api_route("/favicon.ico", _favicon, include_in_schema=False)
 app.add_api_route("/ui/favicon.ico", _favicon, include_in_schema=False)
@@ -164,5 +168,3 @@ async def root() -> FileResponse:
     # Mask path to avoid leaking full FS layout
     masked = _mask_path(INDEX_HTML)
     raise HTTPException(status_code=500, detail=f"index not found at {masked}")
-
-
