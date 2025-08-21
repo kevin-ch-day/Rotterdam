@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# File: platform/android/analysis/dynamic/network.py
 """Utility for capturing and summarizing network traffic from an emulator.
 
 This module provides a light abstraction around ``tcpdump`` or ``mitmproxy``

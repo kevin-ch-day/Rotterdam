@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# File: platform/android/devices/adb.py
 """Shared helpers for invoking ``adb`` commands."""
 
 from __future__ import annotations

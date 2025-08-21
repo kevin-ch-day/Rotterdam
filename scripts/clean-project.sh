@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# File: scripts/clean-project.sh
 # clean.sh — minimal Fedora-only cleaner for the Rotterdam repo
 
 set -euo pipefail

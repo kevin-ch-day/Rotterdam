@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# File: platform/android/devices/discovery.py
 # discovery.py
 """Helpers for discovering and enriching connected Android devices via ADB."""
 

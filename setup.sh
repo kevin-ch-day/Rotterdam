@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# File: setup.sh
 set -euo pipefail
 
 # --- Paths ---

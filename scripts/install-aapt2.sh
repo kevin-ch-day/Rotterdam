@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# File: scripts/install-aapt2.sh
 # install-aapt2.sh — Fedora-only one-shot installer for aapt2 via Android SDK build-tools
 
 set -euo pipefail

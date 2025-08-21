@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# File: platform/android/devices/processes.py
 """List running processes on a device via ADB (robust across Android ps variants)."""
 
 from __future__ import annotations

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# File: platform/android/devices/props.py
 """Helpers for retrieving and interpreting device properties."""
 
 from __future__ import annotations
