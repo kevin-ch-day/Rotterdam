@@ -5,7 +5,7 @@ import argparse
 import json
 
 from cli import run_main_menu
-from logging_config import get_logger
+from logs.logging_config import get_logger
 
 logger = get_logger(__name__)
 

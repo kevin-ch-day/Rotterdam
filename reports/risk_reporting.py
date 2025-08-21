@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
-from report_utils import generate_report, fetch_history, fetch_latest
+from reports.report_utils import generate_report, fetch_history, fetch_latest
 
 __all__ = [
     "create_risk_report",

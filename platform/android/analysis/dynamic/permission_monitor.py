@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 from typing import DefaultDict, Dict, Iterable, List
 
 from devices import adb
-from logging_config import StructuredLogger
+from logs.logging_config import StructuredLogger
 
 logger = StructuredLogger.get_logger(__name__)
 

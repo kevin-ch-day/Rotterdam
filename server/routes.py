@@ -15,7 +15,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, Response, status
 from fastapi.responses import FileResponse
 
 from orchestrator.scheduler import scheduler
-from risk_reporting import create_risk_report
+from reports.risk_reporting import create_risk_report
 from storage.repository import ping_db
 
 router = APIRouter()
