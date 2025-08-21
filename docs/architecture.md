@@ -12,6 +12,8 @@ The static pipeline under `platform/android/analysis/static/` decompiles APKs, e
 
 ## Dynamic Sandbox
 
+**Note:** The dynamic sandbox is parked for the MVP. See [sandbox/PARKED.md](../sandbox/PARKED.md). Avoid modifying or relying on this component until work resumes.
+
 Dynamic analysis lives in `platform/android/analysis/dynamic/`. The `runner.py` module simulates execution of an APK with Frida instrumentation hooks defined in `frida/`. Observed runtime events are converted into metrics that complement static findings.
 
 ## Risk Scoring
