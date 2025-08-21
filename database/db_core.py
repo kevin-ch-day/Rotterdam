@@ -19,11 +19,11 @@ Those concerns should live in a higher-level module such as database/db_engine.p
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Optional, Iterator
-from contextlib import contextmanager
 import threading
 import time
+from contextlib import contextmanager
+from dataclasses import dataclass
+from typing import Iterator, Optional
 
 import mysql.connector
 from mysql.connector import Error
@@ -33,10 +33,21 @@ from mysql.connector.pooling import MySQLConnectionPool
 # Import raw dict from your config; this keeps db_core unopinionated.
 from database.db_config import DB_CONFIG
 
+__all__ = [
+    "ConnectionSettings",
+    "PoolSettings",
+    "RuntimeOptions",
+    "ConnectionProvider",
+    "SingleConnectionProvider",
+    "PooledConnectionProvider",
+    "DatabaseCore",
+]
+
 
 # -------------------------
 # Data models
 # -------------------------
+
 
 @dataclass(frozen=True)
 class ConnectionSettings:
@@ -77,6 +88,7 @@ class RuntimeOptions:
 # Connection provider interface
 # -------------------------
 
+
 class ConnectionProvider:
     """
     Abstract base for connection providers.
@@ -107,6 +119,7 @@ class ConnectionProvider:
 # -------------------------
 # Single connection provider
 # -------------------------
+
 
 class SingleConnectionProvider(ConnectionProvider):
     """
@@ -172,7 +185,10 @@ class SingleConnectionProvider(ConnectionProvider):
         self.connect()
         # Optional ping to refresh TCP keepalive; does not run SQL.
         self.ping(reconnect=True)
-        assert self._conn is not None
+        if self._conn is None:
+            # While connect() should guarantee a connection, avoid returning
+            # ``None`` which would surface as an AttributeError later on.
+            raise RuntimeError("Database connection is not available")
         yield self._conn
 
     # ---- internals ----
@@ -198,7 +214,7 @@ class SingleConnectionProvider(ConnectionProvider):
                 return True
             except Exception as exc:
                 last_exc = exc
-                time.sleep(delay * (2 ** i))
+                time.sleep(delay * (2**i))
         if last_exc:
             # Swallowing the exception here keeps the provider SQL-free and side-effect minimal.
             # Caller can inspect is_ready() or the ping() boolean.
@@ -216,6 +232,7 @@ class SingleConnectionProvider(ConnectionProvider):
 # -------------------------
 # Pooled connection provider
 # -------------------------
+
 
 class PooledConnectionProvider(ConnectionProvider):
     """
@@ -285,7 +302,8 @@ class PooledConnectionProvider(ConnectionProvider):
     @contextmanager
     def connection(self) -> Iterator[MySQLConnection]:
         self.connect()
-        assert self._pool is not None
+        if self._pool is None:
+            raise RuntimeError("Connection pool is not initialized")
         conn = self._pool.get_connection()
         conn.autocommit = self._options.autocommit
         try:
@@ -312,6 +330,7 @@ class PooledConnectionProvider(ConnectionProvider):
 # -------------------------
 # Facade
 # -------------------------
+
 
 class DatabaseCore:
     """
