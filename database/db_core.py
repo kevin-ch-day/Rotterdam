@@ -1,95 +1,41 @@
 # database/db_core.py
 """
-Database core module (simplified).
+Simplified database core module.
 
-Responsibilities:
-- Connection lifecycle management (single or pooled)
-- Ping/health checks (no SQL execution)
-- Optional auto-reconnect policy
-- Facade DatabaseCore class to hide backend details
+- Supports single or pooled MySQL connections
+- Provides connection lifecycle + ping
+- Context manager for safe usage
 
-Intentionally out of scope:
-- Cursors
-- Query execution
-- Transactions
-
-Those live in db_engine.py.
+Out of scope:
+- Queries, cursors, transactions (live in db_engine.py)
 """
 
 from __future__ import annotations
-
-from dataclasses import dataclass
-from typing import Optional, Iterator
 from contextlib import contextmanager
-import time
+from typing import Optional, Iterator, Any
 
 import mysql.connector
 from mysql.connector import Error
-from mysql.connector.abstracts import MySQLConnectionAbstract
 from mysql.connector.pooling import MySQLConnectionPool
 
 from database.db_config import DB_CONFIG
 
 
 # -------------------------
-# Config models
+# Single connection
 # -------------------------
 
-@dataclass(frozen=True)
-class ConnectionSettings:
-    host: str
-    user: str
-    password: str
-    database: str
-    port: int = 3306
-    connection_timeout: int = 10
-
-    @staticmethod
-    def from_mapping(m: dict) -> "ConnectionSettings":
-        return ConnectionSettings(
-            host=m.get("host", "localhost"),
-            user=m["user"],
-            password=m.get("password", ""),
-            database=m.get("database", ""),
-            port=m.get("port", 3306),
-            connection_timeout=m.get("connection_timeout", 10),
-        )
-
-
-@dataclass(frozen=True)
-class PoolSettings:
-    pool_name: str = "rotterdam_pool"
-    pool_size: int = 5
-
-
-@dataclass(frozen=True)
-class RuntimeOptions:
-    autocommit: bool = False
-    reconnect_attempts: int = 2
-    reconnect_backoff_sec: float = 0.3
-
-
-# -------------------------
-# Single connection provider
-# -------------------------
-
-class SingleConnectionProvider:
-    def __init__(self, settings: ConnectionSettings, options: RuntimeOptions) -> None:
-        self._settings = settings
-        self._options = options
-        self._conn: Optional[MySQLConnectionAbstract] = None
+class SingleConnection:
+    def __init__(self, cfg: dict, autocommit: bool = False) -> None:
+        self._cfg = cfg
+        self._conn: Optional[Any] = None
+        self._autocommit = autocommit
 
     def connect(self) -> None:
-        if self._conn is None or not self.is_ready():
-            self._conn = mysql.connector.connect(
-                host=self._settings.host,
-                user=self._settings.user,
-                password=self._settings.password,
-                database=self._settings.database,
-                port=self._settings.port,
-                connection_timeout=self._settings.connection_timeout,
-            )
-            self._conn.autocommit = self._options.autocommit
+        if not self._conn or not self.is_ready():
+            conn = mysql.connector.connect(**self._cfg)
+            conn.autocommit = self._autocommit  # type: ignore[attr-defined]
+            self._conn = conn
 
     def disconnect(self) -> None:
         if self._conn:
@@ -100,61 +46,53 @@ class SingleConnectionProvider:
             self._conn = None
 
     def is_ready(self) -> bool:
-        return bool(self._conn and self._conn.is_connected())
+        try:
+            return bool(self._conn and self._conn.is_connected())
+        except Exception:
+            return False
 
     def ping(self) -> bool:
         try:
             if not self._conn:
                 self.connect()
-            self._conn.ping(reconnect=True, attempts=1, delay=0)
+            if self._conn is not None:
+                self._conn.ping(reconnect=True, attempts=1, delay=0)  # type: ignore[attr-defined]
             return True
         except Error:
-            return self._attempt_reconnect()
+            self.disconnect()
+            return False
 
     @contextmanager
-    def connection(self) -> Iterator[MySQLConnectionAbstract]:
+    def connection(self) -> Iterator[Any]:
         self.connect()
         self.ping()
         assert self._conn is not None
         yield self._conn
 
-    def _attempt_reconnect(self) -> bool:
-        for i in range(self._options.reconnect_attempts):
-            try:
-                time.sleep(self._options.reconnect_backoff_sec * (2 ** i))
-                self.connect()
-                return True
-            except Exception:
-                continue
-        return False
-
 
 # -------------------------
-# Pooled connection provider
+# Connection pool
 # -------------------------
 
-class PooledConnectionProvider:
-    def __init__(self, settings: ConnectionSettings, pool: PoolSettings, options: RuntimeOptions) -> None:
-        self._settings = settings
-        self._options = options
-        self._pool_cfg = pool
+class ConnectionPool:
+    def __init__(self, cfg: dict, pool_name: str = "default_pool",
+                 pool_size: int = 5, autocommit: bool = False) -> None:
+        self._cfg = cfg
+        self._pool_name = pool_name
+        self._pool_size = pool_size
         self._pool: Optional[MySQLConnectionPool] = None
+        self._autocommit = autocommit
 
     def connect(self) -> None:
         if self._pool is None:
             self._pool = MySQLConnectionPool(
-                pool_name=self._pool_cfg.pool_name,
-                pool_size=self._pool_cfg.pool_size,
-                host=self._settings.host,
-                user=self._settings.user,
-                password=self._settings.password,
-                database=self._settings.database,
-                port=self._settings.port,
-                connection_timeout=self._settings.connection_timeout,
+                pool_name=self._pool_name,
+                pool_size=self._pool_size,
+                **self._cfg,
             )
 
     def disconnect(self) -> None:
-        self._pool = None  # GC cleans up connections
+        self._pool = None
 
     def is_ready(self) -> bool:
         return self._pool is not None
@@ -162,20 +100,20 @@ class PooledConnectionProvider:
     def ping(self) -> bool:
         try:
             with self.connection() as conn:
-                conn.ping(reconnect=True, attempts=1, delay=0)
+                conn.ping(reconnect=True, attempts=1, delay=0)  # type: ignore[attr-defined]
             return True
         except Error:
-            self._pool = None
+            self.disconnect()
             return False
 
     @contextmanager
-    def connection(self) -> Iterator[MySQLConnectionAbstract]:
+    def connection(self) -> Iterator[Any]:
         self.connect()
         assert self._pool is not None
         conn = self._pool.get_connection()
-        conn.autocommit = self._options.autocommit
+        conn.autocommit = self._autocommit  # type: ignore[attr-defined]
         try:
-            conn.ping(reconnect=True, attempts=1, delay=0)
+            conn.ping(reconnect=True, attempts=1, delay=0)  # type: ignore[attr-defined]
             yield conn
         finally:
             conn.close()
@@ -186,43 +124,37 @@ class PooledConnectionProvider:
 # -------------------------
 
 class DatabaseCore:
-    def __init__(self, provider) -> None:
+    def __init__(self, provider: Any) -> None:
         self._provider = provider
 
     @staticmethod
-    def from_config(
-        *,
-        use_pool: bool = False,
-        pool_name: str = "rotterdam_pool",
-        pool_size: int = 5,
-        autocommit: bool = False,
-        reconnect_attempts: int = 2,
-        reconnect_backoff_sec: float = 0.3,
-        cfg: Optional[dict] = None,
-    ) -> "DatabaseCore":
-        raw = dict(DB_CONFIG if cfg is None else cfg)
-        settings = ConnectionSettings.from_mapping(raw)
-        options = RuntimeOptions(
-            autocommit=autocommit,
-            reconnect_attempts=reconnect_attempts,
-            reconnect_backoff_sec=reconnect_backoff_sec,
-        )
+    def from_config(use_pool: bool = False, **kwargs) -> "DatabaseCore":
+        cfg = dict(DB_CONFIG)
         provider = (
-            PooledConnectionProvider(settings, PoolSettings(pool_name, pool_size), options)
-            if use_pool
-            else SingleConnectionProvider(settings, options)
+            ConnectionPool(cfg, **kwargs)
+            if use_pool else
+            SingleConnection(cfg, **kwargs)
         )
         return DatabaseCore(provider)
 
-    def connect(self) -> None: self._provider.connect()
-    def disconnect(self) -> None: self._provider.disconnect()
-    def is_ready(self) -> bool: return self._provider.is_ready()
-    def ping(self) -> bool: return self._provider.ping()
+    def connect(self) -> None:
+        self._provider.connect()
+
+    def disconnect(self) -> None:
+        self._provider.disconnect()
+
+    def ping(self) -> bool:
+        return self._provider.ping()
 
     @contextmanager
-    def connection(self) -> Iterator[MySQLConnectionAbstract]:
+    def connection(self) -> Iterator[Any]:
         with self._provider.connection() as conn:
             yield conn
 
-    def __enter__(self): self.connect(); return self
-    def __exit__(self, exc_type, exc, tb): self.disconnect(); return False
+    def __enter__(self) -> "DatabaseCore":
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        self.disconnect()
+        return False
