@@ -139,6 +139,9 @@ custom API key via `ROTTERDAM_API_KEY` and start the server via the CLI:
 ```bash
 export ROTTERDAM_API_KEY="my-strong-key"  # default "secret" will trigger a warning
 python -m cli.actions serve
+
+# or run uvicorn directly for development
+PYTHONPATH=. uvicorn server.main:app --reload
 ```
 
 The browser UI sends this key on all requests. Expose it to the page with a

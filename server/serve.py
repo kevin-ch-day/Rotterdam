@@ -1,15 +1,26 @@
 # server/serve.py
 from __future__ import annotations
 
+import logging
 import socket
+import sys
 import threading
 import time
 import webbrowser
+from pathlib import Path
 from typing import Optional
 
 import uvicorn
 
 from settings import get_settings
+
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    logging.getLogger("uvicorn.error").error(
+        "Repository root '%s' missing from sys.path. Run 'PYTHONPATH=. uvicorn server.main:app --reload'",
+        _ROOT,
+    )
+    raise SystemExit(1)
 
 
 def _wait_for_port(host: str, port: int, timeout: float = 5.0) -> bool:
