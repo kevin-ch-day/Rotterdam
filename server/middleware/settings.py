@@ -64,7 +64,6 @@ class Settings:
         trust_proxy = _env_bool("TRUST_PROXY", False)
         public_paths = {
             "/",
-            "/favicon.ico",
             "/_healthz",
             "/_ready",
             "/ui",
