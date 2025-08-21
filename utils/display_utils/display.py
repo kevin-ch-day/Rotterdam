@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # File: utils/display_utils/display.py
-# display.py
 """
 General display utilities for Android Tool.
 - ASCII-only (no external deps)
@@ -25,6 +24,7 @@ from .status import info, ok, warn, fail
 # -----------------------------
 # Terminal / layout
 # -----------------------------
+
 
 def term_width(default: int = 80) -> int:
     """Best-effort terminal width (falls back safely)."""
@@ -51,7 +51,7 @@ def header(text: str, underline: str = "-") -> str:
 
 def banner(title: str, subtitle: Optional[str] = None, boxed: bool = False) -> str:
     """
-    Top banner. If boxed=True, uses a box; else wide dividers.
+    Top banner. If boxed=True, uses an ASCII box; else wide dividers.
     """
     title = title.strip()
     w = term_width()
@@ -79,17 +79,16 @@ def clear_screen() -> None:
     os.system("cls" if os.name == "nt" else "clear")
 
 
-# Status line helpers re-exported from :mod:`core.status`
-
-
 # -----------------------------
 # Convenience wrappers
 # -----------------------------
+
 
 def print_app_banner(subtitle: Optional[str] = None, *, boxed: bool = False) -> None:
     """Standard app banner using project metadata."""
     title = f"{app_config.APP_NAME} v{app_config.APP_VERSION}"
     print(banner(title, subtitle=subtitle, boxed=boxed))
+
 
 def print_section(title: str, underline: str = "=") -> None:
     """Section header with a blank line around it."""
@@ -105,29 +104,28 @@ def render_menu(
     *,
     serial: Optional[str] = None,
 ) -> str:
-    """Return a framed menu string.
+    """Return a framed ASCII menu string.
 
-    The menu is rendered inside a simple box using box-drawing characters.
+    The menu is rendered inside a simple ASCII box.
     ``serial`` can be supplied to show contextual information (e.g. the
     connected device serial).
     """
-
-    header = title.strip()
+    hdr = title.strip()
     if serial:
-        header = f"{header} (serial: {serial})"
+        hdr = f"{hdr} (serial: {serial})"
 
     # Determine width based on longest line
     body = [f"[{i}] {opt}" for i, opt in enumerate(options, start=1)]
     body.append(f"[0] {exit_label}")
-    width = max(len(header), *(len(line) for line in body)) + 4
+    width = max(len(hdr), *(len(line) for line in body)) + 4
 
-    top = "╭" + "─" * (width - 2) + "╮"
-    sep = "├" + "─" * (width - 2) + "┤"
-    bottom = "╰" + "─" * (width - 2) + "╯"
+    top = "+" + "-" * (width - 2) + "+"
+    sep = "+" + "-" * (width - 2) + "+"
+    bottom = "+" + "-" * (width - 2) + "+"
 
-    lines = [top, f"│ {header.ljust(width - 4)} │", sep]
+    lines = [top, f"| {hdr.ljust(width - 4)} |", sep]
     for line in body:
-        lines.append(f"│ {line.ljust(width - 4)} │")
+        lines.append(f"| {line.ljust(width - 4)} |")
     lines.append(bottom)
     return "\n".join(lines)
 
@@ -154,10 +152,9 @@ def prompt_choice(
     Returns
     -------
     str
-        The chosen option. ``"q"`` is returned if the user requests to quit
-        via ``q``/``Q`` or triggers EOF/KeyboardInterrupt.
+        The chosen option. "q" is returned if the user requests to quit
+        via q/Q or triggers EOF/KeyboardInterrupt.
     """
-
     options = {str(opt) for opt in valid_options}
 
     while True:
@@ -184,6 +181,7 @@ def prompt_choice(
 # -----------------------------
 # Menu helpers
 # -----------------------------
+
 
 def show_menu(
     title: str,
@@ -243,10 +241,12 @@ def run_menu_loop(
 # Simple text helpers
 # -----------------------------
 
+
 def print_bullets(items: Iterable[str], bullet: str = " - ") -> None:
     """Print a simple bullet list."""
     for it in items:
         print(f"{bullet}{it}")
+
 
 def print_kv(pairs: Sequence[tuple[str, Any]], key_pad: int = 18) -> None:
     """
@@ -258,10 +258,12 @@ def print_kv(pairs: Sequence[tuple[str, Any]], key_pad: int = 18) -> None:
         val = "" if v is None else str(v)
         print(f"{key:<{key_pad}} : {val}")
 
+
 def wrap_text(text: str, width: Optional[int] = None) -> str:
     """Wrap a long string to terminal width."""
     w = width or (term_width() - 2)
     return "\n".join(wrap(text, w))
+
 
 # -----------------------------
 # Re-export table utilities

@@ -16,7 +16,27 @@ from .display import (
     term_width,
     wrap_text,
 )
-from .status import fail, ok, info, warn
+
+# Standard status helpers
+from .status import fail, ok, info, warn  # canonical names
+
+# Backward-compatible aliases (some callers use these)
+def good(*args, **kwargs):
+    return ok(*args, **kwargs)
+
+
+def warning(*args, **kwargs):
+    return warn(*args, **kwargs)
+
+
+def error(*args, **kwargs):
+    return fail(*args, **kwargs)
+
+
+def note(*args, **kwargs):
+    # Neutral/low-importance message; map to info
+    return info(*args, **kwargs)
+
 
 __all__ = [
     "banner",
@@ -33,8 +53,14 @@ __all__ = [
     "term_width",
     "wrap_text",
     "print_table",
+    # status helpers (canonical)
     "info",
     "ok",
     "warn",
     "fail",
+    # aliases for backward compatibility
+    "good",
+    "warning",
+    "error",
+    "note",
 ]
