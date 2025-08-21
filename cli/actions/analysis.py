@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from analysis import analyze_apk
-from core import config, menu, renderers
+from core import config
 from devices import apk, packages
-from reporting import ieee
 from sandbox import compute_runtime_metrics
 from sandbox import run_analysis as sandbox_analyze
 from sandbox import ui_driver
 from storage.repository import AnalysisRepository
 from utils.display_utils import display
+from utils.reporting_utils import ieee
 
 from ..prompts import prompt_existing_path
 from .utils import action_context as _action_context
@@ -63,10 +63,8 @@ def analyze_installed_app(serial: str) -> None:
             print("Status: No packages found.")
             return
 
-        options = [
-            (pkg + (" (Twitter)" if pkg == "com.twitter.android" else ""), pkg) for pkg in pkgs
-        ]
-        choice = menu.show_menu(
+        options = [(pkg + (" (Twitter)" if pkg == "com.twitter.android" else ""), pkg) for pkg in pkgs]
+        choice = display.show_menu(
             "Installed Packages",
             [label for label, _ in options],
             exit_label="Cancel",
@@ -158,7 +156,7 @@ def explore_installed_app(serial: str) -> None:
             print("Status: No packages found.")
             return
 
-        choice = menu.show_menu(
+        choice = display.show_menu(
             "Installed Packages",
             pkgs,
             exit_label="Cancel",
@@ -201,21 +199,35 @@ def _display_manifest_insights(outdir: Path) -> None:
 
     if features:
         display.print_section("Requested Features")
-        renderers.print_feature_list(features)
+        rows = [[f.get("name", ""), "yes" if f.get("required") else "no"] for f in features]
+        display.print_table(rows, headers=["Feature", "Required"])
 
     if components:
         for kind in ["activity", "service", "receiver", "provider"]:
             if components.get(kind):
                 display.print_section(f"{kind.title()}s")
-                renderers.print_component_table(components, kind)
+                rows = [
+                    [
+                        c.get("name", ""),
+                        "yes" if c.get("exported") else "no",
+                        c.get("permission", ""),
+                    ]
+                    for c in components.get(kind, [])
+                ]
+                display.print_table(rows, headers=["Name", "Exported", "Permission"])
 
     if metrics:
         display.print_section("Derived Metrics")
-        renderers.print_metric_table(metrics)
+        rows = [[k, str(v)] for k, v in sorted(metrics.items()) if not isinstance(v, dict)]
+        display.print_table(rows, headers=["Metric", "Value"])
         prefix_counts = metrics.get("permission_prefix_counts")
         if prefix_counts:
             display.print_section("Permission Patterns")
-            renderers.print_prefix_summary(prefix_counts)
+            rows = [
+                [p, str(c)]
+                for p, c in sorted(prefix_counts.items(), key=lambda x: (-x[1], x[0]))
+            ]
+            display.print_table(rows, headers=["Prefix", "Count"])
 
     if diff:
         display.print_section("Differences from Previous Version")

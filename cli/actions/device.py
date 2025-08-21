@@ -6,7 +6,6 @@ import re
 from dataclasses import asdict
 from typing import Optional
 
-from core import renderers
 from devices import packages, processes, selection, service
 from utils.display_utils import display
 from utils.reporting_utils import ieee
@@ -32,7 +31,28 @@ def show_connected_devices() -> None:
             print("No devices attached.")
             return
 
-        renderers.print_basic_device_table(devs)
+        rows = [
+            [
+                d.get("serial", ""),
+                d.get("state", ""),
+                d.get("product", "-"),
+                d.get("model", "-"),
+                d.get("device", "-"),
+                d.get("transport_id", d.get("transport", "-")),
+            ]
+            for d in devs
+        ]
+        display.print_table(
+            rows,
+            headers=[
+                "Serial",
+                "State",
+                "Product",
+                "Model",
+                "Device",
+                "Transport",
+            ],
+        )
 
 
 def show_detailed_devices() -> None:
@@ -108,7 +128,30 @@ def list_installed_packages(
             print("No packages found.")
             return
 
-        renderers.print_package_inventory(pkg_info)
+        rows = [
+            [
+                p.get("package", ""),
+                p.get("version_name", ""),
+                p.get("installer", ""),
+                p.get("uid", ""),
+                "yes" if p.get("system") else "no",
+                "yes" if p.get("priv") else "no",
+                "yes" if p.get("high_value") else "no",
+            ]
+            for p in pkg_info
+        ]
+        display.print_table(
+            rows,
+            headers=[
+                "Package",
+                "Version",
+                "Installer",
+                "UID",
+                "System",
+                "Priv",
+                "High-Value",
+            ],
+        )
 
         if csv_path:
             try:
@@ -154,7 +197,8 @@ def scan_dangerous_permissions(serial: str) -> None:
             logger.info("no apps with dangerous permissions")
             print("No apps requesting dangerous permissions found.")
             return
-        renderers.print_permission_scan(risky)
+        rows = [[r.get("package", ""), ", ".join(r.get("permissions", []))] for r in risky]
+        display.print_table(rows, headers=["Package", "Permissions"])
 
 
 def scan_for_devices() -> None:
@@ -174,7 +218,28 @@ def scan_for_devices() -> None:
             print("No devices discovered.")
             return
 
-        renderers.print_basic_device_table(detailed)
+        rows = [
+            [
+                d.get("serial", ""),
+                d.get("state", ""),
+                d.get("product", "-"),
+                d.get("model", "-"),
+                d.get("device", "-"),
+                d.get("transport_id", d.get("transport", "-")),
+            ]
+            for d in detailed
+        ]
+        display.print_table(
+            rows,
+            headers=[
+                "Serial",
+                "State",
+                "Product",
+                "Model",
+                "Device",
+                "Transport",
+            ],
+        )
 
 
 def export_device_report(serial: str) -> None:
@@ -203,4 +268,6 @@ def list_running_processes(serial: str) -> None:
             logger.info("no process data available")
             print("No process data available.")
             return
-        renderers.print_process_table(procs)
+
+        rows = [[p.get("pid", ""), p.get("user", ""), p.get("name", "")] for p in procs]
+        display.print_table(rows, headers=["PID", "User", "Name"])
