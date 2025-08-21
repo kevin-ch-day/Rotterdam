@@ -34,7 +34,7 @@ def info(msg: str, *, ts: bool = False) -> None:
     _emit(INF, msg, ts=ts, stream=sys.stdout)
 
 
-def good(msg: str, *, ts: bool = False) -> None:
+def ok(msg: str, *, ts: bool = False) -> None:
     """Print a success status line."""
     _emit(OK, msg, ts=ts, stream=sys.stdout)
 

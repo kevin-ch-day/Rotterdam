@@ -20,7 +20,7 @@ from typing import Iterable, Sequence, Any, Optional, Callable, List
 
 from app_config import app_config
 from . import table as tables
-from .status import info, good, warn, fail
+from .status import info, ok, warn, fail
 
 # -----------------------------
 # Terminal / layout
