@@ -6,11 +6,10 @@ import re
 from dataclasses import asdict
 from typing import Optional
 
-from reports import ieee
-
 from core import renderers
 from devices import packages, processes, selection, service
 from utils.display_utils import display
+from utils.reporting_utils import ieee
 
 from .utils import action_context as _action_context
 from .utils import logger

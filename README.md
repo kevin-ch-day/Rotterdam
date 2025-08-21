@@ -127,11 +127,12 @@ development.
 
 A lightweight REST API can be launched to submit APKs for analysis and
 retrieve risk reports. The web server's host, port, log level and browser
-behaviour all come from `server/serv_config.py`, which also honours
-environment overrides (`APP_HOST`, `APP_PORT`, `UVICORN_LOG_LEVEL`,
-`OPEN_BROWSER`). The `run.sh` helper sources these values so the CLI and server
-share a single source of truth. Set a custom API key via `ROTTERDAM_API_KEY`
-and start the server via the CLI:
+behaviour are provided by the centralized [`settings`](settings/) package
+(`settings.get_settings`) which honours environment overrides (`APP_HOST`,
+`APP_PORT`, `UVICORN_LOG_LEVEL`, `OPEN_BROWSER`). The `run.sh` helper sources
+these values so the CLI and server share a single source of truth. See
+[`docs/environment.md`](docs/environment.md) for a full list of variables. Set a
+custom API key via `ROTTERDAM_API_KEY` and start the server via the CLI:
 
 ```bash
 export ROTTERDAM_API_KEY="my-strong-key"  # default "secret" will trigger a warning
@@ -172,3 +173,5 @@ Additional reference material:
 
 - [Dynamic analysis](docs/dynamic-analysis.md)
 - [Risk scoring](docs/risk-scoring.md)
+- [Bring-up checklist](docs/BRING-UP-CHECKLIST.md)
+- [Subsystem ownership](docs/OWNERSHIP.md)
