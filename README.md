@@ -172,3 +172,5 @@ Additional reference material:
 
 - [Dynamic analysis](docs/dynamic-analysis.md)
 - [Risk scoring](docs/risk-scoring.md)
+- [Bring-up checklist](docs/BRING-UP-CHECKLIST.md)
+- [Subsystem ownership](docs/OWNERSHIP.md)
