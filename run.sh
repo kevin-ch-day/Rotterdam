@@ -60,6 +60,7 @@ Options:
 Notes:
 - This script assumes ./setup.sh has already been run.
 - The web server is typically started from inside the CLI menu.
+- To run the API server directly, use: PYTHONPATH=. uvicorn server.main:app --reload
 - Set ROTTERDAM_API_KEY to configure API authentication.
 EOF
 }
